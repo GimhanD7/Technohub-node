@@ -101,18 +101,20 @@ exports.updateSettings = async (req, res) => {
 // --- SLIDES ---
 exports.saveSlide = async (req, res) => {
   try {
-    const { id, title, subtitle, image_url, button_text, button_link, sort_order, is_active } = req.body;
+    const { slideId, title, label, imageUrl, sortOrder, isActive } = req.body;
     
-    if (!title || !image_url) return res.status(400).json({ success: false, message: "Title and Image URL required." });
+    if (!title || !imageUrl) return res.status(400).json({ success: false, message: "Title and Image URL required." });
 
     const data = {
-      title, subtitle: subtitle || null, image_url, button_text: button_text || null,
-      button_link: button_link || null, sort_order: sort_order ? parseInt(sort_order) : 0,
-      is_active: is_active ? true : false
+      title, 
+      label: label || null, 
+      image_url: imageUrl, 
+      sort_order: sortOrder ? parseInt(sortOrder) : 0,
+      is_active: isActive === undefined ? true : Boolean(isActive)
     };
 
-    if (id) {
-      await prisma.home_slides.update({ where: { id: parseInt(id) }, data });
+    if (slideId) {
+      await prisma.home_slides.update({ where: { id: parseInt(slideId) }, data });
     } else {
       await prisma.home_slides.create({ data });
     }
@@ -137,16 +139,16 @@ exports.deleteSlide = async (req, res) => {
 // --- LECTURERS ---
 exports.saveLecturer = async (req, res) => {
   try {
-    const { id, name, subject, image_url, description, sort_order, is_active } = req.body;
-    if (!name || !subject || !image_url) return res.status(400).json({ success: false, message: "Name, Subject, and Image URL required." });
+    const { lecturerId, name, subject, focus, imageUrl, initials, sortOrder, isActive } = req.body;
+    if (!name || !subject || !imageUrl) return res.status(400).json({ success: false, message: "Name, Subject, and Image URL required." });
 
     const data = {
-      name, subject, image_url, description: description || null,
-      sort_order: sort_order ? parseInt(sort_order) : 0, is_active: is_active ? true : false
+      name, subject, image_url: imageUrl, focus: focus || null, initials: initials || null,
+      sort_order: sortOrder ? parseInt(sortOrder) : 0, is_active: isActive === undefined ? true : Boolean(isActive)
     };
 
-    if (id) {
-      await prisma.home_lecturers.update({ where: { id: parseInt(id) }, data });
+    if (lecturerId) {
+      await prisma.home_lecturers.update({ where: { id: parseInt(lecturerId) }, data });
     } else {
       await prisma.home_lecturers.create({ data });
     }
@@ -223,7 +225,7 @@ exports.uploadFile = async (req, res) => {
 
     res.json({
       success: true,
-      url: `/uploads/home/${file.filename}`,
+      url: `${req.protocol}://${req.get('host')}/uploads/home/${file.filename}`,
       message: "File uploaded successfully."
     });
   } catch (error) {

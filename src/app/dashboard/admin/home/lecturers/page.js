@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
-import { API_BASE_URL, fetchApi } from "@/lib/api";
+import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import {
   AlertCircle,
   CheckCircle2,
@@ -14,6 +14,8 @@ import {
   UploadCloud,
   UsersRound,
 } from "lucide-react";
+
+const getFullImageUrl = (url) => url?.startsWith('/uploads/') ? `${BASE_URL}${url}` : url;
 
 const initialLecturer = {
   name: "",
@@ -81,7 +83,7 @@ export default function HomePageLecturersManager() {
       });
       const data = await response.json();
       if (data.success) {
-        onUploaded(data.imageUrl);
+        onUploaded(data.url);
         setSuccessMsg("Image uploaded.");
       } else {
         setErrorMsg(data.message || "Image upload failed.");
@@ -180,12 +182,12 @@ export default function HomePageLecturersManager() {
         </div>
 
         <form onSubmit={saveLecturer} className="grid lg:grid-cols-2 gap-4 mb-8">
-          <input value={lecturerForm.name} onChange={(event) => updateLecturerField("name", event.target.value)} placeholder="Lecturer name" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
-          <input value={lecturerForm.subject} onChange={(event) => updateLecturerField("subject", event.target.value)} placeholder="Subject" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
-          <textarea value={lecturerForm.focus} onChange={(event) => updateLecturerField("focus", event.target.value)} placeholder="Details" rows={3} className="lg:col-span-2 rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a] resize-none" />
-          <input value={lecturerForm.imageUrl} onChange={(event) => updateLecturerField("imageUrl", event.target.value)} placeholder="Lecturer image URL" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
-          <input value={lecturerForm.initials} onChange={(event) => updateLecturerField("initials", event.target.value)} placeholder="Initials (e.g. NJ)" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
-          <input type="number" value={lecturerForm.sortOrder} onChange={(event) => updateLecturerField("sortOrder", event.target.value)} placeholder="Order" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+          <input value={lecturerForm.name ?? ""} onChange={(event) => updateLecturerField("name", event.target.value)} placeholder="Lecturer name" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
+          <input value={lecturerForm.subject ?? ""} onChange={(event) => updateLecturerField("subject", event.target.value)} placeholder="Subject" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
+          <textarea value={lecturerForm.focus ?? ""} onChange={(event) => updateLecturerField("focus", event.target.value)} placeholder="Details" rows={3} className="lg:col-span-2 rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a] resize-none" />
+          <input value={lecturerForm.imageUrl ?? ""} onChange={(event) => updateLecturerField("imageUrl", event.target.value)} placeholder="Lecturer image URL" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+          <input value={lecturerForm.initials ?? ""} onChange={(event) => updateLecturerField("initials", event.target.value)} placeholder="Initials (e.g. NJ)" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+          <input type="number" value={lecturerForm.sortOrder ?? 0} onChange={(event) => updateLecturerField("sortOrder", event.target.value)} placeholder="Order" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
           <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-white bg-gray-50 dark:bg-slate-800/50 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-slate-800">
             <input type="checkbox" checked={lecturerForm.isActive} onChange={(event) => updateLecturerField("isActive", event.target.checked)} className="accent-primary w-4 h-4" />
             Active Display
@@ -212,7 +214,7 @@ export default function HomePageLecturersManager() {
         <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-4">
           {lecturers.map((lecturer) => (
             <article key={lecturer.id} className={`rounded-lg border ${lecturer.isActive ? 'border-slate-200 dark:border-slate-800' : 'border-dashed border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50'} p-4 flex gap-4 transition-colors`}>
-              <div className="h-24 w-24 rounded-lg bg-primary/10 bg-cover bg-center flex items-center justify-center text-primary text-xl font-black shrink-0 relative" style={lecturer.imageUrl ? { backgroundImage: `url("${lecturer.imageUrl}")` } : undefined}>
+              <div className="h-24 w-24 rounded-lg bg-primary/10 bg-cover bg-center flex items-center justify-center text-primary text-xl font-black shrink-0 relative" style={lecturer.imageUrl ? { backgroundImage: `url("${getFullImageUrl(lecturer.imageUrl)}")` } : undefined}>
                 {!lecturer.imageUrl && (lecturer.initials || "TH")}
                 {!lecturer.isActive && (
                   <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">Hidden</div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
-import { API_BASE_URL, fetchApi } from "@/lib/api";
+import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import {
   AlertCircle,
   CheckCircle2,
@@ -14,6 +14,8 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
+
+const getFullImageUrl = (url) => url?.startsWith('/uploads/') ? `${BASE_URL}${url}` : url;
 
 const initialSlide = {
   imageUrl: "",
@@ -79,7 +81,7 @@ export default function HomePageSlidesManager() {
       });
       const data = await response.json();
       if (data.success) {
-        onUploaded(data.imageUrl);
+        onUploaded(data.url);
         setSuccessMsg("Image uploaded.");
       } else {
         setErrorMsg(data.message || "Image upload failed.");
@@ -176,10 +178,10 @@ export default function HomePageSlidesManager() {
         </div>
 
         <form onSubmit={saveSlide} className="grid lg:grid-cols-2 gap-4 mb-8">
-          <input value={slideForm.title} onChange={(event) => updateSlideField("title", event.target.value)} placeholder="Slide title" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
-          <input value={slideForm.label} onChange={(event) => updateSlideField("label", event.target.value)} placeholder="Small label" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
-          <input value={slideForm.imageUrl} onChange={(event) => updateSlideField("imageUrl", event.target.value)} placeholder="Image URL" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
-          <input type="number" value={slideForm.sortOrder} onChange={(event) => updateSlideField("sortOrder", event.target.value)} placeholder="Order" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+          <input value={slideForm.title ?? ""} onChange={(event) => updateSlideField("title", event.target.value)} placeholder="Slide title" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
+          <input value={slideForm.label ?? ""} onChange={(event) => updateSlideField("label", event.target.value)} placeholder="Small label" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+          <input value={slideForm.imageUrl ?? ""} onChange={(event) => updateSlideField("imageUrl", event.target.value)} placeholder="Image URL" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" required />
+          <input type="number" value={slideForm.sortOrder ?? 0} onChange={(event) => updateSlideField("sortOrder", event.target.value)} placeholder="Order" className="rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
           <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary transition-colors">
             {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
             Upload Slide Image
@@ -206,7 +208,7 @@ export default function HomePageSlidesManager() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {slides.map((slide) => (
             <article key={slide.id} className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden group">
-              <div className="h-40 bg-slate-900 bg-cover bg-center relative" style={{ backgroundImage: `url("${slide.imageUrl}")` }}>
+              <div className="h-40 bg-slate-900 bg-cover bg-center relative" style={{ backgroundImage: `url("${getFullImageUrl(slide.imageUrl)}")` }}>
                 {!slide.isActive && (
                   <div className="absolute top-2 right-2 bg-red-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Hidden</div>
                 )}
