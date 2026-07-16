@@ -1,0 +1,6 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+</IfModule>
+
+# Redirect Apache 404 Not Found errors to the Next.js custom 404 page
+ErrorDocument 404 http://localhost:3000/404

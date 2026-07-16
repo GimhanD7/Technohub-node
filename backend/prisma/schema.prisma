@@ -1,0 +1,572 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model contact_messages {
+  id           Int                     @id @default(autoincrement())
+  full_name    String                  @db.VarChar(255)
+  email        String?                 @db.VarChar(160)
+  phone        String?                 @db.VarChar(80)
+  learner_type String?                 @db.VarChar(80)
+  subject      String                  @db.VarChar(255)
+  message      String                  @db.Text
+  status       contact_messages_status @default(new)
+  created_at   DateTime                @default(now()) @db.Timestamp(0)
+}
+
+model contact_settings {
+  id                Int      @id @default(autoincrement())
+  hero_badge        String   @default("Student Support Desk") @db.VarChar(120)
+  title             String   @default("Contact Techno-Hub") @db.VarChar(255)
+  subtitle          String?  @db.Text
+  phone             String?  @db.VarChar(80)
+  whatsapp          String?  @db.VarChar(80)
+  email             String?  @db.VarChar(160)
+  address           String?  @db.Text
+  office_hours      String?  @db.VarChar(255)
+  map_url           String?  @db.VarChar(500)
+  facebook_url      String?  @db.VarChar(500)
+  instagram_url     String?  @db.VarChar(500)
+  linkedin_url      String?  @db.VarChar(500)
+  youtube_url       String?  @db.VarChar(500)
+  primary_cta_label String?  @db.VarChar(120)
+  primary_cta_url   String?  @db.VarChar(500)
+  updated_by        Int?
+  updated_at        DateTime @default(now()) @db.Timestamp(0)
+  users             users?   @relation(fields: [updated_by], references: [id], onUpdate: Restrict, map: "contact_settings_ibfk_1")
+
+  @@index([updated_by], map: "updated_by")
+}
+
+model course_categories {
+  id         Int                       @id @default(autoincrement())
+  name       String                    @db.VarChar(255)
+  slug       String                    @unique(map: "slug") @db.VarChar(255)
+  status     course_categories_status? @default(active)
+  created_at DateTime                  @default(now()) @db.Timestamp(0)
+  courses    courses[]
+}
+
+model course_enrollments {
+  id          Int      @id @default(autoincrement())
+  student_id  Int
+  course_id   Int
+  enrolled_at DateTime @default(now()) @db.Timestamp(0)
+  users       users    @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "course_enrollments_ibfk_1")
+  courses     courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "course_enrollments_ibfk_2")
+
+  @@unique([student_id, course_id], map: "student_course_unique")
+  @@index([course_id], map: "course_id")
+}
+
+model course_materials {
+  id             Int                   @id @default(autoincrement())
+  module_id      Int
+  type           course_materials_type
+  title          String                @db.VarChar(255)
+  description    String?               @db.Text
+  content_url    String                @db.VarChar(500)
+  order_index    Int?                  @default(0)
+  created_at     DateTime              @default(now()) @db.Timestamp(0)
+  course_modules course_modules        @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "course_materials_ibfk_1")
+
+  @@index([module_id], map: "module_id")
+}
+
+model course_modules {
+  id               Int                @id @default(autoincrement())
+  course_id        Int
+  title            String             @db.VarChar(255)
+  description      String?            @db.Text
+  order_index      Int?               @default(0)
+  created_at       DateTime           @default(now()) @db.Timestamp(0)
+  course_materials course_materials[]
+  courses          courses            @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "course_modules_ibfk_1")
+
+  @@index([course_id], map: "course_id")
+}
+
+model courses {
+  id                 Int                  @id @default(autoincrement())
+  teacher_id         Int
+  category_id        Int?
+  title              String               @db.VarChar(255)
+  description        String?              @db.Text
+  duration           String?              @db.VarChar(100)
+  points             Int?                 @default(0)
+  banner_url         String?              @db.VarChar(500)
+  status             courses_status?      @default(active)
+  created_at         DateTime             @default(now()) @db.Timestamp(0)
+  course_enrollments course_enrollments[]
+  course_modules     course_modules[]
+  users              users                @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "courses_ibfk_1")
+  course_categories  course_categories?   @relation(fields: [category_id], references: [id], onUpdate: Restrict, map: "fk_course_category")
+
+  @@index([category_id], map: "fk_course_category")
+  @@index([teacher_id], map: "teacher_id")
+}
+
+model ebook_resources {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(255)
+  author       String?  @db.VarChar(255)
+  subject      String   @db.VarChar(120)
+  category     String   @db.VarChar(80)
+  level        String   @db.VarChar(80)
+  description  String?  @db.Text
+  file_url     String   @db.VarChar(500)
+  cover_url    String?  @db.VarChar(500)
+  file_type    String?  @db.VarChar(80)
+  file_size    Int?
+  is_featured  Boolean  @default(false)
+  is_published Boolean  @default(true)
+  created_by   Int?
+  created_at   DateTime @default(now()) @db.Timestamp(0)
+  users        users?   @relation(fields: [created_by], references: [id], onUpdate: Restrict, map: "ebook_resources_ibfk_1")
+
+  @@index([created_by], map: "created_by")
+}
+
+model gallery_images {
+  id              Int           @id @default(autoincrement())
+  gallery_item_id Int
+  image_url       String        @db.VarChar(500)
+  caption         String?       @db.VarChar(255)
+  sort_order      Int           @default(0)
+  created_at      DateTime      @default(now()) @db.Timestamp(0)
+  gallery_items   gallery_items @relation(fields: [gallery_item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gallery_images_ibfk_1")
+
+  @@index([gallery_item_id], map: "gallery_item_id")
+}
+
+model gallery_items {
+  id             Int                      @id @default(autoincrement())
+  title          String                   @db.VarChar(255)
+  entry_type     gallery_items_entry_type @default(event)
+  category       String                   @db.VarChar(120)
+  event_date     DateTime?                @db.Date
+  location       String?                  @db.VarChar(255)
+  summary        String                   @db.VarChar(500)
+  details        String?                  @db.Text
+  image_url      String                   @db.VarChar(500)
+  cta_label      String?                  @db.VarChar(120)
+  cta_url        String?                  @db.VarChar(500)
+  is_featured    Boolean                  @default(false)
+  is_published   Boolean                  @default(true)
+  created_by     Int?
+  created_at     DateTime                 @default(now()) @db.Timestamp(0)
+  gallery_images gallery_images[]
+  users          users?                   @relation(fields: [created_by], references: [id], onUpdate: Restrict, map: "gallery_items_ibfk_1")
+
+  @@index([created_by], map: "created_by")
+}
+
+model home_lecturers {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(255)
+  subject    String   @db.VarChar(255)
+  focus      String?  @db.Text
+  image_url  String?  @db.VarChar(500)
+  initials   String?  @db.VarChar(20)
+  sort_order Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
+
+model home_settings {
+  id                  Int      @id @default(autoincrement())
+  hero_badge          String   @default("Sri Lanka's digital learning hub") @db.VarChar(160)
+  hero_title          String   @default("Learn smarter with one connected education platform.") @db.VarChar(255)
+  hero_subtitle       String?  @db.Text
+  primary_cta_label   String?  @db.VarChar(120)
+  primary_cta_url     String?  @db.VarChar(500)
+  secondary_cta_label String?  @db.VarChar(120)
+  secondary_cta_url   String?  @db.VarChar(500)
+  courses_heading     String?  @db.VarChar(255)
+  courses_subtitle    String?  @db.Text
+  lecturers_heading   String?  @db.VarChar(255)
+  lecturers_subtitle  String?  @db.Text
+  why_heading         String?  @db.VarChar(255)
+  why_subtitle        String?  @db.Text
+  timetable_heading   String?  @db.VarChar(255)
+  timetable_subtitle  String?  @db.Text
+  faq_heading         String?  @db.VarChar(255)
+  updated_by          Int?
+  updated_at          DateTime @default(now()) @db.Timestamp(0)
+  users               users?   @relation(fields: [updated_by], references: [id], onUpdate: Restrict, map: "home_settings_ibfk_1")
+
+  @@index([updated_by], map: "updated_by")
+}
+
+model home_slides {
+  id         Int      @id @default(autoincrement())
+  image_url  String   @db.VarChar(500)
+  title      String   @db.VarChar(255)
+  label      String?  @db.VarChar(160)
+  sort_order Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
+
+model home_timetable {
+  id         Int      @id @default(autoincrement())
+  day_label  String   @db.VarChar(80)
+  time_label String   @db.VarChar(120)
+  title      String   @db.VarChar(255)
+  mode_label String?  @db.VarChar(120)
+  sort_order Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
+
+model material_completions {
+  id           Int      @id @default(autoincrement())
+  student_id   Int
+  material_id  Int
+  completed_at DateTime @default(now()) @db.Timestamp(0)
+
+  @@unique([student_id, material_id], map: "student_material")
+}
+
+model notifications {
+  id                                    Int      @id @default(autoincrement())
+  user_id                               Int?
+  target_role                           String?  @default("all") @db.VarChar(20)
+  title                                 String   @db.VarChar(255)
+  message                               String   @db.Text
+  type                                  String   @default("system") @db.VarChar(50)
+  link                                  String?  @db.VarChar(255)
+  is_read                               Boolean  @default(false)
+  created_by                            Int?
+  created_at                            DateTime @default(now()) @db.Timestamp(0)
+  users_notifications_user_idTousers    users?   @relation("notifications_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "notifications_ibfk_1")
+  users_notifications_created_byTousers users?   @relation("notifications_created_byTousers", fields: [created_by], references: [id], onUpdate: Restrict, map: "notifications_ibfk_2")
+
+  @@index([created_by], map: "created_by")
+  @@index([user_id], map: "user_id")
+}
+
+model online_class_enrollments {
+  id              Int            @id @default(autoincrement())
+  student_id      Int
+  online_class_id Int
+  enrolled_at     DateTime       @default(now()) @db.Timestamp(0)
+  users           users          @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "online_class_enrollments_ibfk_1")
+  online_classes  online_classes @relation(fields: [online_class_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "online_class_enrollments_ibfk_2")
+
+  @@unique([student_id, online_class_id], map: "student_id")
+  @@index([online_class_id], map: "online_class_id")
+}
+
+model online_classes {
+  id                       Int                        @id @default(autoincrement())
+  title                    String                     @db.VarChar(255)
+  description              String?                    @db.Text
+  meeting_link             String                     @db.VarChar(500)
+  platform                 String?                    @default("Zoom") @db.VarChar(100)
+  date_time                DateTime                   @db.DateTime(0)
+  duration                 Int                        @default(60)
+  fee                      Decimal?                   @default(0.00) @db.Decimal(10, 2)
+  created_by               Int
+  created_at               DateTime                   @default(now()) @db.Timestamp(0)
+  online_class_enrollments online_class_enrollments[]
+  users                    users                      @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "online_classes_ibfk_1")
+
+  @@index([created_by], map: "created_by")
+}
+
+model options {
+  id                Int                 @id @default(autoincrement())
+  question_id       Int
+  option_text       String              @db.Text
+  is_correct        Boolean             @default(false)
+  questions         questions           @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "options_ibfk_1")
+  student_responses student_responses[]
+
+  @@index([question_id], map: "question_id")
+}
+
+model otps {
+  id           Int      @id @default(autoincrement())
+  phone_number String   @unique(map: "phone_unique") @db.VarChar(50)
+  otp_code     String   @db.VarChar(10)
+  expires_at   DateTime @db.DateTime(0)
+  created_at   DateTime @default(now()) @db.Timestamp(0)
+}
+
+model questions {
+  id                Int                 @id @default(autoincrement())
+  quiz_id           Int
+  question_text     String              @db.Text
+  image_url         String?             @db.VarChar(255)
+  marks             Int                 @default(1)
+  created_at        DateTime            @default(now()) @db.Timestamp(0)
+  options           options[]
+  quizzes           quizzes             @relation(fields: [quiz_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "questions_ibfk_1")
+  student_flags     student_flags[]
+  student_responses student_responses[]
+
+  @@index([quiz_id], map: "quiz_id")
+}
+
+model quiz_attempts {
+  id                Int                 @id @default(autoincrement())
+  quiz_id           Int
+  user_id           Int
+  score             Int                 @default(0)
+  started_at        DateTime            @default(now()) @db.Timestamp(0)
+  submitted_at      DateTime?           @db.Timestamp(0)
+  is_submitted      Boolean             @default(false)
+  quizzes           quizzes             @relation(fields: [quiz_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "quiz_attempts_ibfk_1")
+  users             users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "quiz_attempts_ibfk_2")
+  student_flags     student_flags[]
+  student_responses student_responses[]
+
+  @@index([quiz_id], map: "quiz_id")
+  @@index([user_id], map: "user_id")
+}
+
+model quiz_payments {
+  id         Int      @id @default(autoincrement())
+  quiz_id    Int
+  user_id    Int
+  amount     Decimal  @db.Decimal(10, 2)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  quizzes    quizzes  @relation(fields: [quiz_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "quiz_payments_ibfk_1")
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "quiz_payments_ibfk_2")
+
+  @@unique([quiz_id, user_id], map: "quiz_user_unique")
+  @@index([user_id], map: "user_id")
+}
+
+model quizzes {
+  id            Int             @id @default(autoincrement())
+  title         String          @db.VarChar(255)
+  start_time    DateTime        @db.DateTime(0)
+  end_time      DateTime        @db.DateTime(0)
+  created_by    Int
+  fee           Decimal?        @default(0.00) @db.Decimal(10, 2)
+  created_at    DateTime        @default(now()) @db.Timestamp(0)
+  questions     questions[]
+  quiz_attempts quiz_attempts[]
+  quiz_payments quiz_payments[]
+  users         users           @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "quizzes_ibfk_1")
+
+  @@index([created_by], map: "created_by")
+}
+
+model security_settings {
+  id                            Int      @id
+  developer_options_restriction Boolean? @default(false)
+  right_click_restriction       Boolean? @default(false)
+  anti_recording_watermark      Boolean? @default(false)
+  developer_master_mode         Boolean? @default(false)
+  updated_at                    DateTime @default(now()) @db.Timestamp(0)
+}
+
+model student_flags {
+  id            Int           @id @default(autoincrement())
+  attempt_id    Int
+  question_id   Int
+  is_flagged    Boolean       @default(false)
+  quiz_attempts quiz_attempts @relation(fields: [attempt_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "student_flags_ibfk_1")
+  questions     questions     @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "student_flags_ibfk_2")
+
+  @@unique([attempt_id, question_id], map: "uniq_attempt_question")
+  @@index([question_id], map: "question_id")
+}
+
+model student_responses {
+  id            Int           @id @default(autoincrement())
+  attempt_id    Int
+  question_id   Int
+  option_id     Int
+  quiz_attempts quiz_attempts @relation(fields: [attempt_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "student_responses_ibfk_1")
+  questions     questions     @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "student_responses_ibfk_2")
+  options       options       @relation(fields: [option_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "student_responses_ibfk_3")
+
+  @@index([attempt_id], map: "attempt_id")
+  @@index([option_id], map: "option_id")
+  @@index([question_id], map: "question_id")
+}
+
+model system_logs {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  action      String   @db.VarChar(255)
+  details     String?  @db.Text
+  ip_address  String?  @db.VarChar(45)
+  device_info String?  @db.VarChar(255)
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  users       users?   @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "system_logs_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model system_settings {
+  id              Int      @id
+  site_name       String?  @default("Techno-Hub") @db.VarChar(255)
+  primary_color   String?  @default("#1a3cb6") @db.VarChar(50)
+  secondary_color String?  @default("#efc300") @db.VarChar(50)
+  contact_email   String?  @db.VarChar(255)
+  contact_phone   String?  @db.VarChar(50)
+  facebook_url    String?  @db.VarChar(255)
+  youtube_url     String?  @db.VarChar(255)
+  instagram_url   String?  @db.VarChar(255)
+  linkedin_url    String?  @db.VarChar(255)
+  twitter_url     String?  @db.VarChar(255)
+  address         String?  @db.Text
+  updated_at      DateTime @default(now()) @db.Timestamp(0)
+}
+
+model teacher_commissions {
+  teacher_id       Int                                  @id
+  commission_type  teacher_commissions_commission_type? @default(percentage)
+  commission_value Decimal?                             @default(80.00) @db.Decimal(10, 2)
+  users            users                                @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "teacher_commissions_ibfk_1")
+}
+
+model teacher_earnings_history {
+  id               Int                                      @id @default(autoincrement())
+  teacher_id       Int
+  amount           Decimal                                  @db.Decimal(10, 2)
+  commission_type  teacher_earnings_history_commission_type
+  commission_value Decimal                                  @db.Decimal(10, 2)
+  net_earning      Decimal                                  @db.Decimal(10, 2)
+  description      String?                                  @db.VarChar(255)
+  created_at       DateTime                                 @default(now()) @db.Timestamp(0)
+  users            users                                    @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "teacher_earnings_history_ibfk_1")
+
+  @@index([teacher_id], map: "teacher_id")
+}
+
+model users {
+  id                                            Int                        @id @default(autoincrement())
+  index_number                                  String?                    @unique(map: "index_number") @db.VarChar(20)
+  full_name                                     String                     @db.VarChar(255)
+  phone_number                                  String                     @unique(map: "phone_number") @db.VarChar(50)
+  email                                         String?                    @unique(map: "email") @db.VarChar(255)
+  address                                       String                     @db.VarChar(255)
+  education_info                                String?                    @db.Text
+  wallet_balance                                Decimal                    @default(0.00) @db.Decimal(10, 2)
+  education_category                            users_education_category?
+  birthdate                                     DateTime?                  @db.Date
+  password_hash                                 String                     @db.VarChar(255)
+  role                                          users_role?                @default(student)
+  student_category                              String                     @default("School") @db.VarChar(50)
+  status                                        users_status?              @default(active)
+  experience                                    String?                    @db.Text
+  certifications                                String?                    @db.Text
+  last_notification_read_at                     DateTime?                  @db.Timestamp(0)
+  created_at                                    DateTime                   @default(now()) @db.Timestamp(0)
+  subject                                       String?                    @db.VarChar(255)
+  profile_picture                               String?                    @db.VarChar(255)
+  contact_settings                              contact_settings[]
+  course_enrollments                            course_enrollments[]
+  courses                                       courses[]
+  ebook_resources                               ebook_resources[]
+  gallery_items                                 gallery_items[]
+  home_settings                                 home_settings[]
+  notifications_notifications_user_idTousers    notifications[]            @relation("notifications_user_idTousers")
+  notifications_notifications_created_byTousers notifications[]            @relation("notifications_created_byTousers")
+  online_class_enrollments                      online_class_enrollments[]
+  online_classes                                online_classes[]
+  quiz_attempts                                 quiz_attempts[]
+  quiz_payments                                 quiz_payments[]
+  quizzes                                       quizzes[]
+  system_logs                                   system_logs[]
+  teacher_commissions                           teacher_commissions?
+  teacher_earnings_history                      teacher_earnings_history[]
+  wallet_transactions                           wallet_transactions[]
+}
+
+model wallet_transactions {
+  id               Int                         @id @default(autoincrement())
+  user_id          Int
+  amount           Decimal                     @db.Decimal(10, 2)
+  type             wallet_transactions_type
+  status           wallet_transactions_status? @default(pending)
+  payment_slip_url String?                     @db.VarChar(500)
+  reference_number String?                     @db.VarChar(100)
+  description      String?                     @db.Text
+  created_at       DateTime                    @default(now()) @db.Timestamp(0)
+  updated_at       DateTime                    @default(now()) @db.Timestamp(0)
+  users            users                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "wallet_transactions_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+enum teacher_commissions_commission_type {
+  percentage
+  fixed
+}
+
+enum course_materials_type {
+  video
+  pdf
+  live_session
+}
+
+enum gallery_items_entry_type {
+  event
+  news
+  achievement
+  workshop
+}
+
+enum course_categories_status {
+  active
+  disabled
+}
+
+enum teacher_earnings_history_commission_type {
+  percentage
+  fixed
+}
+
+enum wallet_transactions_type {
+  credit
+  debit
+}
+
+enum wallet_transactions_status {
+  pending
+  approved
+  rejected
+}
+
+enum contact_messages_status {
+  new
+  read
+  closed
+}
+
+enum courses_status {
+  active
+  disabled
+}
+
+enum users_education_category {
+  school
+  o_l          @map("o/l")
+  a_l          @map("a/l")
+  university
+  vocational
+  professional
+}
+
+enum users_role {
+  student
+  teacher
+  admin
+}
+
+enum users_status {
+  active
+  suspended
+}

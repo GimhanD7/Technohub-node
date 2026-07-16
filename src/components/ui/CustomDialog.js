@@ -1,0 +1,64 @@
+import { AlertTriangle, Info, CheckCircle2, X } from "lucide-react";
+
+export function CustomDialog({ isOpen, type = "info", title, message, onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel", isAlertOnly = false }) {
+  if (!isOpen) return null;
+
+  const icons = {
+    warning: <AlertTriangle className="w-6 h-6 text-amber-500" />,
+    error: <X className="w-6 h-6 text-red-500" />,
+    success: <CheckCircle2 className="w-6 h-6 text-green-500" />,
+    info: <Info className="w-6 h-6 text-blue-500" />
+  };
+
+  const colors = {
+    warning: "bg-amber-50 border-amber-200 text-amber-800",
+    error: "bg-red-50 border-red-200 text-red-800",
+    success: "bg-green-50 border-green-200 text-green-800",
+    info: "bg-blue-50 border-blue-200 text-blue-800"
+  };
+
+  const btnColors = {
+    warning: "bg-amber-500 hover:bg-amber-600 focus:ring-amber-500",
+    error: "bg-red-500 hover:bg-red-600 focus:ring-red-500",
+    success: "bg-green-500 hover:bg-green-600 focus:ring-green-500",
+    info: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            <div className={`p-2 rounded-full shrink-0 border ${colors[type]} bg-opacity-50`}>
+              {icons[type]}
+            </div>
+            <div className="pt-1">
+              <h3 className="text-[15px] font-bold text-slate-800 tracking-tight leading-none mb-2">{title}</h3>
+              <div className="text-[13px] text-gray-500 leading-relaxed">{message}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-end gap-2">
+          {!isAlertOnly && (
+            <button 
+              onClick={onCancel}
+              className="px-4 py-2 text-[12px] font-medium text-slate-600 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-1"
+            >
+              {cancelText}
+            </button>
+          )}
+          <button 
+            onClick={() => {
+              if (onConfirm) onConfirm();
+              if (isAlertOnly && onCancel) onCancel(); // For alerts, clicking OK just closes it
+            }}
+            className={`px-4 py-2 text-[12px] font-medium text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${btnColors[type]}`}
+          >
+            {isAlertOnly ? "OK" : confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

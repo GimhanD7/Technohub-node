@@ -1,0 +1,34 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 1. If it's a real file, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # 2. If there's a trailing slash, and the .html file exists for the non-slash version, rewrite to .html
+  RewriteCond %{REQUEST_URI} ^/(.*)/$
+  RewriteCond %{DOCUMENT_ROOT}/%1.html -f
+  RewriteRule ^(.*)/$ $1.html [L]
+
+  # 3. If there's no trailing slash, and .html exists, rewrite to .html
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.*)$ $1.html [L]
+
+  # 4. Dynamic Fallbacks
+  RewriteRule ^dashboard/student/learn/[^/]+/?$ dashboard/student/learn/1.html [L]
+  RewriteRule ^home/exam-hall/quiz/[^/]+/?$ home/exam-hall/quiz/1.html [L]
+  RewriteRule ^dashboard/teacher/quiz-submissions/[^/]+/?$ dashboard/teacher/quiz-submissions/1.html [L]
+  RewriteRule ^dashboard/teacher/quiz-standings/[^/]+/?$ dashboard/teacher/quiz-standings/1.html [L]
+  RewriteRule ^dashboard/admin/quiz-submissions/[^/]+/?$ dashboard/admin/quiz-submissions/1.html [L]
+  RewriteRule ^dashboard/admin/quiz-standings/[^/]+/?$ dashboard/admin/quiz-standings/1.html [L]
+  RewriteRule ^dashboard/admin/quizzes/edit/[^/]+/?$ dashboard/admin/quizzes/edit/1.html [L]
+
+  # 5. Root fallback
+  RewriteRule ^$ index.html [L]
+
+  # 6. Fallback to 404 for anything else
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.*)$ 404.html [L]
+</IfModule>
