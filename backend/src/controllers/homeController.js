@@ -225,7 +225,7 @@ exports.uploadFile = async (req, res) => {
 
     res.json({
       success: true,
-      url: `${req.protocol}://${req.get('host')}/uploads/home/${file.filename}`,
+      url: `/uploads/home/${file.filename}`,
       message: "File uploaded successfully."
     });
   } catch (error) {

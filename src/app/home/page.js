@@ -5,7 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Button from "@/components/ui/Button";
-import { fetchApi } from "@/lib/api";
+import { BASE_URL, fetchApi } from "@/lib/api";
 import {
   ArrowRight,
   Award,
@@ -191,6 +191,8 @@ function getInitials(name) {
     .join("");
 }
 
+const getFullImageUrl = (url) => url?.startsWith('/uploads/') ? `${BASE_URL}${url}` : url;
+
 function mergeDisplayItems(adminItems, fallbackItems, minimumCount) {
   const activeItems = Array.isArray(adminItems) ? adminItems.filter(Boolean) : [];
   const merged = [...activeItems];
@@ -224,7 +226,7 @@ function ReelColumn({ slides, reverse = false }) {
       <div className={reverse ? "reel-track-reverse space-y-4" : "reel-track space-y-4"}>
         {repeatedImages.map((item, index) => (
           <article key={`${item.imageUrl || item.src}-${index}`} className="relative h-44 rounded-lg overflow-hidden border border-white/15 bg-slate-900 shadow-sm">
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${item.imageUrl || item.src}")` }} />
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${getFullImageUrl(item.imageUrl || item.src)}")` }} />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent" />
             <div className="absolute left-4 right-4 bottom-4 text-white">
               <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">{item.label}</p>
@@ -247,7 +249,7 @@ function LecturerSlider({ items }) {
           <article key={`${lecturer.name}-${index}`} className="w-[310px] shrink-0 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm overflow-hidden">
             <div
               className={`h-40 ${lecturer.imageUrl ? "bg-cover bg-center" : `bg-gradient-to-br ${lecturer.tone || "from-[#1a3cb6] to-[#0f172a]"}`} relative p-5 text-white flex flex-col justify-between`}
-              style={lecturer.imageUrl ? { backgroundImage: `linear-gradient(to top, rgba(15,23,42,0.78), rgba(15,23,42,0.08)), url("${lecturer.imageUrl}")` } : undefined}
+              style={lecturer.imageUrl ? { backgroundImage: `linear-gradient(to top, rgba(15,23,42,0.78), rgba(15,23,42,0.08)), url("${getFullImageUrl(lecturer.imageUrl)}")` } : undefined}
             >
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-[#1e293b]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider">
