@@ -155,16 +155,24 @@ exports.deleteLecturer = async (req, res) => {
 // --- TIMETABLE ---
 exports.saveTimetable = async (req, res) => {
   try {
-    const { id, day, subject, time, teacher, sort_order, is_active } = req.body;
-    if (!day || !subject || !time || !teacher) return res.status(400).json({ success: false, message: "All fields are required." });
+    const { rowId, id, day, time, title, mode, sortOrder, isActive } = req.body;
+    const targetId = rowId || id;
+    
+    if (!day || !time || !title) {
+      return res.status(400).json({ success: false, message: "Day, Time, and Title are required." });
+    }
 
     const data = {
-      day, subject, time, teacher,
-      sort_order: sort_order ? parseInt(sort_order) : 0, is_active: is_active ? true : false
+      day_label: day,
+      time_label: time,
+      title: title,
+      mode_label: mode || null,
+      sort_order: sortOrder !== undefined ? parseInt(sortOrder) : 0,
+      is_active: isActive !== undefined ? Boolean(isActive) : true
     };
 
-    if (id) {
-      await prisma.home_timetable.update({ where: { id: parseInt(id) }, data });
+    if (targetId) {
+      await prisma.home_timetable.update({ where: { id: parseInt(targetId) }, data });
     } else {
       await prisma.home_timetable.create({ data });
     }
