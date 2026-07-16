@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, Fragment, useCallback } from "react";
+import React, { useEffect, useState, useRef, Fragment, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
   ClipboardList, Clock, Flag, Check, ChevronLeft, ChevronRight, AlertCircle, 
@@ -12,7 +12,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Button from "@/components/ui/Button";
 
-export default function StudentQuizPage() {
+function StudentQuizContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const quizId = searchParams?.get("id");
@@ -1599,6 +1599,10 @@ function QuizReviewSection({ quizId, userId }) {
   );
 }
 
-
-
-
+export default function StudentQuizPage() {
+  return (
+    <Suspense fallback={<div>Loading quiz...</div>}>
+      <StudentQuizContent />
+    </Suspense>
+  );
+}
