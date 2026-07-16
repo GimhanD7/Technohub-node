@@ -39,14 +39,15 @@ exports.getContent = async (req, res) => {
         timetableSubtitle: settings.timetable_subtitle,
         faqHeading: settings.faq_heading
       } : {},
-      slides: slides.map(s => ({ ...s, imageUrl: s.image_url, is_active: Boolean(s.is_active) })),
-      lecturers: lecturers.map(l => ({ ...l, imageUrl: l.image_url, is_active: Boolean(l.is_active) })),
+      slides: slides.map(s => ({ ...s, imageUrl: s.image_url, isActive: Boolean(s.is_active), sortOrder: s.sort_order })),
+      lecturers: lecturers.map(l => ({ ...l, imageUrl: l.image_url, isActive: Boolean(l.is_active), sortOrder: l.sort_order })),
       timetable: timetable.map(t => ({ 
         ...t, 
         day: t.day_label, 
         time: t.time_label, 
         mode: t.mode_label, 
-        is_active: Boolean(t.is_active) 
+        isActive: Boolean(t.is_active),
+        sortOrder: t.sort_order
       }))
     });
   } catch (error) {
