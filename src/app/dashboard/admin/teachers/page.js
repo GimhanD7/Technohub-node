@@ -146,7 +146,7 @@ export default function TeacherManagement() {
     setUploadingImage(true);
     const formDataObj = new FormData();
     formDataObj.append('image', file);
-    formDataObj.append('id', editUser ? editUser.id : user.id); // Or appropriately fetch the correct ID if editing
+    formDataObj.append('id', editUser ? editUser.id : 'NEW'); 
 
     try {
         const response = await fetch(`${API_BASE_URL}/user/upload_profile`, {

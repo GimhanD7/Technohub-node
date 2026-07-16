@@ -32,19 +32,26 @@ exports.listEbooks = async (req, res) => {
 
 exports.createEbook = async (req, res) => {
   try {
-    const { title, subject, description, file_url, file_type, file_size } = req.body;
-    if (!title || !subject || !file_url) {
+    const { title, author, subject, category, level, description, fileUrl, coverUrl, fileType, fileSize, isFeatured, isPublished, userId } = req.body;
+    if (!title || !subject || !fileUrl) {
       return res.status(400).json({ success: false, message: "Title, subject, and resource file are required." });
     }
 
     await prisma.ebook_resources.create({
       data: {
         title,
+        author: author || null,
         subject,
+        category: category || "E-Book",
+        level: level || "Advanced Level",
         description: description || '',
-        file_url,
-        file_type: file_type || 'application/pdf',
-        file_size: file_size ? parseInt(file_size) : 0
+        file_url: fileUrl,
+        cover_url: coverUrl || null,
+        file_type: fileType || 'application/pdf',
+        file_size: fileSize ? parseInt(fileSize) : 0,
+        is_featured: isFeatured === true,
+        is_published: isPublished !== false,
+        created_by: userId ? parseInt(userId) : null
       }
     });
 
@@ -56,21 +63,36 @@ exports.createEbook = async (req, res) => {
 
 exports.updateEbook = async (req, res) => {
   try {
-    const { id, title, subject, description, file_url, file_type, file_size } = req.body;
-    if (!id || !title || !subject) {
+    const { resourceId, id, title, author, subject, category, level, description, fileUrl, coverUrl, fileType, fileSize, isFeatured, isPublished } = req.body;
+    const targetId = resourceId || id;
+    
+    if (!targetId || !title || !subject) {
       return res.status(400).json({ success: false, message: "ID, Title, and Subject are required." });
     }
 
-    const updateData = { title, subject, description: description || '' };
+    const updateData = { 
+      title, 
+      author: author || null,
+      subject, 
+      category: category || "E-Book",
+      level: level || "Advanced Level",
+      description: description || '',
+      is_featured: isFeatured === true,
+      is_published: isPublished !== false,
+    };
     
-    if (file_url) {
-      updateData.file_url = file_url;
-      updateData.file_type = file_type;
-      updateData.file_size = file_size ? parseInt(file_size) : 0;
+    if (fileUrl) {
+      updateData.file_url = fileUrl;
+      updateData.file_type = fileType;
+      updateData.file_size = fileSize ? parseInt(fileSize) : 0;
+    }
+    
+    if (coverUrl !== undefined) {
+      updateData.cover_url = coverUrl;
     }
 
     await prisma.ebook_resources.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(targetId) },
       data: updateData
     });
 
@@ -82,10 +104,11 @@ exports.updateEbook = async (req, res) => {
 
 exports.deleteEbook = async (req, res) => {
   try {
-    const { id } = req.body;
-    if (!id) return res.status(400).json({ success: false, message: "Resource ID is required." });
+    const { id, resourceId } = req.body;
+    const targetId = id || resourceId;
+    if (!targetId) return res.status(400).json({ success: false, message: "Resource ID is required." });
 
-    await prisma.ebook_resources.delete({ where: { id: parseInt(id) } });
+    await prisma.ebook_resources.delete({ where: { id: parseInt(targetId) } });
     res.json({ success: true, message: "Resource deleted successfully." });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to delete resource." });

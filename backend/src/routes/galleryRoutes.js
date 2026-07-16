@@ -24,12 +24,10 @@ const upload = multer({ storage: storage });
 
 router.get('/list', galleryController.listGallery);
 router.post('/create', galleryController.createGallery);
-router.put('/update', galleryController.updateGallery);
-router.delete('/delete', galleryController.deleteGallery);
+router.post('/update', galleryController.updateGallery);
+router.post('/delete', galleryController.deleteGallery);
 
-// Allow array of images (up to 20) under 'images' field, or a single under 'images' (frontend uses 'images[]' or 'image')
-// Express/multer usually handles field names specifically. The PHP script checked for `$_FILES['images']` or `$_FILES['image']`.
-// We will use `.array('images', 20)` and assume frontend sends 'images'.
+// Allow array of images (up to 20) under 'images' field
 router.post('/upload', upload.array('images', 20), galleryController.uploadGallery);
 
 module.exports = router;

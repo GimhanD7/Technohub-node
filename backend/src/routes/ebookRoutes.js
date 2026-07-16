@@ -25,8 +25,8 @@ const upload = multer({ storage: storage });
 router.get('/list', ebookController.listEbooks);
 router.get('/get_resources', ebookController.listEbooks);
 router.post('/create', ebookController.createEbook);
-router.put('/update', ebookController.updateEbook);
-router.delete('/delete', ebookController.deleteEbook);
+router.post('/update', ebookController.updateEbook);
+router.post('/delete', ebookController.deleteEbook);
 
 router.post('/upload', upload.single('resource'), ebookController.uploadEbook);
 

@@ -17,7 +17,8 @@ exports.getUsers = async (req, res) => {
       where: whereClause,
       select: {
         id: true, index_number: true, full_name: true, email: true, phone_number: true,
-        role: true, status: true, created_at: true, education_category: true, wallet_balance: true
+        role: true, status: true, created_at: true, education_category: true, wallet_balance: true,
+        subject: true, experience: true, certifications: true, profile_picture: true
       },
       orderBy: { created_at: 'desc' }
     });
@@ -36,42 +37,102 @@ exports.getUsers = async (req, res) => {
 
 exports.addUser = async (req, res) => {
   try {
-    const { index_number, full_name, email, phone, role, password, education_category } = req.body;
+    const { fullName, phoneNumber, email, role, password, subject, experience, certifications, profilePicture, educationCategory, indexNumber } = req.body;
     
-    const existing = await prisma.users.findFirst({ where: { OR: [{ email }, { index_number }] } });
-    if (existing) return res.status(400).json({ success: false, message: "Email or Index Number already in use." });
+    // Map camelCase to snake_case for existing fields in case some other form uses them
+    const mappedEmail = email || req.body.email;
+    const mappedFullName = fullName || req.body.full_name;
+    const mappedPhone = phoneNumber || req.body.phone;
+    const mappedIndex = indexNumber || req.body.index_number;
+    
+    const existing = await prisma.users.findFirst({ 
+      where: { 
+        OR: [
+          ...(mappedEmail ? [{ email: mappedEmail }] : []),
+          ...(mappedIndex ? [{ index_number: mappedIndex }] : []),
+          ...(mappedPhone ? [{ phone_number: mappedPhone }] : [])
+        ] 
+      } 
+    });
+    
+    if (existing) {
+      if (mappedEmail && existing.email === mappedEmail) {
+        return res.status(400).json({ success: false, message: "Email is already in use." });
+      }
+      if (mappedPhone && existing.phone_number === mappedPhone) {
+        return res.status(400).json({ success: false, message: "Phone number is already in use." });
+      }
+      if (mappedIndex && existing.index_number === mappedIndex) {
+        return res.status(400).json({ success: false, message: "Index number is already in use." });
+      }
+      return res.status(400).json({ success: false, message: "Email, Phone, or Index Number already in use." });
+    }
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash = password ? await bcrypt.hash(password, 10) : await bcrypt.hash("password123", 10);
+    
     await prisma.users.create({
       data: {
-        index_number, full_name, email, phone_number: phone, role,
+        index_number: mappedIndex || null, 
+        full_name: mappedFullName || "Unknown", 
+        email: mappedEmail || null, 
+        phone_number: mappedPhone || "", 
+        role: role || "student",
         password_hash: hash,
-        education_category: role === 'student' ? (education_category || null) : null
+        address: "",
+        education_category: role === 'student' ? (educationCategory || req.body.education_category || null) : null,
+        subject: subject || null,
+        experience: experience || null,
+        certifications: certifications || null,
+        profile_picture: profilePicture || null
       }
     });
 
     res.json({ success: true, message: "User added successfully." });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("[addUser Error]:", error);
+    res.status(500).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
 exports.updateUser = async (req, res) => {
   try {
-    const { user_id, full_name, phone, role, education_category, status, password, admin_id } = req.body;
-    if (!user_id) return res.status(400).json({ success: false, message: "User ID required." });
+    const { id, user_id, fullName, full_name, phoneNumber, phone, role, educationCategory, education_category, status, password, admin_id, subject, experience, certifications, profilePicture } = req.body;
+    
+    const targetId = id || user_id;
+    if (!targetId) return res.status(400).json({ success: false, message: "User ID required." });
 
-    const updateData = { full_name, phone_number: phone, role, status, education_category: role === 'student' ? education_category : null };
+    const mappedFullName = fullName || full_name;
+    const mappedPhone = phoneNumber || phone;
+    const mappedEdu = educationCategory || education_category;
+
+    const updateData = { 
+      full_name: mappedFullName, 
+      phone_number: mappedPhone, 
+      role, 
+      status, 
+      education_category: role === 'student' ? mappedEdu : null,
+      subject: subject || null,
+      experience: experience || null,
+      certifications: certifications || null,
+    };
+    
+    if (profilePicture) updateData.profile_picture = profilePicture;
+
     if (password) {
       updateData.password_hash = await bcrypt.hash(password, 10);
     }
 
-    await prisma.users.update({ where: { id: parseInt(user_id) }, data: updateData });
+    await prisma.users.update({ where: { id: parseInt(targetId) }, data: updateData });
 
-    if (admin_id) await logActivity(admin_id, 'Updated User', `Updated user ID: ${user_id}`, req);
+    if (admin_id) await logActivity(admin_id, 'Updated User', `Updated user ID: ${targetId}`, req);
     res.json({ success: true, message: "User updated successfully." });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("[updateUser Error]:", error);
+    if (error.code === 'P2002') {
+      const field = error.meta?.target || "field";
+      return res.status(400).json({ success: false, message: `The ${field} is already in use by another user.` });
+    }
+    res.status(500).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -87,11 +148,12 @@ exports.deleteUser = async (req, res) => {
 
 exports.toggleStatus = async (req, res) => {
   try {
-    const { user_id, status } = req.body;
-    if (!user_id || !status) return res.status(400).json({ success: false, message: "Missing data." });
+    const { id, user_id, status } = req.body;
+    const targetId = id || user_id;
+    if (!targetId || !status) return res.status(400).json({ success: false, message: "Missing data." });
 
     await prisma.users.update({
-      where: { id: parseInt(user_id) },
+      where: { id: parseInt(targetId) },
       data: { status }
     });
     res.json({ success: true, message: `Account ${status}.` });
@@ -102,11 +164,12 @@ exports.toggleStatus = async (req, res) => {
 
 exports.setRole = async (req, res) => {
   try {
-    const { user_id, role } = req.body;
-    if (!user_id || !role) return res.status(400).json({ success: false, message: "Missing data." });
+    const { id, user_id, role } = req.body;
+    const targetId = id || user_id;
+    if (!targetId || !role) return res.status(400).json({ success: false, message: "Missing data." });
 
     await prisma.users.update({
-      where: { id: parseInt(user_id) },
+      where: { id: parseInt(targetId) },
       data: { role, education_category: role !== 'student' ? null : undefined }
     });
     res.json({ success: true, message: "Role updated." });
@@ -209,19 +272,21 @@ exports.uploadProfile = async (req, res) => {
 
     const relativePath = `/uploads/profiles/${req.file.filename}`;
     
-    // Optional: Delete old avatar
-    const oldUser = await prisma.users.findUnique({ where: { id: parseInt(id) } });
-    if (oldUser?.profile_picture) {
-      try {
-        const oldPath = path.resolve(__dirname, '../../../..', oldUser.profile_picture.replace(/^\//, ''));
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-      } catch (e) {}
-    }
+    if (id !== 'NEW') {
+      // Optional: Delete old avatar
+      const oldUser = await prisma.users.findUnique({ where: { id: parseInt(id) } });
+      if (oldUser?.profile_picture) {
+        try {
+          const oldPath = path.resolve(__dirname, '../../../..', oldUser.profile_picture.replace(/^\//, ''));
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        } catch (e) {}
+      }
 
-    await prisma.users.update({
-      where: { id: parseInt(id) },
-      data: { profile_picture: relativePath }
-    });
+      await prisma.users.update({
+        where: { id: parseInt(id) },
+        data: { profile_picture: relativePath }
+      });
+    }
 
     res.json({ success: true, message: "Avatar updated.", imageUrl: relativePath });
   } catch (error) {

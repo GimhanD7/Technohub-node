@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { API_BASE_URL, fetchApi } from "@/lib/api";
+import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import {
   AlertCircle,
@@ -46,7 +46,11 @@ const galleryTypes = [
   { value: "news", label: "News", icon: Newspaper },
   { value: "achievement", label: "Achievement", icon: Trophy },
   { value: "workshop", label: "Workshop", icon: GraduationCap },
+  { value: "facility", label: "Facility", icon: Sparkles },
+  { value: "other", label: "Other", icon: Images },
 ];
+
+const getFullImageUrl = (url) => url?.startsWith('/uploads/') ? `${BASE_URL}${url}` : url;
 
 const typeLabels = galleryTypes.reduce((acc, item) => {
   acc[item.value] = item.label;
@@ -147,7 +151,7 @@ export default function AdminGalleryPage() {
     setSuccessMsg("");
 
     const uploadData = new FormData();
-    files.forEach((file) => uploadData.append("images[]", file));
+    files.forEach((file) => uploadData.append("images", file));
 
     try {
       const response = await fetch(`${API_BASE_URL}/gallery/upload`, {
@@ -431,7 +435,7 @@ export default function AdminGalleryPage() {
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {formImageUrls.map((imageUrl, index) => (
                   <div key={imageUrl} className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b]">
-                    <div className="h-28 bg-cover bg-center" style={{ backgroundImage: `url("${imageUrl}")` }} />
+                    <div className="h-28 bg-cover bg-center" style={{ backgroundImage: `url("${getFullImageUrl(imageUrl)}")` }} />
                     <div className="p-2 flex items-center justify-between gap-2">
                       <button type="button" onClick={() => moveImageToMain(imageUrl)} className="text-[10px] font-bold text-primary hover:text-slate-900 dark:text-white">
                         {index === 0 ? "Cover" : "Set Cover"}
@@ -534,7 +538,7 @@ export default function AdminGalleryPage() {
                   <div key={item.id} className={`p-4 grid lg:grid-cols-[150px_1fr_auto] gap-4 items-center ${editingId === item.id ? "bg-primary/5" : ""}`}>
                     <div
                       className="h-24 rounded-lg bg-slate-900 bg-cover bg-center border border-slate-200 dark:border-slate-800"
-                      style={{ backgroundImage: imageUrls[0] ? `url("${imageUrls[0]}")` : "linear-gradient(135deg,#0f172a,#1a3cb6,#efc300)" }}
+                      style={{ backgroundImage: imageUrls[0] ? `url("${getFullImageUrl(imageUrls[0])}")` : "linear-gradient(135deg,#0f172a,#1a3cb6,#efc300)" }}
                     />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
