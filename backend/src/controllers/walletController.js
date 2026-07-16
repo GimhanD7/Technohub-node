@@ -198,6 +198,7 @@ exports.approveOrReject = async (req, res) => {
 exports.deleteTransaction = async (req, res) => {
   try {
     const { id } = req.body;
+    if (!id) return res.status(400).json({ success: false, message: "Transaction ID is required." });
     await prisma.wallet_transactions.delete({ where: { id: parseInt(id) } });
     res.json({ success: true, message: "Transaction deleted." });
   } catch (error) {
