@@ -59,17 +59,30 @@ exports.getContent = async (req, res) => {
 exports.updateSettings = async (req, res) => {
   try {
     const { 
-      hero_title, hero_subtitle, about_title, about_content, about_image,
-      features_title, features_subtitle, courses_title, courses_subtitle,
-      testimonials_title, testimonials_subtitle, footer_about, footer_address,
-      footer_phone, footer_email, facebook_url, twitter_url, instagram_url, linkedin_url
+      heroBadge, heroTitle, heroSubtitle, primaryCtaLabel, primaryCtaUrl,
+      secondaryCtaLabel, secondaryCtaUrl, coursesHeading, coursesSubtitle,
+      lecturersHeading, lecturersSubtitle, whyHeading, whySubtitle,
+      timetableHeading, timetableSubtitle, faqHeading, userId
     } = req.body;
 
     const updateData = {
-      hero_title, hero_subtitle, about_title, about_content, about_image,
-      features_title, features_subtitle, courses_title, courses_subtitle,
-      testimonials_title, testimonials_subtitle, footer_about, footer_address,
-      footer_phone, footer_email, facebook_url, twitter_url, instagram_url, linkedin_url
+      hero_badge: heroBadge,
+      hero_title: heroTitle,
+      hero_subtitle: heroSubtitle,
+      primary_cta_label: primaryCtaLabel,
+      primary_cta_url: primaryCtaUrl,
+      secondary_cta_label: secondaryCtaLabel,
+      secondary_cta_url: secondaryCtaUrl,
+      courses_heading: coursesHeading,
+      courses_subtitle: coursesSubtitle,
+      lecturers_heading: lecturersHeading,
+      lecturers_subtitle: lecturersSubtitle,
+      why_heading: whyHeading,
+      why_subtitle: whySubtitle,
+      timetable_heading: timetableHeading,
+      timetable_subtitle: timetableSubtitle,
+      faq_heading: faqHeading,
+      updated_by: userId ? parseInt(userId) : null
     };
 
     const first = await prisma.home_settings.findFirst({ orderBy: { id: 'asc' } });
@@ -112,7 +125,8 @@ exports.saveSlide = async (req, res) => {
 
 exports.deleteSlide = async (req, res) => {
   try {
-    const { id } = req.body;
+    const id = req.body.id || req.body.slideId;
+    if (!id) return res.status(400).json({ success: false, message: "Slide ID is required." });
     await prisma.home_slides.delete({ where: { id: parseInt(id) } });
     res.json({ success: true, message: "Slide deleted successfully." });
   } catch (error) {
@@ -145,7 +159,8 @@ exports.saveLecturer = async (req, res) => {
 
 exports.deleteLecturer = async (req, res) => {
   try {
-    const { id } = req.body;
+    const id = req.body.id || req.body.lecturerId;
+    if (!id) return res.status(400).json({ success: false, message: "Lecturer ID is required." });
     await prisma.home_lecturers.delete({ where: { id: parseInt(id) } });
     res.json({ success: true, message: "Lecturer deleted successfully." });
   } catch (error) {
@@ -185,7 +200,8 @@ exports.saveTimetable = async (req, res) => {
 
 exports.deleteTimetable = async (req, res) => {
   try {
-    const { id } = req.body;
+    const id = req.body.id || req.body.rowId;
+    if (!id) return res.status(400).json({ success: false, message: "Timetable row ID is required." });
     await prisma.home_timetable.delete({ where: { id: parseInt(id) } });
     res.json({ success: true, message: "Timetable row deleted successfully." });
   } catch (error) {

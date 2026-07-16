@@ -26,13 +26,13 @@ router.get('/get_content', homeController.getContent);
 router.post('/update_settings', homeController.updateSettings);
 
 router.post('/save_slide', homeController.saveSlide);
-router.delete('/delete_slide', homeController.deleteSlide);
+router.post('/delete_slide', homeController.deleteSlide);
 
 router.post('/save_lecturer', homeController.saveLecturer);
-router.delete('/delete_lecturer', homeController.deleteLecturer);
+router.post('/delete_lecturer', homeController.deleteLecturer);
 
 router.post('/save_timetable', homeController.saveTimetable);
-router.delete('/delete_timetable', homeController.deleteTimetable);
+router.post('/delete_timetable', homeController.deleteTimetable);
 
 router.post('/upload', upload.single('image'), homeController.uploadFile);
 
