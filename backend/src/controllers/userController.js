@@ -196,8 +196,8 @@ exports.updateProfile = async (req, res) => {
     const actualEduCategory = educationCategory || education_category;
     const actualPassword = password || new_password;
 
-    if (!actualId || !actualFullName || !email) {
-      return res.status(400).json({ success: false, message: "Required fields missing (id, full_name, email)." });
+    if (!actualId || !actualFullName) {
+      return res.status(400).json({ success: false, message: "Required fields missing (id, full_name)." });
     }
 
     const user = await prisma.users.findUnique({ where: { id: parseInt(actualId) } });
@@ -206,16 +206,23 @@ exports.updateProfile = async (req, res) => {
     const updateData = { 
       full_name: actualFullName, 
       phone_number: actualPhone, 
-      email 
     };
+    if (email !== undefined) {
+      updateData.email = email;
+    }
     
     if (user.role === 'student' && actualEduCategory) {
-      updateData.education_category = actualEduCategory;
+      let mappedEduCategory = actualEduCategory;
+      if (mappedEduCategory === 'o/l') mappedEduCategory = 'o_l';
+      if (mappedEduCategory === 'a/l') mappedEduCategory = 'a_l';
+      updateData.education_category = mappedEduCategory;
     }
 
     if (address !== undefined) updateData.address = address;
     if (educationInfo !== undefined) updateData.education_info = educationInfo;
-    if (birthdate !== undefined) updateData.birthdate = birthdate;
+    if (birthdate !== undefined) {
+      updateData.birthdate = birthdate === "" ? null : new Date(birthdate);
+    }
     if (subject !== undefined) updateData.subject = subject;
     if (experience !== undefined) updateData.experience = experience;
     if (certifications !== undefined) updateData.certifications = certifications;

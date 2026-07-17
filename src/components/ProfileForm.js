@@ -199,6 +199,22 @@ export default function ProfileForm({ initialUser }) {
             </div>
           </div>
 
+          {/* Field Row: Address */}
+          <div className="flex flex-col md:flex-row md:items-center py-6 border-t border-gray-100 dark:border-slate-800">
+            <div className="w-full md:w-1/3 mb-3 md:mb-0">
+              <label className="text-[14px] font-semibold text-slate-800 dark:text-white">Address</label>
+            </div>
+            <div className="w-full md:w-2/3">
+              <input 
+                type="text" 
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-600 outline-none transition-all text-[15px]"
+                placeholder="Address"
+              />
+            </div>
+          </div>
+
           {/* Field Row: Email */}
           <div className="flex flex-col md:flex-row md:items-center py-6 border-t border-gray-100 dark:border-slate-800">
             <div className="w-full md:w-1/3 mb-3 md:mb-0">
@@ -289,10 +305,13 @@ export default function ProfileForm({ initialUser }) {
                     onChange={(e) => setEducationCategory(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-600 outline-none transition-all text-[15px]"
                   >
-                    <option value="">Select Category</option>
+                    <option value="" disabled>Select Category</option>
                     <option value="school">School</option>
+                    <option value="o/l">O/L</option>
+                    <option value="a/l">A/L</option>
                     <option value="university">University</option>
-                    <option value="other">Other</option>
+                    <option value="vocational">Vocational</option>
+                    <option value="professional">Professional</option>
                   </select>
                 </div>
               </div>

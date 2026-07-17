@@ -102,6 +102,10 @@ exports.register = async (req, res) => {
     // Hash password
     const password_hash = await bcrypt.hash(password, 10);
 
+    let mappedEduCategory = actualStudentCategory;
+    if (mappedEduCategory === 'o/l') mappedEduCategory = 'o_l';
+    if (mappedEduCategory === 'a/l') mappedEduCategory = 'a_l';
+
     const newUser = await prisma.users.create({
       data: {
         full_name: actualFullName,
@@ -110,6 +114,7 @@ exports.register = async (req, res) => {
         address,
         role,
         student_category: actualStudentCategory,
+        education_category: mappedEduCategory,
         status: 'active'
       }
     });
