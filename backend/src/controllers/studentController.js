@@ -274,10 +274,10 @@ exports.getDashboardSummary = async (req, res) => {
     // 4. Class Stats
     const classStatsQuery = await prisma.$queryRaw`
       SELECT
-          COUNT(CASE WHEN NOW() BETWEEN scheduled_at AND DATE_ADD(scheduled_at, INTERVAL duration MINUTE) THEN 1 END) AS ongoing_classes,
-          COUNT(CASE WHEN scheduled_at > NOW() THEN 1 END) AS upcoming_classes,
-          COUNT(CASE WHEN scheduled_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 END) AS classes_this_week,
-          MIN(CASE WHEN scheduled_at > NOW() THEN scheduled_at END) AS next_class_time
+          COUNT(CASE WHEN NOW() BETWEEN date_time AND DATE_ADD(date_time, INTERVAL duration MINUTE) THEN 1 END) AS ongoing_classes,
+          COUNT(CASE WHEN date_time > NOW() THEN 1 END) AS upcoming_classes,
+          COUNT(CASE WHEN date_time BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 END) AS classes_this_week,
+          MIN(CASE WHEN date_time > NOW() THEN date_time END) AS next_class_time
       FROM online_classes
     `;
     const classStats = classStatsQuery[0] || {};

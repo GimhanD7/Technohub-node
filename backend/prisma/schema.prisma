@@ -336,11 +336,11 @@ model quiz_payments {
   quiz_id    Int
   user_id    Int
   amount     Decimal  @db.Decimal(10, 2)
-  created_at DateTime @default(now()) @db.Timestamp(0)
+  paid_at    DateTime @default(now()) @db.Timestamp(0)
   quizzes    quizzes  @relation(fields: [quiz_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "quiz_payments_ibfk_1")
   users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "quiz_payments_ibfk_2")
 
-  @@unique([quiz_id, user_id], map: "quiz_user_unique")
+  @@unique([quiz_id, user_id], map: "uniq_user_quiz")
   @@index([user_id], map: "user_id")
 }
 
