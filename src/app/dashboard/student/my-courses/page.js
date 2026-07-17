@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, Loader2, PlayCircle, Star, Image as ImageIcon, Clock, Search } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export default function StudentMyCourses() {
@@ -96,7 +96,7 @@ export default function StudentMyCourses() {
                   <div className="h-36 bg-slate-100 relative overflow-hidden">
                     {course.banner_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={course.banner_url} alt="Course Banner" className="w-full h-full object-cover" />
+                      <img src={course.banner_url.startsWith('http') ? course.banner_url : `${BASE_URL}${course.banner_url.startsWith('/') ? '' : '/'}${course.banner_url}`} alt="Course Banner" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-white"><ImageIcon className="w-8 h-8" /></div>
                     )}

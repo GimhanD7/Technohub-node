@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search } from "lucide-react";
 import { API_BASE_URL, fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
+import { BASE_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export default function TeacherCourseManagement() {
@@ -435,7 +436,7 @@ export default function TeacherCourseManagement() {
               <div key={c.id} className={`bg-white dark:bg-[#1e293b] rounded-lg border shadow-sm overflow-hidden flex flex-col transition-all ${c.status === 'disabled' ? 'border-gray-200 dark:border-slate-800 opacity-75' : 'border-blue-100 dark:border-blue-900/50'}`}>
                 <div className="h-32 bg-gray-100 relative overflow-hidden group">
                   {c.banner_url ? (
-                    <img src={c.banner_url} alt="Banner" className="w-full h-full object-cover" />
+                    <img src={c.banner_url.startsWith('http') ? c.banner_url : `${BASE_URL}${c.banner_url.startsWith('/') ? '' : '/'}${c.banner_url}`} alt="Banner" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-white"><ImageIcon className="w-8 h-8" /></div>
                   )}
@@ -605,7 +606,7 @@ export default function TeacherCourseManagement() {
                 <div className="col-span-3 sm:col-span-1">
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Banner Image</label>
                   <div className="flex gap-2">
-                    <input type="url" value={courseForm.banner_url} onChange={e => setCourseForm({...courseForm, banner_url: e.target.value})} className="w-full p-2.5 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" placeholder="https://... or Upload" />
+                    <input type="text" value={courseForm.banner_url} onChange={e => setCourseForm({...courseForm, banner_url: e.target.value})} className="w-full p-2.5 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" placeholder="https://... or Upload" />
                     <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-white px-3 py-2.5 rounded border border-slate-200 dark:border-slate-800 flex items-center justify-center text-[12px] font-bold transition-colors">
                       Upload
                       <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />

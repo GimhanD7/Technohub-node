@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import {
   AlertCircle,
   Award,
@@ -624,7 +624,7 @@ function CourseCard({ course, completed = false }) {
           {course.banner_url ? (
             // Uploaded course banners are served by the PHP/XAMPP asset path.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={course.banner_url} alt={course.title} className="h-full w-full object-cover" />
+            <img src={course.banner_url.startsWith('http') ? course.banner_url : `${BASE_URL}${course.banner_url.startsWith('/') ? '' : '/'}${course.banner_url}`} alt={course.title} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-slate-900 text-white">
               <BookOpen className="h-8 w-8 opacity-80" />

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Loader2, BookOpen, Star, PlayCircle, Users, CheckCircle, Image as ImageIcon } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import { toast } from "react-hot-toast";
@@ -120,7 +120,7 @@ export default function StudentCourseExplorer() {
               <div className="h-40 bg-gray-100 relative overflow-hidden">
                 {course.banner_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={course.banner_url} alt="Course Banner" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={course.banner_url.startsWith('http') ? course.banner_url : `${BASE_URL}${course.banner_url.startsWith('/') ? '' : '/'}${course.banner_url}`} alt="Course Banner" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-white"><ImageIcon className="w-10 h-10" /></div>
                 )}
