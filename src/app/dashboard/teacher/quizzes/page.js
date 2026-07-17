@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Plus, Trash2, Calendar, ClipboardList, RefreshCw, Award, Users, Lock, Search, X, Zap, Clock, Archive, CheckCircle, AlertTriangle, Loader2, Filter, LayoutGrid
+  Plus, Trash2, Calendar, ClipboardList, RefreshCw, Award, Users, Lock, Search, X, Zap, Clock, Archive, CheckCircle, AlertTriangle, Loader2, Filter, LayoutGrid, Edit
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -372,19 +372,30 @@ export default function TeacherQuizzesPage() {
 
                           <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
 
-                          {/* Teachers cannot edit */}
-                          <span className="p-1.5 text-gray-400 cursor-not-allowed" title="Only administrators can edit quizzes">
-                            <Lock className="w-4 h-4" />
-                          </span>
+                          {quiz._status === "past" || quiz._status === "active" ? (
+                            <button disabled className="p-1.5 text-gray-400 cursor-not-allowed" title="Past and active quizzes cannot be edited">
+                              <Lock className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <Link href={`/dashboard/teacher/quizzes/edit?id=${quiz.id}`} className="p-1.5 text-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 rounded transition-colors" title="Edit Quiz">
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                          )}
 
-                          <button 
-                            onClick={() => handleDeleteQuiz(quiz.id)} 
-                            disabled={isDeletingId === quiz.id}
-                            className="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded transition-colors disabled:opacity-50" 
-                            title="Delete Quiz"
-                          >
-                            {isDeletingId === quiz.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
+                          {quiz._status === "past" ? (
+                            <button disabled className="p-1.5 text-gray-400 cursor-not-allowed" title="Past quizzes cannot be deleted">
+                              <Lock className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => handleDeleteQuiz(quiz.id)} 
+                              disabled={isDeletingId === quiz.id}
+                              className="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded transition-colors disabled:opacity-50" 
+                              title="Delete Quiz"
+                            >
+                              {isDeletingId === quiz.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

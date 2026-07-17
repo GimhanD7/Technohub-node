@@ -68,7 +68,7 @@ exports.listQuizzes = async (req, res) => {
           score: attempt.score,
           startedAt: attempt.start_time,
           submittedAt: attempt.submitted_at,
-          isSubmitted: attempt.is_submitted === 1
+          isSubmitted: Boolean(attempt.is_submitted)
         } : null
       };
 
@@ -124,29 +124,40 @@ exports.getQuiz = async (req, res) => {
 exports.createQuiz = async (req, res) => {
   try {
     const data = req.body;
-    if (!data.teacherId || !data.title || !data.questions) {
-      return res.status(400).json({ success: false, message: "Missing required fields." });
+
+    // Detailed validation with specific field info
+    const missing = [];
+    if (!data.teacherId) missing.push('teacherId');
+    if (!data.title) missing.push('title');
+    if (!data.questions || !Array.isArray(data.questions) || data.questions.length === 0) missing.push('questions');
+    if (!data.startTime) missing.push('startTime');
+    if (!data.endTime) missing.push('endTime');
+
+    if (missing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Missing required fields: ${missing.join(', ')}`
+      });
     }
+
+    const fee = parseFloat(data.fee) || 0;
 
     const quiz = await prisma.quizzes.create({
       data: {
         created_by: parseInt(data.teacherId),
-        title: data.title,
-        description: data.description || '',
-        time_limit_minutes: parseInt(data.timeLimit),
+        title: data.title.trim(),
         start_time: new Date(data.startTime),
         end_time: new Date(data.endTime),
-        status: data.status || 'draft',
-        is_paid: data.isPaid ? 1 : 0,
-        price: data.isPaid ? parseFloat(data.price) : 0,
+        fee: fee,
         questions: {
           create: data.questions.map(q => ({
             question_text: q.questionText,
-            marks: parseFloat(q.marks),
+            marks: parseInt(q.marks) || 1,
+            image_url: q.imageUrl || null,
             options: {
               create: q.options.map((opt, idx) => ({
                 option_text: opt,
-                is_correct: idx === q.correctOptionIndex ? 1 : 0
+                is_correct: idx === q.correctOptionIndex
               }))
             }
           }))
@@ -155,7 +166,7 @@ exports.createQuiz = async (req, res) => {
     });
 
     await logActivity(data.teacherId, 'Created Quiz', `Title: ${data.title}`, req);
-    res.json({ success: true, message: "Quiz created successfully." });
+    res.json({ success: true, message: "Quiz created successfully.", quizId: quiz.id });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to create quiz: " + error.message });
   }
@@ -168,39 +179,39 @@ exports.editQuiz = async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing required fields." });
     }
 
-    // Since questions and options might have been added/removed, the easiest approach is to delete all existing questions for this quiz and recreate them. Prisma cascading deletes will handle options if configured, or we can manually delete.
+    const fee = parseFloat(data.fee) || 0;
+
     await prisma.$transaction(async (tx) => {
       await tx.quizzes.update({
         where: { id: parseInt(data.quizId) },
         data: {
-          title: data.title,
-          description: data.description || '',
-          time_limit_minutes: parseInt(data.timeLimit),
+          title: data.title.trim(),
           start_time: new Date(data.startTime),
           end_time: new Date(data.endTime),
-          status: data.status,
-          is_paid: data.isPaid ? 1 : 0,
-          price: data.isPaid ? parseFloat(data.price) : 0
+          fee: fee
         }
       });
 
-      // Delete old questions (options are usually CASCADE deleted by DB, if not, delete them first)
+      // Delete old questions and their options
       const oldQuestions = await tx.questions.findMany({ where: { quiz_id: parseInt(data.quizId) } });
       const oldQIds = oldQuestions.map(q => q.id);
-      await tx.options.deleteMany({ where: { question_id: { in: oldQIds } } });
+      if (oldQIds.length > 0) {
+        await tx.options.deleteMany({ where: { question_id: { in: oldQIds } } });
+      }
       await tx.questions.deleteMany({ where: { quiz_id: parseInt(data.quizId) } });
 
-      // Insert new
+      // Insert new questions
       for (const q of data.questions) {
         await tx.questions.create({
           data: {
             quiz_id: parseInt(data.quizId),
             question_text: q.questionText,
-            marks: parseFloat(q.marks),
+            marks: parseInt(q.marks) || 1,
+            image_url: q.imageUrl || null,
             options: {
               create: q.options.map((opt, idx) => ({
                 option_text: opt,
-                is_correct: idx === q.correctOptionIndex ? 1 : 0
+                is_correct: idx === q.correctOptionIndex
               }))
             }
           }
@@ -208,7 +219,8 @@ exports.editQuiz = async (req, res) => {
       }
     });
 
-    if (data.teacherId) await logActivity(data.teacherId, 'Edited Quiz', `Quiz ID: ${data.quizId}`, req);
+    const actorId = data.teacherId || data.userId;
+    if (actorId) await logActivity(actorId, 'Edited Quiz', `Quiz ID: ${data.quizId}`, req);
     res.json({ success: true, message: "Quiz updated successfully." });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to update quiz: " + error.message });
@@ -217,11 +229,37 @@ exports.editQuiz = async (req, res) => {
 
 exports.deleteQuiz = async (req, res) => {
   try {
-    const { id } = req.body;
+    // Support both `id` and `quizId` field names from frontend
+    const id = req.body.quizId || req.body.id;
     if (!id) return res.status(400).json({ success: false, message: "Quiz ID required." });
 
-    await prisma.quizzes.delete({ where: { id: parseInt(id) } });
-    res.json({ success: true, message: "Quiz deleted." });
+    const quizId = parseInt(id);
+
+    // Delete in correct order to respect FK constraints
+    // 1. Get all questions for this quiz
+    const questionsToDelete = await prisma.questions.findMany({ where: { quiz_id: quizId } });
+    const questionIds = questionsToDelete.map(q => q.id);
+
+    // 2. Delete student responses linked to attempts for this quiz
+    const attemptsToDelete = await prisma.quiz_attempts.findMany({ where: { quiz_id: quizId } });
+    const attemptIds = attemptsToDelete.map(a => a.id);
+
+    if (attemptIds.length > 0) {
+      await prisma.student_responses.deleteMany({ where: { attempt_id: { in: attemptIds } } });
+    }
+    await prisma.quiz_attempts.deleteMany({ where: { quiz_id: quizId } });
+    await prisma.quiz_payments.deleteMany({ where: { quiz_id: quizId } });
+
+    // 3. Delete options then questions
+    if (questionIds.length > 0) {
+      await prisma.options.deleteMany({ where: { question_id: { in: questionIds } } });
+    }
+    await prisma.questions.deleteMany({ where: { quiz_id: quizId } });
+
+    // 4. Finally delete the quiz
+    await prisma.quizzes.delete({ where: { id: quizId } });
+
+    res.json({ success: true, message: "Quiz deleted successfully." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -271,7 +309,7 @@ exports.startAttempt = async (req, res) => {
     if (!userId || !quizId) return res.status(400).json({ success: false, message: "Missing data." });
 
     const quiz = await prisma.quizzes.findUnique({ where: { id: parseInt(quizId) } });
-    if (!quiz || quiz.status !== 'published') return res.status(400).json({ success: false, message: "Quiz unavailable." });
+    if (!quiz) return res.status(400).json({ success: false, message: "Quiz not found." });
 
     const now = new Date();
     if (now < quiz.start_time || now > quiz.end_time) {
@@ -288,17 +326,12 @@ exports.startAttempt = async (req, res) => {
         return res.json({ success: false, message: "You have already submitted this quiz.", alreadySubmitted: true });
       }
     } else {
-      // Create new attempt
-      const endTime = new Date(now.getTime() + quiz.time_limit_minutes * 60000);
-      const actualEndTime = endTime > quiz.end_time ? quiz.end_time : endTime;
-
+      // Create new attempt - only use columns that exist in schema
       attempt = await prisma.quiz_attempts.create({
         data: {
           user_id: parseInt(userId),
-          quiz_id: parseInt(quizId),
-          start_time: now,
-          end_time: actualEndTime,
-          ip_address: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || ''
+          quiz_id: parseInt(quizId)
+          // started_at has default(now()), is_submitted has default(false)
         }
       });
     }
@@ -313,7 +346,7 @@ exports.startAttempt = async (req, res) => {
       }
     });
 
-    res.json({ success: true, attemptId: attempt.id, questions, endTime: attempt.end_time });
+    res.json({ success: true, attemptId: attempt.id, questions, endTime: quiz.end_time });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -374,7 +407,6 @@ exports.submitQuiz = async (req, res) => {
 
     const quiz = attempt.quizzes;
     const now = new Date();
-    const submitTime = now > attempt.end_time ? attempt.end_time : now;
 
     // Calculate score
     const questions = await prisma.questions.findMany({ where: { quiz_id: quiz.id }, include: { options: true } });
@@ -395,7 +427,7 @@ exports.submitQuiz = async (req, res) => {
 
     await prisma.quiz_attempts.update({
       where: { id: parseInt(attemptId) },
-      data: { score: totalScore, submitted_at: submitTime, is_submitted: 1 }
+      data: { score: totalScore, submitted_at: now, is_submitted: true }
     });
 
     res.json({
@@ -403,7 +435,7 @@ exports.submitQuiz = async (req, res) => {
       message: "Quiz submitted successfully!",
       score: totalScore,
       maxScore: maxPossibleScore,
-      submitTime
+      submitTime: now
     });
 
   } catch (error) {
@@ -418,13 +450,25 @@ exports.submitQuiz = async (req, res) => {
 exports.getSubmissions = async (req, res) => {
   try {
     const { quizId, userId, role } = req.query;
-    let attempts;
 
-    if (role === 'teacher') {
+    // Fetch quiz details
+    const quiz = await prisma.quizzes.findUnique({
+      where: { id: parseInt(quizId) }
+    });
+    if (!quiz) return res.status(404).json({ success: false, message: 'Quiz not found.' });
+
+    // Fetch questions with options for expanded answer view
+    const questions = await prisma.questions.findMany({
+      where: { quiz_id: parseInt(quizId) },
+      include: { options: true }
+    });
+
+    let attempts;
+    if (role === 'teacher' || role === 'admin') {
       attempts = await prisma.quiz_attempts.findMany({
-        where: { quiz_id: parseInt(quizId), is_submitted: 1 },
-        include: { users: { select: { full_name: true, index_number: true } } },
-        orderBy: { score: 'desc' }
+        where: { quiz_id: parseInt(quizId), is_submitted: true },
+        include: { users: { select: { full_name: true, index_number: true, phone_number: true, role: true } } },
+        orderBy: [{ score: 'desc' }, { submitted_at: 'asc' }]
       });
     } else {
       attempts = await prisma.quiz_attempts.findMany({
@@ -432,14 +476,91 @@ exports.getSubmissions = async (req, res) => {
       });
     }
 
-    const formatted = attempts.map(a => ({
-      ...a,
-      student_name: a.users?.full_name || 'Unknown',
-      student_index: a.users?.index_number || 'Unknown',
-      users: undefined
-    }));
+    // Calculate max possible score
+    const marksAgg = await prisma.questions.aggregate({
+      where: { quiz_id: parseInt(quizId) },
+      _sum: { marks: true }
+    });
+    const maxScore = parseFloat(marksAgg._sum.marks) || 0;
 
-    res.json({ success: true, attempts: formatted });
+    // Build ranked submissions
+    let rank = 1;
+    let displayRank = 1;
+    let prevScore = null;
+
+    const formatted = attempts.map((a, idx) => {
+      if (prevScore !== null && a.score < prevScore) {
+        displayRank = rank;
+      }
+      prevScore = a.score;
+      rank++;
+
+      // Build answers map: { questionId: [selectedOptionId] }
+      const timeTaken = a.submitted_at && a.start_time
+        ? Math.round((new Date(a.submitted_at) - new Date(a.start_time)) / 1000)
+        : 0;
+
+      return {
+        attemptId: a.id,
+        rank: displayRank,
+        score: a.score,
+        percentage: maxScore > 0 ? Math.round((a.score / maxScore) * 100) : 0,
+        submittedAt: a.submitted_at,
+        timeTaken,
+        fullName: a.users?.full_name || 'Unknown',
+        indexNumber: a.users?.index_number || 'N/A',
+        phone: a.users?.phone_number || 'N/A',
+        role: a.users?.role || 'student',
+        answers: {}
+      };
+    });
+
+    // Attach student responses for expanded view
+    if (formatted.length > 0) {
+      const attemptIds = attempts.map(a => a.id);
+      const responses = await prisma.student_responses.findMany({
+        where: { attempt_id: { in: attemptIds } }
+      });
+      for (const sub of formatted) {
+        const subResponses = responses.filter(r => r.attempt_id === sub.attemptId);
+        sub.answers = subResponses.reduce((acc, r) => {
+          if (!acc[r.question_id]) acc[r.question_id] = [];
+          acc[r.question_id].push(r.option_id);
+          return acc;
+        }, {});
+      }
+    }
+
+    // Statistics
+    const totalSubmissions = formatted.length;
+    const avgScore = totalSubmissions > 0
+      ? Math.round((formatted.reduce((s, a) => s + a.score, 0) / totalSubmissions) * 100) / 100
+      : 0;
+    const avgPercentage = maxScore > 0 ? Math.round((avgScore / maxScore) * 100) : 0;
+
+    res.json({
+      success: true,
+      quiz: {
+        id: quiz.id,
+        title: quiz.title,
+        startTime: quiz.start_time,
+        endTime: quiz.end_time,
+        fee: quiz.fee
+      },
+      questions: questions.map(q => ({
+        id: q.id,
+        text: q.question_text,
+        imageUrl: q.image_url || null,
+        options: q.options
+      })),
+      submissions: formatted,
+      statistics: {
+        totalSubmissions,
+        averageScore: avgScore,
+        averagePercentage: avgPercentage,
+        maxScore
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

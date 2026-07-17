@@ -7,7 +7,8 @@ router.get('/list', quizController.listQuizzes);
 router.get('/get', quizController.getQuiz);
 router.post('/create', quizController.createQuiz);
 router.put('/edit', quizController.editQuiz);
-router.delete('/delete', quizController.deleteQuiz);
+router.post('/edit', quizController.editQuiz);
+router.post('/delete', quizController.deleteQuiz);
 
 // Student Taking
 router.get('/get_lobby', quizController.getLobby);

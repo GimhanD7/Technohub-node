@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Save, ArrowLeft, AlertCircle, CheckSquare, Square, RefreshCw, Star, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, AlertCircle, CheckSquare, Square, RefreshCw, Star, Image as ImageIcon, X, User, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { fetchApi, API_BASE_URL } from "@/lib/api";
+import { fetchApi, API_BASE_URL, BASE_URL } from "@/lib/api";
 import Button from "@/components/ui/Button";
 
 export default function QuizEditor({ quizId = null, isEdit = false }) {
@@ -12,7 +12,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
   const [title, setTitle] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [fee, setFee] = useState(0);
+  const [fee, setFee] = useState("");
   const [questions, setQuestions] = useState([
     {
       text: "",
@@ -33,6 +33,11 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
   const [successMsg, setSuccessMsg] = useState("");
   const [isReadOnly, setIsReadOnly] = useState(false);
 
+  // Admin teacher-selection state
+  const [teachers, setTeachers] = useState([]);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [teacherSelected, setTeacherSelected] = useState(false);
+
   useEffect(() => {
     const savedUser = localStorage.getItem("techno_hub_user");
     if (!savedUser) {
@@ -42,12 +47,23 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     const parsedUser = JSON.parse(savedUser);
     setUser(parsedUser);
 
-    // If it's a teacher trying to edit, enforce read-only
+    // Allow teachers to edit their own quizzes, or at least edit quizzes in general
     if (isEdit && parsedUser.role === "teacher") {
-      setIsReadOnly(true);
+      setIsReadOnly(false);
+    }
+
+    // If admin is creating a quiz, fetch teachers list first
+    if (!isEdit && parsedUser.role === "admin") {
+      fetchApi("/course/get_teachers").then(data => {
+        if (data.success) setTeachers(data.teachers || []);
+      });
+    } else {
+      // Teacher creating their own quiz — skip teacher selection
+      setTeacherSelected(true);
     }
 
     if (isEdit && quizId) {
+      setTeacherSelected(true);
       loadQuizData(quizId, parsedUser);
     }
   }, [quizId, isEdit]);
@@ -61,17 +77,23 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     if (data.success) {
       setTitle(data.quiz.title);
       // Format dates to fit datetime-local inputs (YYYY-MM-DDTHH:MM)
-      setStartTime(data.quiz.startTime.replace(" ", "T").substring(0, 16));
-      setEndTime(data.quiz.endTime.replace(" ", "T").substring(0, 16));
-      setFee(data.quiz.fee || 0);
+      // Prisma returns ISO strings like 2026-07-18T08:32:00.000Z
+      const formatTime = (timeStr) => {
+        if (!timeStr) return "";
+        return new Date(timeStr).toISOString().substring(0, 16);
+      };
+      
+      setStartTime(formatTime(data.quiz.start_time));
+      setEndTime(formatTime(data.quiz.end_time));
+      setFee(data.quiz.fee != null ? String(data.quiz.fee) : "");
       
       const formattedQuestions = data.quiz.questions.map(q => ({
-        text: q.text,
+        text: q.question_text || "",
         marks: q.marks,
-        imageUrl: q.imageUrl || null,
+        imageUrl: q.image_url || null,
         options: q.options.map(opt => ({
-          text: opt.text,
-          is_correct: opt.is_correct || false
+          text: opt.option_text || "",
+          is_correct: Boolean(opt.is_correct)
         }))
       }));
       setQuestions(formattedQuestions);
@@ -241,13 +263,24 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
 
     setIsSaving(true);
     const endpoint = isEdit ? "/quiz/edit" : "/quiz/create";
+    // If admin is creating on behalf of a teacher, use selectedTeacher's ID
+    const creatorId = (!isEdit && user.role === "admin" && selectedTeacher)
+      ? selectedTeacher.id
+      : user.id;
     const payload = {
+      teacherId: creatorId,
       userId: user.id,
       role: user.role,
       title,
       startTime,
       endTime,
-      questions,
+      questions: questions.map(q => ({
+        questionText: q.text,
+        marks: q.marks,
+        imageUrl: q.imageUrl || null,
+        options: q.options.map(o => o.text),
+        correctOptionIndex: q.options.findIndex(o => o.is_correct)
+      })),
       fee: parseFloat(fee) || 0,
       ...(isEdit ? { quizId } : {})
     };
@@ -282,6 +315,62 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     );
   }
 
+  // Admin creating quiz: show teacher selection step first
+  if (!isEdit && user?.role === "admin" && !teacherSelected) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b border-gray-200 dark:border-slate-800 pb-5">
+          <button
+            onClick={() => router.push("/dashboard/admin/quizzes")}
+            className="p-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white">Create Quiz — Select Teacher</h1>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Choose which teacher this quiz will be created for.</p>
+          </div>
+        </div>
+
+        {teachers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+            <RefreshCw className="w-6 h-6 animate-spin mb-3" />
+            <p className="text-sm">Loading teachers...</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {teachers.map(t => (
+              <button
+                key={t.id}
+                onClick={() => { setSelectedTeacher(t); setTeacherSelected(true); }}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left group ${
+                  selectedTeacher?.id === t.id
+                    ? "border-primary bg-primary/5 dark:bg-primary/10"
+                    : "border-gray-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center shrink-0">
+                  {t.profile_picture ? (
+                    <img src={t.profile_picture} alt={t.full_name} className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <User className="w-5 h-5 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-800 dark:text-white text-sm">{t.full_name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{t.email}</p>
+                  {t.index_number && <p className="text-xs text-slate-400 dark:text-slate-500">{t.index_number}</p>}
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       
@@ -289,7 +378,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-800 pb-5">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => router.push(getBackUrl())}
+            onClick={() => !isEdit && user?.role === "admin" ? setTeacherSelected(false) : router.push(getBackUrl())}
             className="p-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -298,6 +387,9 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
             <h1 className="text-xl font-bold text-slate-800 dark:text-white">
               {isEdit ? (isReadOnly ? "View Quiz Details" : "Edit Quiz") : "Create New Quiz"}
             </h1>
+            {!isEdit && user?.role === "admin" && selectedTeacher && (
+              <p className="text-xs text-primary dark:text-primary font-medium mt-0.5">For: {selectedTeacher.full_name}</p>
+            )}
             <p className="text-xs text-gray-500 dark:text-slate-400">Set quiz questions, options, timings, and correct answers.</p>
           </div>
         </div>
@@ -380,11 +472,24 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
           <input 
             type="number" 
             value={fee} 
-            onChange={(e) => setFee(Math.max(0, parseFloat(e.target.value) || 0))} 
+            onChange={(e) => {
+              const val = e.target.value;
+              // Allow empty string while typing; store raw string so no leading zeros
+              setFee(val === "" ? "" : val);
+            }}
+            onBlur={(e) => {
+              // On blur, clamp to valid number >= 0
+              const parsed = parseFloat(e.target.value);
+              setFee(isNaN(parsed) || parsed < 0 ? "0" : String(parsed));
+            }}
+            onFocus={(e) => {
+              // Clear the field if value is 0 so user doesn't have to delete it
+              if (parseFloat(e.target.value) === 0) setFee("");
+            }}
             disabled={isReadOnly}
             min="0"
             step="0.01"
-            placeholder="e.g. 150"
+            placeholder="0 (Free)"
             className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-50"
           />
         </div>
@@ -456,7 +561,11 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
               </div>
               {q.imageUrl ? (
                 <div className="relative w-32 h-24 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                  <img src={q.imageUrl} alt="Question" className="w-full h-full object-cover" />
+                  <img 
+                    src={q.imageUrl.startsWith('http') ? q.imageUrl : `${BASE_URL}${q.imageUrl}`} 
+                    alt="Question" 
+                    className="w-full h-full object-cover" 
+                  />
                   {!isReadOnly && (
                     <button
                       type="button"

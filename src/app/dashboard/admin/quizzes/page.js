@@ -372,8 +372,8 @@ export default function AdminQuizzesPage() {
 
                           <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
 
-                          {quiz._status === "past" ? (
-                            <button disabled className="p-1.5 text-gray-400 cursor-not-allowed" title="Past quizzes cannot be edited">
+                          {quiz._status === "past" || quiz._status === "active" ? (
+                            <button disabled className="p-1.5 text-gray-400 cursor-not-allowed" title="Past and active quizzes cannot be edited">
                               <Lock className="w-4 h-4" />
                             </button>
                           ) : (
