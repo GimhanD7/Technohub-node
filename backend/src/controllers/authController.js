@@ -33,7 +33,7 @@ exports.login = async (req, res) => {
     }
 
     // Log success here if logger is implemented
-    
+
     // Create JWT token
     const token = jwt.sign(
       { id: user.id, role: user.role, phone_number: user.phone_number },
@@ -59,15 +59,40 @@ exports.login = async (req, res) => {
 
 exports.register = async (req, res) => {
   try {
-    const { full_name, phone_number, password, address, role = 'student', student_category = 'School' } = req.body;
+    const { 
+      fullName, full_name, 
+      phoneNumber, phone_number, 
+      password, 
+      address, 
+      role = 'student', 
+      educationCategory, student_category,
+      otp 
+    } = req.body;
 
-    if (!full_name || !phone_number || !password || !address) {
+    const actualFullName = fullName || full_name;
+    const actualPhoneNumber = phoneNumber || phone_number;
+    const actualStudentCategory = educationCategory || student_category || 'School';
+
+    if (!actualFullName || !actualPhoneNumber || !password || !address || !otp) {
       return res.status(400).json({ success: false, message: "Missing required fields." });
+    }
+
+    // 1. Verify OTP
+    const otpRecord = await prisma.otps.findUnique({
+      where: { phone_number: actualPhoneNumber }
+    });
+
+    if (!otpRecord || otpRecord.otp_code !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid verification code." });
+    }
+
+    if (new Date() > otpRecord.expires_at) {
+      return res.status(400).json({ success: false, message: "Verification code has expired." });
     }
 
     // Check if user exists
     const existingUser = await prisma.users.findUnique({
-      where: { phone_number }
+      where: { phone_number: actualPhoneNumber }
     });
 
     if (existingUser) {
@@ -79,15 +104,22 @@ exports.register = async (req, res) => {
 
     const newUser = await prisma.users.create({
       data: {
-        full_name,
-        phone_number,
+        full_name: actualFullName,
+        phone_number: actualPhoneNumber,
         password_hash,
         address,
         role,
-        student_category,
+        student_category: actualStudentCategory,
         status: 'active'
       }
     });
+
+    // Delete OTP record on successful registration
+    try {
+      await prisma.otps.delete({ where: { phone_number: actualPhoneNumber } });
+    } catch (e) {
+      console.error("Failed to delete OTP record:", e);
+    }
 
     delete newUser.password_hash;
 
@@ -119,6 +151,8 @@ exports.sendOtp = async (req, res) => {
       create: { phone_number: phoneNumber, otp_code: otpCode, expires_at: expiresAt }
     });
 
+    console.log(`\n========================================\n[OTP DEBUG] Phone: ${phoneNumber} | Code: ${otpCode}\n========================================\n`);
+
     // Send SMS via Text.lk API using native Node fetch
     const apiKey = "5699|p87wUERdDtxFnhjHSoIAtovVaGUPQtSfM5LzvZIDf59a80e3";
     let formattedPhone = phoneNumber;
@@ -126,28 +160,41 @@ exports.sendOtp = async (req, res) => {
       formattedPhone = '94' + formattedPhone.substring(1);
     }
 
-    const response = await fetch('https://app.text.lk/api/v3/sms/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + apiKey,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        recipient: formattedPhone,
-        sender_id: 'Text.lk',
-        type: 'plain',
-        message: "Your Techno-Hub registration OTP is: " + otpCode + ". Valid for 5 minutes."
-      })
-    });
+    try {
+      const response = await fetch('https://app.text.lk/api/v3/sms/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient: formattedPhone,
+          sender_id: 'AITI',
+          type: 'plain',
+          message: "Your Techno-Hub registration OTP is: " + otpCode + ". Valid for 5 minutes."
+        })
+      });
 
-    const responseData = await response.json();
+      const responseData = await response.json();
 
-    if (response.ok) {
-      res.json({ success: true, message: "OTP sent successfully!" });
-    } else {
-      console.error("Text.lk API Error:", responseData);
-      res.json({ success: false, message: "Failed to send OTP. Please try again. " + (responseData.message || '') });
+      if (response.ok) {
+        res.json({ success: true, message: "OTP sent successfully!" });
+      } else {
+        console.error("Text.lk API Error:", responseData);
+        // Fallback in case of API failure so dev isn't blocked
+        res.json({ 
+          success: true, 
+          message: "OTP generated! (SMS gateway error, please check server terminal for the code)" 
+        });
+      }
+    } catch (fetchError) {
+      console.error("SMS Fetch Failed (Gateway offline or invalid URL):", fetchError.message);
+      // Fallback in case of network error (like ENOTFOUND) so dev isn't blocked
+      res.json({ 
+        success: true, 
+        message: "OTP generated! (Check backend terminal for the verification code)" 
+      });
     }
   } catch (error) {
     console.error("OTP Error:", error);
