@@ -76,12 +76,14 @@ export default function CourseCategoriesPage() {
   };
 
   const handleDelete = (id, name) => {
-    showAlert(
-      "Delete Category",
-      `Are you sure you want to delete the category "${name}"? This cannot be undone.`,
-      "warning",
-      false,
-      async () => {
+    setDialogState({
+      isOpen: true,
+      type: "warning",
+      title: "Delete Category",
+      message: `Are you sure you want to delete the category "${name}"? This cannot be undone.`,
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
         const user = JSON.parse(localStorage.getItem("techno_hub_user"));
         const data = await fetchApi("/course/manage_categories", {
           method: "DELETE",
@@ -93,8 +95,9 @@ export default function CourseCategoriesPage() {
         } else {
           showAlert("Error", data.message || "Failed to delete category.", "error");
         }
-      }
-    );
+      },
+      onCancel: () => setDialogState(prev => ({ ...prev, isOpen: false }))
+    });
   };
 
   return (
