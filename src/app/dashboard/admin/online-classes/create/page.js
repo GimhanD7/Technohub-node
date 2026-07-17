@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import {
@@ -222,7 +222,7 @@ export default function AdminOnlineClassCreatePage() {
               >
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center shrink-0">
                   {t.profile_picture ? (
-                    <img src={t.profile_picture} alt={t.full_name} className="w-10 h-10 rounded-full object-cover" />
+                    <img src={t.profile_picture.startsWith('http') ? t.profile_picture : `${BASE_URL}${t.profile_picture.startsWith('/') ? '' : '/'}${t.profile_picture}`} alt={t.full_name} className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <User className="w-5 h-5 text-primary" />
                   )}

@@ -131,7 +131,7 @@ export default function ProfileForm({ initialUser }) {
             <div className="relative">
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-[#1e293b] bg-gray-100 overflow-hidden shadow-md relative group">
                 {profilePicture ? (
-                  <img src={profilePicture.startsWith('http') ? profilePicture : `${BASE_URL}/${profilePicture}`} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={profilePicture.startsWith('http') ? profilePicture : `${BASE_URL}${profilePicture.startsWith('/') ? '' : '/'}${profilePicture}`} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-4xl font-bold">
                     {fullName?.charAt(0)?.toUpperCase()}
@@ -240,7 +240,7 @@ export default function ProfileForm({ initialUser }) {
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 shadow-sm border border-gray-200 flex-shrink-0 relative group">
                   {profilePicture ? (
-                    <img src={profilePicture.startsWith('http') ? profilePicture : `${BASE_URL}/${profilePicture}`} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={profilePicture.startsWith('http') ? profilePicture : `${BASE_URL}${profilePicture.startsWith('/') ? '' : '/'}${profilePicture}`} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-xl">
                       {fullName?.charAt(0)?.toUpperCase()}

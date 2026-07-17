@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
+const path = require('path');
 const { logActivity } = require('../utils/logger');
 
 // --- ADMIN CRUD ---
