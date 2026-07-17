@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const onlineClassController = require('../controllers/onlineClassController');
 
-// In PHP, it was a monolithic manage.php file handling GET/POST/PUT/DELETE.
-// Now mapped to standard Express REST semantics.
+router.get('/teachers', onlineClassController.getTeachers);
 router.get('/manage', onlineClassController.getClasses);
 router.post('/manage', onlineClassController.createClass);
 router.put('/manage', onlineClassController.updateClass);

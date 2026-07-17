@@ -102,6 +102,20 @@ export default function ScheduleClassEditor({ classId: propClassId = null, isEdi
 
     if (data.success && data.class) {
       const cls = data.class;
+      
+      const now = new Date();
+      const cStart = new Date(cls.date_time);
+      if (now >= cStart) {
+        showAlert("Access Denied", "Live or ended classes cannot be edited.", "error", () => {
+          if (onCancel) {
+            onCancel();
+          } else {
+            router.push(getBackUrl(currentUser));
+          }
+        });
+        return;
+      }
+
       setFormTitle(cls.title || "");
       setFormDescription(cls.description || "");
       setFormMeetingLink(cls.meeting_link || "");

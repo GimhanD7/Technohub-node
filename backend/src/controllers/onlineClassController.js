@@ -2,6 +2,19 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { logActivity } = require('../utils/logger');
 
+exports.getTeachers = async (req, res) => {
+  try {
+    const teachers = await prisma.users.findMany({
+      where: { role: 'teacher' },
+      select: { id: true, full_name: true, subject: true },
+      orderBy: { full_name: 'asc' }
+    });
+    res.json({ success: true, teachers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.getClasses = async (req, res) => {
   try {
     const { id, userId, role } = req.query;
@@ -17,7 +30,7 @@ exports.getClasses = async (req, res) => {
         ...cls,
         teacher_name: cls.users?.full_name || null,
         users: undefined,
-        scheduled_at: cls.date_time // frontend expects scheduled_at
+        scheduled_at: cls.date_time
       };
       return res.json({ success: true, class: formatted });
     }
@@ -26,8 +39,7 @@ exports.getClasses = async (req, res) => {
     let whereClause = {};
     if (role === 'teacher' && userId) {
       whereClause.created_by = parseInt(userId);
-    } 
-    // Removed student target_grade logic since target_grade doesn't exist in schema.prisma for online_classes
+    }
 
     const classes = await prisma.online_classes.findMany({
       where: whereClause,
@@ -81,18 +93,36 @@ exports.getClasses = async (req, res) => {
 
 exports.createClass = async (req, res) => {
   try {
-    const { teacher_id, title, description, scheduled_at, duration, platform, meeting_link, fee } = req.body;
-    
-    if (!teacher_id || !title || !scheduled_at || !meeting_link) {
+    // Accept both naming conventions from frontend
+    const {
+      teacher_id,
+      userId,
+      role,
+      title,
+      description,
+      scheduled_at,
+      date_time,
+      duration,
+      platform,
+      meeting_link,
+      fee
+    } = req.body;
+
+    // Resolve teacher ID: explicit teacher_id, or userId when role is teacher, or userId as fallback
+    const resolvedTeacherId = teacher_id || (role === 'teacher' ? userId : teacher_id) || userId;
+    // Resolve date: accept either field name
+    const resolvedDateTime = date_time || scheduled_at;
+
+    if (!resolvedTeacherId || !title || !resolvedDateTime || !meeting_link) {
       return res.status(400).json({ success: false, message: "Missing required fields." });
     }
 
     await prisma.online_classes.create({
       data: {
-        created_by: parseInt(teacher_id),
+        created_by: parseInt(resolvedTeacherId),
         title,
         description: description || '',
-        date_time: new Date(scheduled_at),
+        date_time: new Date(resolvedDateTime),
         duration: duration ? parseInt(duration) : 60,
         platform: platform || 'Zoom',
         meeting_link,
@@ -100,7 +130,7 @@ exports.createClass = async (req, res) => {
       }
     });
 
-    await logActivity(teacher_id, 'Created Online Class', `Title: ${title}`, req);
+    await logActivity(resolvedTeacherId, 'Created Online Class', `Title: ${title}`, req);
     res.json({ success: true, message: "Online class scheduled successfully." });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to schedule class: " + error.message });
@@ -109,14 +139,43 @@ exports.createClass = async (req, res) => {
 
 exports.updateClass = async (req, res) => {
   try {
-    const { id, teacher_id, title, description, scheduled_at, duration, platform, meeting_link, fee } = req.body;
-    
+    const {
+      id,
+      teacher_id,
+      userId,
+      title,
+      description,
+      scheduled_at,
+      date_time,
+      duration,
+      platform,
+      meeting_link,
+      fee
+    } = req.body;
+
     if (!id) return res.status(400).json({ success: false, message: "Class ID required." });
+
+    const existingClass = await prisma.online_classes.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!existingClass) {
+      return res.status(404).json({ success: false, message: "Class not found." });
+    }
+
+    const now = new Date();
+    const cStart = new Date(existingClass.date_time);
+    if (now >= cStart) {
+      return res.status(400).json({ success: false, message: "Live or ended classes cannot be edited." });
+    }
+
+    // Resolve date: accept either field name
+    const resolvedDateTime = date_time || scheduled_at;
 
     const updateData = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
-    if (scheduled_at !== undefined) updateData.date_time = new Date(scheduled_at);
+    if (resolvedDateTime !== undefined) updateData.date_time = new Date(resolvedDateTime);
     if (duration !== undefined) updateData.duration = parseInt(duration);
     if (platform !== undefined) updateData.platform = platform;
     if (meeting_link !== undefined) updateData.meeting_link = meeting_link;
@@ -127,8 +186,9 @@ exports.updateClass = async (req, res) => {
       data: updateData
     });
 
-    if (teacher_id) {
-      await logActivity(teacher_id, 'Updated Online Class', `Class ID: ${id}`, req);
+    const actorId = teacher_id || userId;
+    if (actorId) {
+      await logActivity(actorId, 'Updated Online Class', `Class ID: ${id}`, req);
     }
     res.json({ success: true, message: "Online class updated successfully." });
   } catch (error) {
@@ -138,12 +198,34 @@ exports.updateClass = async (req, res) => {
 
 exports.deleteClass = async (req, res) => {
   try {
-    const { id, teacher_id } = req.body;
+    const { id, teacher_id, userId } = req.body;
     if (!id) return res.status(400).json({ success: false, message: "Class ID required." });
 
+    const existingClass = await prisma.online_classes.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!existingClass) {
+      return res.status(404).json({ success: false, message: "Class not found." });
+    }
+
+    const now = new Date();
+    const cStart = new Date(existingClass.date_time);
+    const durationMs = (existingClass.duration || 60) * 60000;
+    const cEnd = new Date(cStart.getTime() + durationMs);
+
+    if (now >= cStart && now <= cEnd) {
+      return res.status(400).json({ success: false, message: "Live classes cannot be deleted while in progress." });
+    }
+    if (now > cEnd) {
+      return res.status(400).json({ success: false, message: "Ended classes cannot be deleted." });
+    }
+
     await prisma.online_classes.delete({ where: { id: parseInt(id) } });
-    if (teacher_id) {
-      await logActivity(teacher_id, 'Deleted Online Class', `Class ID: ${id}`, req);
+
+    const actorId = teacher_id || userId;
+    if (actorId) {
+      await logActivity(actorId, 'Deleted Online Class', `Class ID: ${id}`, req);
     }
     res.json({ success: true, message: "Online class deleted successfully." });
   } catch (error) {
