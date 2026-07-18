@@ -167,9 +167,9 @@ export default function LoginPage() {
                   />
                   <span className="text-sm text-zinc-600">Remember for 30 days</span>
                 </label>
-                <button type="button" onClick={() => setShowSupportModal(true)} className="text-sm font-medium text-primary hover:text-secondary transition-colors">
+                <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-secondary transition-colors">
                   Forgot password?
-                </button>
+                </Link>
               </div>
               
               <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg rounded-xl shadow-[0_4px_14px_0_rgba(26,60,182,0.39)]">

@@ -206,3 +206,143 @@ exports.sendOtp = async (req, res) => {
     res.status(500).json({ success: false, message: "Backend Error: " + error.message });
   }
 };
+
+exports.sendResetOtp = async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    if (!phoneNumber) return res.status(400).json({ success: false, message: "Phone number is required." });
+
+    // Must be an existing user to reset password
+    const existingUser = await prisma.users.findUnique({ where: { phone_number: phoneNumber } });
+    if (!existingUser) return res.status(404).json({ success: false, message: "No account found with this phone number." });
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await prisma.otps.upsert({
+      where: { phone_number: phoneNumber },
+      update: { otp_code: otpCode, expires_at: expiresAt, created_at: new Date() },
+      create: { phone_number: phoneNumber, otp_code: otpCode, expires_at: expiresAt }
+    });
+
+    console.log(`\n========================================\n[RESET OTP DEBUG] Phone: ${phoneNumber} | Code: ${otpCode}\n========================================\n`);
+
+    // Send SMS via Text.lk API
+    const apiKey = "5699|p87wUERdDtxFnhjHSoIAtovVaGUPQtSfM5LzvZIDf59a80e3";
+    let formattedPhone = phoneNumber;
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '94' + formattedPhone.substring(1);
+    }
+
+    try {
+      const response = await fetch('https://app.text.lk/api/v3/sms/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient: formattedPhone,
+          sender_id: 'AITI',
+          type: 'plain',
+          message: `Your Techno-Hub password reset OTP is: ${otpCode}. Valid for 5 minutes. Do not share this code.`
+        })
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        res.json({ success: true, message: "OTP sent successfully to your phone!" });
+      } else {
+        console.error("Text.lk API Error:", responseData);
+        res.json({
+          success: true,
+          message: "OTP generated! (SMS gateway error, check server terminal for the code)"
+        });
+      }
+    } catch (fetchError) {
+      console.error("SMS Fetch Failed:", fetchError.message);
+      res.json({
+        success: true,
+        message: "OTP generated! (Check backend terminal for the verification code)"
+      });
+    }
+  } catch (error) {
+    console.error("sendResetOtp Error:", error);
+    res.status(500).json({ success: false, message: "Backend Error: " + error.message });
+  }
+};
+
+exports.verifyResetOtp = async (req, res) => {
+  try {
+    const { phoneNumber, otp } = req.body;
+    if (!phoneNumber || !otp) {
+      return res.status(400).json({ success: false, message: "Phone number and OTP are required." });
+    }
+
+    const otpRecord = await prisma.otps.findUnique({ where: { phone_number: phoneNumber } });
+
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: "No OTP found for this number. Please request a new code." });
+    }
+
+    if (otpRecord.otp_code !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP code. Please try again." });
+    }
+
+    if (new Date() > otpRecord.expires_at) {
+      return res.status(400).json({ success: false, message: "OTP has expired. Please request a new code." });
+    }
+
+    res.json({ success: true, message: "OTP verified successfully. You may now reset your password." });
+  } catch (error) {
+    console.error("verifyResetOtp Error:", error);
+    res.status(500).json({ success: false, message: "Backend Error: " + error.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { phoneNumber, otp, newPassword } = req.body;
+    if (!phoneNumber || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: "Phone number, OTP, and new password are required." });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
+    }
+
+    // Re-verify OTP before allowing password change
+    const otpRecord = await prisma.otps.findUnique({ where: { phone_number: phoneNumber } });
+
+    if (!otpRecord || otpRecord.otp_code !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP. Please restart the process." });
+    }
+
+    if (new Date() > otpRecord.expires_at) {
+      return res.status(400).json({ success: false, message: "OTP has expired. Please restart the process." });
+    }
+
+    // Hash the new password
+    const password_hash = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    await prisma.users.update({
+      where: { phone_number: phoneNumber },
+      data: { password_hash }
+    });
+
+    // Clean up OTP record
+    try {
+      await prisma.otps.delete({ where: { phone_number: phoneNumber } });
+    } catch (e) {
+      console.error("Failed to delete OTP record after password reset:", e);
+    }
+
+    res.json({ success: true, message: "Password reset successfully! You can now login with your new password." });
+  } catch (error) {
+    console.error("resetPassword Error:", error);
+    res.status(500).json({ success: false, message: "Backend Error: " + error.message });
+  }
+};
