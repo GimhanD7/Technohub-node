@@ -7,7 +7,7 @@ import {
   HelpCircle, RefreshCw, Trophy, ArrowRight, ArrowLeft, CornerDownRight, Star, Heart, Smile,
   Users, Award, Medal, BarChart3
 } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import Button from "@/components/ui/Button";
 
 export default function StudentQuizPage() {
@@ -187,7 +187,7 @@ export default function StudentQuizPage() {
       setQuestions((data.quiz.questions || []).map(q => ({
         ...q,
         text: q.text || q.question_text,
-        imageUrl: q.imageUrl || q.image_url,
+        imageUrl: (q.imageUrl || q.image_url) ? ((q.imageUrl || q.image_url).startsWith('http') ? (q.imageUrl || q.image_url) : `${BASE_URL}${q.imageUrl || q.image_url}`) : null,
         selectedOptions: q.selectedOptions || [],
         options: (q.options || []).map(opt => ({
           ...opt,

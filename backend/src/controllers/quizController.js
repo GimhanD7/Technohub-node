@@ -425,40 +425,52 @@ exports.startAttempt = async (req, res) => {
 
 exports.saveProgress = async (req, res) => {
   try {
-    const { attemptId, responses } = req.body; // responses: { [questionId]: optionId }
-    if (!attemptId || !responses) return res.status(400).json({ success: false, message: "Missing data." });
+    const { attemptId, questionId, selectedOptions, isFlagged } = req.body;
+    if (!attemptId || !questionId) return res.status(400).json({ success: false, message: "Missing data." });
 
-    // Ensure attempt is active
     const attempt = await prisma.quiz_attempts.findUnique({ where: { id: parseInt(attemptId) } });
     if (!attempt || attempt.is_submitted) return res.status(400).json({ success: false, message: "Invalid or submitted attempt." });
 
-    for (const [qId, oId] of Object.entries(responses)) {
-      if (oId) {
-        await prisma.student_responses.upsert({
-          where: { attempt_id_question_id: { attempt_id: parseInt(attemptId), question_id: parseInt(qId) } },
-          update: { option_id: parseInt(oId) },
-          create: { attempt_id: parseInt(attemptId), question_id: parseInt(qId), option_id: parseInt(oId) }
+    // First delete all existing responses for this question and attempt
+    await prisma.student_responses.deleteMany({
+      where: { attempt_id: parseInt(attemptId), question_id: parseInt(questionId) }
+    });
+
+    // Insert new selected options
+    if (selectedOptions && selectedOptions.length > 0) {
+      const responsesToCreate = selectedOptions.map(optionId => ({
+        attempt_id: parseInt(attemptId),
+        question_id: parseInt(questionId),
+        option_id: parseInt(optionId)
+      }));
+      await prisma.student_responses.createMany({
+        data: responsesToCreate
+      });
+    }
+
+    // Save flag status
+    if (isFlagged !== undefined) {
+      const existingFlag = await prisma.student_flags.findFirst({
+        where: { attempt_id: parseInt(attemptId), question_id: parseInt(questionId) }
+      });
+      if (existingFlag) {
+        await prisma.student_flags.update({
+          where: { id: existingFlag.id },
+          data: { is_flagged: Boolean(isFlagged) }
+        });
+      } else {
+        await prisma.student_flags.create({
+          data: {
+            attempt_id: parseInt(attemptId),
+            question_id: parseInt(questionId),
+            is_flagged: Boolean(isFlagged)
+          }
         });
       }
     }
 
     res.json({ success: true, message: "Progress saved." });
   } catch (error) {
-    // If the compound unique constraint doesn't exist natively on DB, we handle fallback:
-    if (error.code === 'P2002' || error.message.includes('Unique')) {
-       // Manual delete/insert fallback if upsert fails on missing constraint
-       for (const [qId, oId] of Object.entries(req.body.responses)) {
-           if (oId) {
-             const existing = await prisma.student_responses.findFirst({ where: { attempt_id: parseInt(req.body.attemptId), question_id: parseInt(qId) } });
-             if (existing) {
-                await prisma.student_responses.update({ where: { id: existing.id }, data: { option_id: parseInt(oId) } });
-             } else {
-                await prisma.student_responses.create({ data: { attempt_id: parseInt(req.body.attemptId), question_id: parseInt(qId), option_id: parseInt(oId) } });
-             }
-           }
-       }
-       return res.json({ success: true, message: "Progress saved via fallback." });
-    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -488,10 +500,14 @@ exports.submitQuiz = async (req, res) => {
 
     for (const q of questions) {
       maxPossibleScore += q.marks;
-      const correctOption = q.options.find(o => Boolean(o.is_correct));
-      const studentResponse = responses.find(r => r.question_id === q.id);
-
-      if (correctOption && studentResponse && studentResponse.option_id === correctOption.id) {
+      
+      const correctOptions = q.options.filter(o => Boolean(o.is_correct)).map(o => o.id);
+      const studentSelected = responses.filter(r => r.question_id === q.id).map(r => r.option_id);
+      
+      // Check if student selected EXACTLY the correct options
+      if (correctOptions.length > 0 && 
+          correctOptions.length === studentSelected.length && 
+          correctOptions.every(id => studentSelected.includes(id))) {
         totalScore += q.marks;
       }
     }
@@ -554,22 +570,34 @@ exports.getSubmissions = async (req, res) => {
     });
     const maxScore = parseFloat(marksAgg._sum.marks) || 0;
 
-    // Build ranked submissions
+    // First add timeTaken
+    const mapped = attempts.map(a => {
+      const timeTaken = a.submitted_at && a.started_at
+        ? Math.round((new Date(a.submitted_at) - new Date(a.started_at)) / 1000)
+        : 0;
+      return { ...a, timeTaken };
+    });
+
+    // Sort by score desc, then timeTaken asc (if available)
+    mapped.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.timeTaken - b.timeTaken;
+    });
+
     let rank = 1;
     let displayRank = 1;
     let prevScore = null;
+    let prevTime = null;
 
-    const formatted = attempts.map((a, idx) => {
-      if (prevScore !== null && a.score < prevScore) {
-        displayRank = rank;
+    const formatted = mapped.map((a, idx) => {
+      if (prevScore !== null) {
+         if (a.score < prevScore || (a.score === prevScore && a.timeTaken > prevTime)) {
+             displayRank = rank;
+         }
       }
       prevScore = a.score;
+      prevTime = a.timeTaken;
       rank++;
-
-      // Build answers map: { questionId: [selectedOptionId] }
-      const timeTaken = a.submitted_at && a.start_time
-        ? Math.round((new Date(a.submitted_at) - new Date(a.start_time)) / 1000)
-        : 0;
 
       return {
         attemptId: a.id,
@@ -577,7 +605,7 @@ exports.getSubmissions = async (req, res) => {
         score: a.score,
         percentage: maxScore > 0 ? Math.round((a.score / maxScore) * 100) : 0,
         submittedAt: a.submitted_at,
-        timeTaken,
+        timeTaken: a.timeTaken,
         fullName: a.users?.full_name || 'Unknown',
         indexNumber: a.users?.index_number || 'N/A',
         phone: a.users?.phone_number || 'N/A',
@@ -657,29 +685,44 @@ exports.getRankings = async (req, res) => {
     });
     const maxMarks = questionsAgg._sum.marks || 0;
 
-    let currentRank = 1;
-    let displayRank = 1;
-    let prevScore = null;
-
-    const formatted = attempts.map((a) => {
-      if (prevScore !== null && a.score < prevScore) {
-        displayRank = currentRank;
-      }
-      prevScore = a.score;
-      currentRank++;
-
+    // First add timeTaken
+    const mapped = attempts.map(a => {
       const timeTaken = a.submitted_at && a.started_at
         ? Math.round((new Date(a.submitted_at) - new Date(a.started_at)) / 1000)
         : null;
+      return { ...a, timeTaken };
+    });
+
+    // Sort by score desc, then timeTaken asc (if available)
+    mapped.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.timeTaken !== null && b.timeTaken !== null) return a.timeTaken - b.timeTaken;
+      return 0;
+    });
+
+    let currentRank = 1;
+    let displayRank = 1;
+    let prevScore = null;
+    let prevTime = null;
+
+    const formatted = mapped.map((a) => {
+      if (prevScore !== null) {
+         if (a.score < prevScore || (a.score === prevScore && a.timeTaken > prevTime)) {
+             displayRank = currentRank;
+         }
+      }
+      prevScore = a.score;
+      prevTime = a.timeTaken;
+      currentRank++;
 
       return {
         rank: displayRank,
-        userId: a.user_id,          // <-- expose user_id so frontend can highlight the current student
+        userId: a.user_id,
         score: a.score,
         submitted_at: a.submitted_at,
         fullName: a.users?.full_name || 'Unknown',
         indexNumber: a.users?.index_number || '-',
-        timeTaken,
+        timeTaken: a.timeTaken,
       };
     });
 

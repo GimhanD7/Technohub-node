@@ -7,7 +7,7 @@ import {
   HelpCircle, RefreshCw, Trophy, ArrowRight, CornerDownRight, Star, Heart, Smile,
   Users, Award, Medal, BarChart3, Crown
 } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Button from "@/components/ui/Button";
@@ -189,7 +189,7 @@ function StudentQuizContent() {
       setQuestions((data.quiz.questions || []).map(q => ({ 
         ...q, 
         text: q.text || q.question_text,
-        imageUrl: q.imageUrl || q.image_url,
+        imageUrl: (q.imageUrl || q.image_url) ? ((q.imageUrl || q.image_url).startsWith('http') ? (q.imageUrl || q.image_url) : `${BASE_URL}${q.imageUrl || q.image_url}`) : null,
         selectedOptions: q.selectedOptions || [],
         options: (q.options || []).map(opt => ({
           ...opt,
@@ -1406,7 +1406,7 @@ function StudentQuizContent() {
                 onClick={handleToggleFlag}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   currentQ.isFlagged
-                    ? "bg-rose-50 dark:bg-rose-900/200 border-rose-500 text-white shadow-sm"
+                    ? "bg-rose-500 dark:bg-rose-600 border-rose-500 text-white shadow-sm"
                     : "bg-white dark:bg-slate-900 border-slate-200 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:bg-rose-900/20"
                 }`}
               >
