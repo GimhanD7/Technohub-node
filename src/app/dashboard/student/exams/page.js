@@ -22,9 +22,19 @@ export default function StudentExamHallPage() {
 
   const getDurationMinutes = (startTime, endTime) => {
     if (!startTime || !endTime) return 0;
-    const start = new Date(startTime.replace(/-/g, "/")).getTime();
-    const end = new Date(endTime.replace(/-/g, "/")).getTime();
+    const start = new Date(startTime).getTime();
+    const end = new Date(endTime).getTime();
     return Math.max(0, Math.round((end - start) / (1000 * 60)));
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const formatTime = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   };
 
   const loadQuizzes = useCallback(async (userId) => {
@@ -99,7 +109,7 @@ export default function StudentExamHallPage() {
 
   return (
     <div className="max-w-7xl mx-auto md:pb-12 h-full flex flex-col md:block relative">
-      
+
       {/* =========================================
           DESKTOP HEADER (hidden on small screens)
       ========================================= */}
@@ -121,7 +131,7 @@ export default function StudentExamHallPage() {
             <ClipboardList className="w-6 h-6 text-white" />
           </div>
         </div>
-        
+
         {/* Decorative background elements */}
         <div className="absolute top-[-50px] right-[-20px] w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-[-30px] left-[-30px] w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
@@ -144,11 +154,10 @@ export default function StudentExamHallPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2.5 text-[13px] rounded-lg transition-all capitalize whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                  isActiveTab
+                className={`flex-1 py-2.5 text-[13px] rounded-lg transition-all capitalize whitespace-nowrap flex items-center justify-center gap-1.5 ${isActiveTab
                     ? "bg-white dark:bg-slate-700 text-primary font-bold shadow-sm"
                     : "text-slate-500 dark:text-slate-400 font-medium hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
+                  }`}
               >
                 {tab}
                 <span className={`px-2 py-0.5 rounded-full text-[10px] ${isActiveTab ? 'bg-primary/10 text-primary' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
@@ -176,129 +185,152 @@ export default function StudentExamHallPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
             {(activeTab === "active" ? quizzes.active : activeTab === "upcoming" ? quizzes.upcoming : quizzes.past).map((quiz) => (
-            <div
-              key={quiz.id}
-              className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden group"
-            >
-              {/* Header */}
-              <div className={`px-5 py-4 border-b border-gray-100 dark:border-slate-800/50 ${parseFloat(quiz.fee) > 0 ? "bg-amber-50/50 dark:bg-amber-900/10" : "bg-emerald-50/50 dark:bg-emerald-900/10"}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="text-[15px] font-bold text-slate-800 dark:text-white line-clamp-2 leading-tight">
-                      {quiz.title}
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-1 capitalize">{activeTab} &middot; Exam #{quiz.id}</p>
-                  </div>
-                  <div className="shrink-0">
-                    {parseFloat(quiz.fee) > 0 ? (
-                      <span className={`px-3 py-1.5 rounded-lg text-[14px] md:text-[15px] font-black flex items-center gap-1.5 shadow-sm border ${quiz.isPaid
-                        ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
-                        : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
-                        }`}>
-                        {!quiz.isPaid && <Lock className="w-4 h-4" />}
-                        {quiz.isPaid ? "PAID" : `LKR ${parseFloat(quiz.fee).toFixed(0)}`}
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1.5 rounded-lg text-[14px] md:text-[15px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
-                        FREE
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 flex-1 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
-                    <Clock className="w-4 h-4 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 font-medium">Duration</p>
-                    <p className="text-[13px] font-bold text-slate-700 dark:text-white">{getDurationMinutes(quiz.startTime, quiz.endTime)} mins</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                    <ClipboardList className="w-4 h-4 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 font-medium">Questions</p>
-                    <p className="text-[13px] font-bold text-slate-700 dark:text-white">{quiz.questionCount} Qs</p>
-                  </div>
-                </div>
-
-                {quiz.attempt && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded bg-slate-50 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                      <UserCheck className="w-4 h-4 text-slate-500 dark:text-gray-400" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-medium">Status</p>
-                      <p className="text-[13px] font-bold">
-                        {quiz.attempt.isSubmitted ? (
-                          <span className="text-green-600 dark:text-green-400">Grade: {quiz.attempt.score}</span>
-                        ) : (
-                          <span className="text-amber-500 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> In Progress
+              <div
+                key={quiz.id}
+                className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden group"
+              >
+                {/* Header */}
+                <div className={`px-5 py-4 border-b border-gray-100 dark:border-slate-800/50 ${parseFloat(quiz.fee) > 0 ? "bg-amber-50/50 dark:bg-amber-900/10" : "bg-emerald-50/50 dark:bg-emerald-900/10"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-[15px] font-bold text-slate-800 dark:text-white line-clamp-2 leading-tight">
+                        {quiz.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <p className="text-[11px] text-slate-500 dark:text-gray-400 capitalize">
+                          {activeTab} &middot; Exam #{quiz.id}
+                        </p>
+                        {quiz.startTime && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900/5 dark:bg-white/10 text-[11px] font-bold text-slate-800 dark:text-white">
+                            {formatDate(quiz.startTime)}
                           </span>
                         )}
-                      </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      {parseFloat(quiz.fee) > 0 ? (
+                        <span className={`px-3 py-1.5 rounded-lg text-[14px] md:text-[15px] font-black flex items-center gap-1.5 shadow-sm border ${quiz.isPaid
+                          ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
+                          : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
+                          }`}>
+                          {!quiz.isPaid && <Lock className="w-4 h-4" />}
+                          {quiz.isPaid ? "PAID" : `LKR ${parseFloat(quiz.fee).toFixed(0)}`}
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1.5 rounded-lg text-[14px] md:text-[15px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                          FREE
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
-
-                <div className="border-t border-gray-100 dark:border-slate-800/50 pt-3 mt-4">
-                  <p className="text-[10px] text-slate-400 font-medium">Start Time</p>
-                  <p className="text-[12px] font-semibold text-slate-700 dark:text-white">{quiz.startTime}</p>
                 </div>
-              </div>
 
-              {/* Footer */}
-              <div className="px-5 pb-5">
-                {activeTab === "past" ? (
-                  quiz.attempt?.isSubmitted ? (
+                {/* Body */}
+                <div className="p-5 flex-1 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-medium">Duration</p>
+                      <p className="text-[13px] font-bold text-slate-700 dark:text-white">{getDurationMinutes(quiz.startTime, quiz.endTime)} mins</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                      <ClipboardList className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-medium">Questions</p>
+                      <p className="text-[13px] font-bold text-slate-700 dark:text-white">{quiz.questionCount} Qs</p>
+                    </div>
+                  </div>
+
+                  {quiz.attempt && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded bg-slate-50 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                        <UserCheck className="w-4 h-4 text-slate-500 dark:text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-medium">Status</p>
+                        <p className="text-[13px] font-bold">
+                          {quiz.attempt.isSubmitted ? (
+                            <span className="text-green-600 dark:text-green-400">Grade: {quiz.attempt.score}</span>
+                          ) : (
+                            <span className="text-amber-500 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> In Progress
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t border-gray-100 dark:border-slate-800/50 pt-3 mt-4">
+                    <p className="text-[10px] text-slate-400 font-medium mb-2">Exam Window</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 text-center">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Start</p>
+                        <p className="text-[15px] font-black text-slate-900 dark:text-white tabular-nums leading-tight mt-0.5">
+                          {formatTime(quiz.startTime)}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
+                      <div className="flex-1 text-center">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">End</p>
+                        <p className="text-[15px] font-black text-slate-900 dark:text-white tabular-nums leading-tight mt-0.5">
+                          {formatTime(quiz.endTime)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-5 pb-5">
+                  {activeTab === "past" ? (
+                    quiz.attempt?.isSubmitted ? (
+                      <Link href={`/home/exam-hall/quiz?id=${quiz.id}`} className="block">
+                        <Button className="w-full text-[12px] h-10 rounded-lg flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white">
+                          Review Standings
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
+                    ) : (
+                      <div className="w-full h-10 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex items-center justify-center gap-1.5 text-[12px] text-gray-400 font-bold cursor-not-allowed">
+                        <Lock className="w-3.5 h-3.5" />
+                        Exam Ended
+                      </div>
+                    )
+                  ) : !quiz.isPaid ? (
+                    <Button
+                      onClick={() => handleUnlockClick(quiz)}
+                      className="w-full text-[12px] h-10 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      Unlock Exam
+                    </Button>
+                  ) : (
                     <Link href={`/home/exam-hall/quiz?id=${quiz.id}`} className="block">
-                      <Button className="w-full text-[12px] h-10 rounded-lg flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white">
-                        Review Standings
+                      <Button className="w-full text-[12px] h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5">
+                        {activeTab === "active" ? (
+                          quiz.attempt?.isSubmitted ? "Review Results" : "Start Exam"
+                        ) : (
+                          "Join Lobby"
+                        )}
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
-                  ) : (
-                    <div className="w-full h-10 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex items-center justify-center gap-1.5 text-[12px] text-gray-400 font-bold cursor-not-allowed">
-                      <Lock className="w-3.5 h-3.5" />
-                      Exam Ended
-                    </div>
-                  )
-                ) : !quiz.isPaid ? (
-                  <Button
-                    onClick={() => handleUnlockClick(quiz)}
-                    className="w-full text-[12px] h-10 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    Unlock Exam
-                  </Button>
-                ) : (
-                  <Link href={`/home/exam-hall/quiz?id=${quiz.id}`} className="block">
-                    <Button className="w-full text-[12px] h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5">
-                      {activeTab === "active" ? (
-                        quiz.attempt?.isSubmitted ? "Review Results" : "Start Exam"
-                      ) : (
-                        "Join Lobby"
-                      )}
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
-                  </Link>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
       </div>
 
-      
+
 
       {selectedQuizForUnlock && (
         <CustomDialog

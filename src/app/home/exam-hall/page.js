@@ -29,11 +29,32 @@ export default function ExamHallPage() {
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Safely parses either an ISO string ("2026-07-18T09:16:00.000Z")
+  // or a space-separated string ("2026-07-18 09:16:00") — Safari can't
+  // parse the latter without swapping dashes for slashes, but doing that
+  // to an ISO string breaks it and produces Invalid Date / NaN.
+  const parseDate = (value) => {
+    if (!value) return null;
+    const isIso = value.includes("T");
+    const normalized = isIso ? value : value.replace(/-/g, "/");
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   const getDurationMinutes = (startTime, endTime) => {
-    if (!startTime || !endTime) return 0;
-    const start = new Date(startTime.replace(/-/g, "/")).getTime();
-    const end = new Date(endTime.replace(/-/g, "/")).getTime();
-    return Math.max(0, Math.round((end - start) / (1000 * 60)));
+    const start = parseDate(startTime);
+    const end = parseDate(endTime);
+    if (!start || !end) return 0;
+    return Math.max(0, Math.round((end.getTime() - start.getTime()) / (1000 * 60)));
+  };
+
+  const formatDateParts = (value) => {
+    const d = parseDate(value);
+    if (!d) return { date: "—", time: "—" };
+    return {
+      date: d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+      time: d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
+    };
   };
 
   const loadQuizzes = useCallback(async (userId) => {
@@ -226,7 +247,17 @@ hover:-translate-y-1
                         <h3 className="text-[16px] font-extrabold text-slate-850 tracking-tight group-hover:text-primary transition-colors line-clamp-2 leading-snug">
                           {quiz.title}
                         </h3>
-                        <p className="text-[11px] text-slate-500 dark:text-white mt-0.5 capitalize">{activeTab} &middot; Exam #{quiz.id}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <p className="text-[11px] text-slate-500 dark:text-white capitalize">
+                            {activeTab} &middot; Exam #{quiz.id}
+                          </p>
+                          {formatDateParts(quiz.startTime).date !== "—" && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900/5 dark:bg-white/10 text-[11px] font-bold text-slate-800 dark:text-white">
+                              <Calendar className="w-3 h-3" />
+                              {formatDateParts(quiz.startTime).date}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="shrink-0">
                         {parseFloat(quiz.fee) > 0 ? (
@@ -301,8 +332,25 @@ hover:-translate-y-1
                     )}
 
                     <div className="border-t border-slate-100 dark:border-slate-800/50 pt-4">
-                      <p className="text-[10px] text-slate-400 font-medium">Start Time</p>
-                      <p className="text-[13px] font-bold text-slate-800 dark:text-white">{quiz.startTime}</p>
+                      <p className="text-[10px] text-slate-400 font-medium mb-2 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-350" />
+                        Exam Window
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 text-center">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Start</p>
+                          <p className="text-[15px] font-black text-slate-900 dark:text-white tabular-nums leading-tight mt-0.5">
+                            {formatDateParts(quiz.startTime).time}
+                          </p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
+                        <div className="flex-1 text-center">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">End</p>
+                          <p className="text-[15px] font-black text-slate-900 dark:text-white tabular-nums leading-tight mt-0.5">
+                            {formatDateParts(quiz.endTime).time}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
