@@ -147,7 +147,7 @@ export default function TeacherQuizSubmissions() {
             <Clock className="w-5 h-5 text-purple-500" />
           </div>
           <p className="text-sm text-slate-800 dark:text-white">
-            {quiz.startTime?.split(" ")[0]} to {quiz.endTime?.split(" ")[0]}
+            {quiz.startTime ? new Date(quiz.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'} to {quiz.endTime ? new Date(quiz.endTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
           </p>
         </div>
       </div>

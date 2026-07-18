@@ -52,8 +52,8 @@ function StudentQuizContent() {
 
   const getDurationMinutes = (startTime, endTime) => {
     if (!startTime || !endTime) return 0;
-    const start = new Date(startTime.replace(/-/g, "/")).getTime();
-    const end = new Date(endTime.replace(/-/g, "/")).getTime();
+    const start = new Date(startTime).getTime();
+    const end = new Date(endTime).getTime();
     return Math.max(0, Math.round((end - start) / (1000 * 60)));
   };
 
@@ -186,7 +186,16 @@ function StudentQuizContent() {
 
     if (data.success) {
       setQuiz(data.quiz);
-      setQuestions(data.quiz.questions);
+      setQuestions((data.quiz.questions || []).map(q => ({ 
+        ...q, 
+        text: q.text || q.question_text,
+        imageUrl: q.imageUrl || q.image_url,
+        selectedOptions: q.selectedOptions || [],
+        options: (q.options || []).map(opt => ({
+          ...opt,
+          text: opt.text || opt.option_text
+        }))
+      })));
       
       const serverTime = new Date(data.quiz.now).getTime();
       const startT = new Date(data.quiz.startTime).getTime();
@@ -242,7 +251,7 @@ function StudentQuizContent() {
       const loadLobbyStudents = async () => {
         const data = await fetchApi(`/quiz/get_lobby?quizId=${quizId}`);
         if (data.success) {
-          setLobbyUsers(data.students);
+          setLobbyUsers(data.students || []);
         }
       };
 
@@ -871,7 +880,11 @@ function StudentQuizContent() {
             <div className="grid grid-cols-2 gap-3.5 text-left text-xs">
               <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Start Time</p>
-                <p className="font-bold text-slate-700 dark:text-slate-200 mt-1 truncate">{quiz.startTime.split(' ')[1] || quiz.startTime}</p>
+                <p className="font-bold text-slate-700 dark:text-slate-200 mt-1 truncate">
+                  {quiz.startTime
+                    ? new Date(quiz.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+                    : '—'}
+                </p>
               </div>
               <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Duration</p>

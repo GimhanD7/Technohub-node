@@ -196,7 +196,7 @@ function PodiumColumn({ entry, rank, order }) {
       <div
         className={`w-full max-w-[160px] ${PEDESTAL_HEIGHT[rank]} rounded-t-xl bg-gradient-to-br from-[#0f172a] via-[#1e3a8a] to-[#1d4ed8] shadow-lg flex flex-col items-center justify-end pb-4 px-3`}
       >
-        <p className="text-white font-bold text-sm sm:text-base text-center truncate w-full">
+        <p className="text-white font-bold text-sm sm:text-base text-center line-clamp-3 leading-tight w-full">
           {entry.fullName}
         </p>
         <p className="text-[#eab308] font-semibold text-xs mt-0.5">{entry.score} pts</p>

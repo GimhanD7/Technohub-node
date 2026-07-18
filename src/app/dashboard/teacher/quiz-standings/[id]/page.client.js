@@ -184,7 +184,16 @@ export default function StudentQuizPage() {
 
     if (data.success) {
       setQuiz(data.quiz);
-      setQuestions(data.quiz.questions);
+      setQuestions((data.quiz.questions || []).map(q => ({
+        ...q,
+        text: q.text || q.question_text,
+        imageUrl: q.imageUrl || q.image_url,
+        selectedOptions: q.selectedOptions || [],
+        options: (q.options || []).map(opt => ({
+          ...opt,
+          text: opt.text || opt.option_text
+        }))
+      })));
       
       const serverTime = new Date(data.quiz.now).getTime();
       const startT = new Date(data.quiz.startTime).getTime();

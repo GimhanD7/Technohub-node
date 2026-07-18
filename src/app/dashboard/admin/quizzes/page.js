@@ -348,9 +348,9 @@ export default function AdminQuizzesPage() {
                       <td className="py-3 px-5">
                         <div className="flex items-center gap-1.5 text-slate-700 dark:text-white">
                           <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                          <span className="text-[12px]">{quiz.startTime}</span>
+                          <span className="text-[12px]">{quiz.startTime ? new Date(quiz.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</span>
                         </div>
-                        <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 ml-5">to {quiz.endTime}</div>
+                        <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 ml-5">to {quiz.endTime ? new Date(quiz.endTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</div>
                       </td>
                       <td className="py-3 px-5 hidden lg:table-cell">
                         <span className="px-2 py-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 rounded text-[11px] font-medium border border-gray-200 dark:border-slate-700">

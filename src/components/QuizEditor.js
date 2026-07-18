@@ -80,7 +80,9 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
       // Prisma returns ISO strings like 2026-07-18T08:32:00.000Z
       const formatTime = (timeStr) => {
         if (!timeStr) return "";
-        return new Date(timeStr).toISOString().substring(0, 16);
+        const d = new Date(timeStr);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       };
       
       setStartTime(formatTime(data.quiz.start_time));

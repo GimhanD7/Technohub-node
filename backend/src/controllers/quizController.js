@@ -80,7 +80,15 @@ exports.listQuizzes = async (req, res) => {
       } else if (now < qStart) {
         upcoming.push(formattedQuiz);
       } else {
-        past.push(formattedQuiz);
+        // For past quizzes: only include if the student has actually submitted an attempt.
+        // If no userId is provided (e.g., public/admin/teacher view), show all past quizzes.
+        if (uid > 0) {
+          if (attempt && Boolean(attempt.is_submitted)) {
+            past.push(formattedQuiz);
+          }
+        } else {
+          past.push(formattedQuiz);
+        }
       }
     }
 
@@ -334,11 +342,19 @@ exports.getLobby = async (req, res) => {
       _count: undefined
     };
 
-    res.json({ success: true, quiz: formatted });
+    // Fetch students who have joined (have an active attempt) for the lobby list
+    const activeAttempts = await prisma.quiz_attempts.findMany({
+      where: { quiz_id: parseInt(quizId), is_submitted: false },
+      include: { users: { select: { full_name: true } } }
+    });
+    const students = activeAttempts.map(a => ({ fullName: a.users?.full_name || 'Unknown' }));
+
+    res.json({ success: true, quiz: formatted, students });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 exports.startAttempt = async (req, res) => {
   try {
@@ -640,6 +656,7 @@ exports.getRankings = async (req, res) => {
 
       return {
         rank: displayRank,
+        userId: a.user_id,          // <-- expose user_id so frontend can highlight the current student
         score: a.score,
         submitted_at: a.submitted_at,
         fullName: a.users?.full_name || 'Unknown',
