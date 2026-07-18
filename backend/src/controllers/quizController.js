@@ -11,14 +11,35 @@ exports.listQuizzes = async (req, res) => {
     const { userId } = req.query;
     const uid = userId ? parseInt(userId) : 0;
 
-    const quizzes = await prisma.$queryRaw`
-      SELECT q.*, u.full_name AS creator_name, COUNT(qs.id) AS question_count 
-      FROM quizzes q 
-      LEFT JOIN users u ON q.created_by = u.id
-      LEFT JOIN questions qs ON q.id = qs.quiz_id
-      GROUP BY q.id 
-      ORDER BY q.start_time DESC
-    `;
+    let userRole = 'student';
+    if (uid > 0) {
+      const user = await prisma.users.findUnique({ where: { id: uid }, select: { role: true } });
+      if (user) {
+        userRole = user.role;
+      }
+    }
+
+    let quizzes;
+    if (userRole === 'teacher') {
+      quizzes = await prisma.$queryRaw`
+        SELECT q.*, u.full_name AS creator_name, COUNT(qs.id) AS question_count 
+        FROM quizzes q 
+        LEFT JOIN users u ON q.created_by = u.id
+        LEFT JOIN questions qs ON q.id = qs.quiz_id
+        WHERE q.created_by = ${uid}
+        GROUP BY q.id 
+        ORDER BY q.start_time DESC
+      `;
+    } else {
+      quizzes = await prisma.$queryRaw`
+        SELECT q.*, u.full_name AS creator_name, COUNT(qs.id) AS question_count 
+        FROM quizzes q 
+        LEFT JOIN users u ON q.created_by = u.id
+        LEFT JOIN questions qs ON q.id = qs.quiz_id
+        GROUP BY q.id 
+        ORDER BY q.start_time DESC
+      `;
+    }
 
     const active = [];
     const upcoming = [];
@@ -27,7 +48,7 @@ exports.listQuizzes = async (req, res) => {
 
     for (const quiz of quizzes) {
       let attempt = null;
-      if (uid > 0) {
+      if (uid > 0 && userRole === 'student') {
         attempt = await prisma.quiz_attempts.findFirst({
           where: { quiz_id: quiz.id, user_id: uid }
         });
@@ -37,15 +58,12 @@ exports.listQuizzes = async (req, res) => {
       const fee = quiz.fee ? parseFloat(quiz.fee) : 0;
 
       if (fee > 0) {
-        if (uid > 0) {
-          const user = await prisma.users.findUnique({ where: { id: uid }, select: { role: true } });
-          if (user && user.role === 'student') {
-            const payment = await prisma.quiz_payments.findFirst({
-              where: { quiz_id: quiz.id, user_id: uid }
-            });
-            if (!payment) {
-              isPaid = false;
-            }
+        if (uid > 0 && userRole === 'student') {
+          const payment = await prisma.quiz_payments.findFirst({
+            where: { quiz_id: quiz.id, user_id: uid }
+          });
+          if (!payment) {
+            isPaid = false;
           }
         } else {
           isPaid = false;
@@ -81,8 +99,8 @@ exports.listQuizzes = async (req, res) => {
         upcoming.push(formattedQuiz);
       } else {
         // For past quizzes: only include if the student has actually submitted an attempt.
-        // If no userId is provided (e.g., public/admin/teacher view), show all past quizzes.
-        if (uid > 0) {
+        // For teachers and admins, show all past quizzes.
+        if (userRole === 'student' && uid > 0) {
           if (attempt && Boolean(attempt.is_submitted)) {
             past.push(formattedQuiz);
           }
