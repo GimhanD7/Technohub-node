@@ -117,7 +117,7 @@ exports.recharge = async (req, res) => {
         type: 'credit',
         status: 'pending',
         description: `Bank Deposit - Ref: ${reference_number || 'N/A'}`,
-        slip_url: slipUrl
+        payment_slip_url: slipUrl
       }
     });
 
