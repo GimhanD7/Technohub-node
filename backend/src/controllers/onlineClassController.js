@@ -81,7 +81,15 @@ exports.getClasses = async (req, res) => {
       } else if (now < cStart) {
         upcoming.push(cls);
       } else {
-        past.push(cls);
+        // For past classes in student view: only show if the student was enrolled.
+        // For admin/teacher views (no role=student), show all past classes.
+        if (role === 'student' && userId) {
+          if (enrolledIds.has(c.id)) {
+            past.push(cls);
+          }
+        } else {
+          past.push(cls);
+        }
       }
     }
 

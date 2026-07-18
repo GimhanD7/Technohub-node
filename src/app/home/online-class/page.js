@@ -38,8 +38,10 @@ export default function OnlineClassPage() {
   const formatClassDateTime = (dateTimeStr, durationMins) => {
     if (!dateTimeStr) return { date: "N/A", timeRange: "N/A" };
 
-    const start = new Date(dateTimeStr.replace(/-/g, "/"));
-    const end = new Date(start.getTime() + durationMins * 60 * 1000);
+    const start = new Date(dateTimeStr);
+    if (isNaN(start.getTime())) return { date: "N/A", timeRange: "N/A" };
+
+    const end = new Date(start.getTime() + (durationMins || 60) * 60 * 1000);
 
     const yyyy = start.getFullYear();
     const mm = String(start.getMonth() + 1).padStart(2, '0');

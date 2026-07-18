@@ -450,8 +450,9 @@ export default function StudentDashboard() {
 
   const formatClassDateTime = (dateTimeStr, durationMins) => {
     if (!dateTimeStr) return { date: "N/A", timeRange: "N/A" };
-    const start = new Date(dateTimeStr.replace(/-/g, "/"));
-    const end = new Date(start.getTime() + durationMins * 60 * 1000);
+    const start = new Date(dateTimeStr);
+    if (isNaN(start.getTime())) return { date: "N/A", timeRange: "N/A" };
+    const end = new Date(start.getTime() + (durationMins || 60) * 60 * 1000);
     const yyyy = start.getFullYear();
     const mm = String(start.getMonth() + 1).padStart(2, '0');
     const dd = String(start.getDate()).padStart(2, '0');
@@ -483,8 +484,8 @@ export default function StudentDashboard() {
     }
   }, []);
 
-  const loadClasses = useCallback(async () => {
-    const data = await fetchApi("/online_class/manage");
+  const loadClasses = useCallback(async (userId) => {
+    const data = await fetchApi(`/online_class/manage?userId=${userId}&role=student`);
     setIsLoadingClasses(false);
 
     if (data.success) {
@@ -516,7 +517,7 @@ export default function StudentDashboard() {
       const t = setTimeout(() => {
         loadDashboardSummary(parsedUser.id);
         loadQuizzes(parsedUser.id);
-        loadClasses();
+        loadClasses(parsedUser.id);
       }, 0);
       return () => clearTimeout(t);
     }
@@ -1004,21 +1005,28 @@ export default function StudentDashboard() {
             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
               <div className="flex gap-2 border-b border-slate-50 pb-1.5 overflow-x-auto">
                 {[
-                  { id: "ongoing", label: "Ongoing" },
+                  { id: "ongoing",  label: "Live Now" },
                   { id: "upcoming", label: "Upcoming" },
-                  { id: "past", label: "Completed" }
-                ].map((sub) => (
-                  <button
-                    key={sub.id}
-                    onClick={() => setClassSubTab(sub.id)}
-                    className={`px-4 py-2 text-xs font-bold border-b-2 capitalize transition-all cursor-pointer whitespace-nowrap ${classSubTab === sub.id
-                        ? "border-secondary text-primary font-black scale-100"
-                        : "border-transparent text-slate-400 hover:text-slate-800"
+                  { id: "past",     label: "Attended" }
+                ].map((sub) => {
+                  const count =
+                    sub.id === "ongoing"  ? (classes.ongoing?.filter(c => c.is_enrolled).length || 0) :
+                    sub.id === "upcoming" ? (classes.upcoming?.filter(c => c.is_enrolled).length || 0) :
+                    (classes.past?.length || 0);
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => setClassSubTab(sub.id)}
+                      className={`px-4 py-2 text-xs font-bold border-b-2 capitalize transition-all cursor-pointer whitespace-nowrap ${
+                        classSubTab === sub.id
+                          ? "border-blue-500 text-blue-600 font-black dark:border-blue-400 dark:text-blue-400"
+                          : "border-transparent text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                       }`}
-                  >
-                    {sub.label} Classes ({classes[sub.id]?.length || 0})
-                  </button>
-                ))}
+                    >
+                      {sub.label} ({count})
+                    </button>
+                  );
+                })}
               </div>
               <Link href="/home/online-class">
                 <span className="flex items-center gap-1.5 text-primary text-[12px] font-bold hover:underline cursor-pointer group">
@@ -1040,85 +1048,248 @@ export default function StudentDashboard() {
                 <RefreshCw className="w-7 h-7 animate-spin text-primary mb-3" />
                 <p className="text-xs font-semibold">Retrieving online lectures...</p>
               </div>
-            ) : (classes[classSubTab] || []).length === 0 ? (
-              <div className="py-16 text-center text-slate-400 border border-dashed border-slate-200 rounded-3xl p-6">
-                <Video className="w-12 h-12 mx-auto text-slate-200 mb-3" />
-                <p className="text-xs font-bold text-slate-700">No {classSubTab} classes scheduled</p>
-                <p className="text-[10px] text-slate-400 mt-1">Please check the calendar schedule or query your batch representatives.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(classes[classSubTab] || []).map((cls) => {
-                  const { date, timeRange } = formatClassDateTime(cls.date_time, cls.duration);
-                  return (
-                    <div
-                      key={cls.id}
-                      className={`bg-white rounded-3xl border flex flex-col justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group ${classSubTab === "ongoing" ? "border-red-200 ring-1 ring-red-50/50 shadow-md shadow-red-500/5" : "border-slate-150"
-                        }`}
-                    >
-                      <div className="p-5 bg-slate-50/60 border-b border-slate-100">
-                        <div className="flex justify-between items-center mb-2.5">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
-                            {getCategoryFromTitle(cls.title)}
-                          </span>
-                          {classSubTab === "ongoing" && (
-                            <span className="flex items-center gap-1 text-[9px] font-extrabold text-red-650 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded-full border border-red-150 animate-pulse-slow">
-                              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span> Live Now
+            ) : classSubTab === "past" ? (
+              /* ── Attended (past enrolled) ── */
+              (classes.past || []).length === 0 ? (
+                <div className="py-16 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-6">
+                  <Video className="w-12 h-12 mx-auto text-slate-200 mb-3" />
+                  <p className="text-xs font-bold text-slate-700 dark:text-white">No attended classes yet</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Classes you were enrolled in will appear here after they end.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {(classes.past || []).map((cls) => {
+                    const { date, timeRange } = formatClassDateTime(cls.date_time, cls.duration);
+                    return (
+                      <div key={cls.id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-150 dark:border-slate-700 flex flex-col justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group">
+                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 dark:from-blue-900/10 dark:to-indigo-900/5">
+                          <div className="flex justify-between items-center mb-2.5">
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                              {getCategoryFromTitle(cls.title)}
                             </span>
-                          )}
-                        </div>
-                        <h4 className="text-[13px] font-bold text-slate-800 leading-snug min-h-[38px] line-clamp-2 group-hover:text-primary transition-colors">
-                          {cls.title}
-                        </h4>
-                      </div>
-
-                      <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600">
-                        <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-50">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary shrink-0 text-white flex items-center justify-center font-bold text-xs shadow-inner">
-                            {cls.creator_name ? cls.creator_name.charAt(0).toUpperCase() : "I"}
+                            <span className="flex items-center gap-1 text-[9px] font-extrabold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> Attended
+                            </span>
                           </div>
-                          <div>
-                            <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">Instructor</p>
-                            <span className="font-bold text-slate-700 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
-                          </div>
+                          <h4 className="text-[13px] font-bold text-slate-800 dark:text-white leading-snug min-h-[38px] line-clamp-2 group-hover:text-blue-600 transition-colors">
+                            {cls.title}
+                          </h4>
+                          <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-md bg-slate-900/5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                            Ended: {date}
+                          </span>
                         </div>
 
-                        <div className="flex items-start gap-2.5">
-                          <Calendar className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                          <div>
-                            <p className="font-bold text-slate-800 leading-none mb-0.5">{date}</p>
-                            <p className="text-[9px] text-slate-450 font-medium">{timeRange} ({cls.duration} mins)</p>
+                        <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600 dark:text-slate-400">
+                          <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-50 dark:border-slate-800">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 shrink-0 text-white flex items-center justify-center font-bold text-xs shadow-inner">
+                              {cls.creator_name ? cls.creator_name.charAt(0).toUpperCase() : "I"}
+                            </div>
+                            <div>
+                              <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">Instructor</p>
+                              <span className="font-bold text-slate-700 dark:text-slate-200 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-2.5">
+                            <Calendar className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-bold text-slate-800 dark:text-white leading-none mb-0.5">{date}</p>
+                              <p className="text-[9px] text-slate-400 font-medium">{timeRange} ({cls.duration} mins)</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5">
+                            <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="font-medium">Platform: <strong className="text-slate-800 dark:text-white">{cls.platform || "Zoom Meetings"}</strong></span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2.5">
-                          <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span className="text-slate-605 font-medium">Platform: <strong className="text-slate-800 font-bold">{cls.platform || "Zoom Meetings"}</strong></span>
-                        </div>
-                      </div>
-
-                      <div className="p-5 pt-0">
-                        {classSubTab === "ongoing" ? (
-                          <a href={cls.meeting_link} target="_blank" rel="noopener noreferrer" className="w-full inline-block">
-                            <Button size="sm" className="w-full text-[11px] h-9 bg-gradient-to-r from-red-500 to-amber-500 hover:opacity-95 text-white flex items-center justify-center gap-1.5 font-bold rounded-xl shadow-sm border-none">
-                              <Video className="w-3.5 h-3.5 animate-pulse" /> Join Live Lecture
-                            </Button>
-                          </a>
-                        ) : classSubTab === "upcoming" ? (
-                          <div className="w-full py-2 bg-slate-50 border border-slate-150/70 rounded-xl text-center text-slate-400 font-bold text-[10px] select-none">
-                            Locks Until Scheduled Time
-                          </div>
-                        ) : (
-                          <div className="w-full py-2 bg-gray-50 border border-gray-150 rounded-xl text-center text-gray-400 font-bold text-[10px] select-none uppercase tracking-wider">
+                        <div className="px-5 pb-5">
+                          <div className="w-full py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-150 dark:border-slate-700 rounded-xl text-center text-slate-400 font-bold text-[10px] select-none uppercase tracking-wider">
                             Session Ended
                           </div>
-                        )}
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (() => {
+              /* ── Ongoing / Upcoming — only enrolled classes ── */
+              const allInTab = (classes[classSubTab] || []);
+              const enrolledInTab = allInTab.filter(c => c.is_enrolled);
+              const unenrolledInTab = allInTab.filter(c => !c.is_enrolled);
+
+              return (
+                <>
+                  {enrolledInTab.length === 0 && unenrolledInTab.length === 0 ? (
+                    <div className="py-16 text-center text-slate-400 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-6">
+                      <Video className="w-12 h-12 mx-auto text-slate-200 mb-3" />
+                      <p className="text-xs font-bold text-slate-700 dark:text-white">No {classSubTab === "ongoing" ? "live" : classSubTab} classes</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Enroll in a class to see it appear here.</p>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Enrolled classes */}
+                      {enrolledInTab.length > 0 && (
+                        <div>
+                          {unenrolledInTab.length > 0 && (
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                              <UserCheck className="w-3.5 h-3.5 text-emerald-500" /> Enrolled Classes
+                            </p>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {enrolledInTab.map((cls) => {
+                              const { date, timeRange } = formatClassDateTime(cls.date_time, cls.duration);
+                              return (
+                                <div
+                                  key={cls.id}
+                                  className={`bg-white rounded-3xl border flex flex-col justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group ${
+                                    classSubTab === "ongoing" ? "border-red-200 ring-1 ring-red-50/50 shadow-md shadow-red-500/5" : "border-slate-150"
+                                  }`}
+                                >
+                                  <div className="p-5 bg-slate-50/60 border-b border-slate-100">
+                                    <div className="flex justify-between items-center mb-2.5">
+                                      <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                        {getCategoryFromTitle(cls.title)}
+                                      </span>
+                                      {classSubTab === "ongoing" ? (
+                                        <span className="flex items-center gap-1 text-[9px] font-extrabold text-red-600 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded-full border border-red-150 animate-pulse-slow">
+                                          <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span> Live Now
+                                        </span>
+                                      ) : (
+                                        <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                          <CheckCircle2 className="w-2.5 h-2.5" /> Enrolled
+                                        </span>
+                                      )}
+                                    </div>
+                                    <h4 className="text-[13px] font-bold text-slate-800 leading-snug min-h-[38px] line-clamp-2 group-hover:text-primary transition-colors">
+                                      {cls.title}
+                                    </h4>
+                                  </div>
+
+                                  <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600">
+                                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-50">
+                                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary shrink-0 text-white flex items-center justify-center font-bold text-xs shadow-inner">
+                                        {cls.creator_name ? cls.creator_name.charAt(0).toUpperCase() : "I"}
+                                      </div>
+                                      <div>
+                                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">Instructor</p>
+                                        <span className="font-bold text-slate-700 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-2.5">
+                                      <Calendar className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                                      <div>
+                                        <p className="font-bold text-slate-800 leading-none mb-0.5">{date}</p>
+                                        <p className="text-[9px] text-slate-450 font-medium">{timeRange} ({cls.duration} mins)</p>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2.5">
+                                      <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                      <span className="font-medium">Platform: <strong className="text-slate-800 font-bold">{cls.platform || "Zoom Meetings"}</strong></span>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-5 pt-0">
+                                    {classSubTab === "ongoing" ? (
+                                      <a href={cls.meeting_link} target="_blank" rel="noopener noreferrer" className="w-full inline-block">
+                                        <Button size="sm" className="w-full text-[11px] h-9 bg-gradient-to-r from-red-500 to-amber-500 hover:opacity-95 text-white flex items-center justify-center gap-1.5 font-bold rounded-xl shadow-sm border-none">
+                                          <Video className="w-3.5 h-3.5 animate-pulse" /> Join Live Lecture
+                                        </Button>
+                                      </a>
+                                    ) : (
+                                      <div className="w-full py-2 bg-slate-50 border border-slate-150/70 rounded-xl text-center text-slate-400 font-bold text-[10px] select-none">
+                                        Locks Until Scheduled Time
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Other available classes (not enrolled) */}
+                      {unenrolledInTab.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <ClipboardList className="w-3.5 h-3.5 text-blue-400" /> Other Available Classes
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {unenrolledInTab.map((cls) => {
+                              const { date, timeRange } = formatClassDateTime(cls.date_time, cls.duration);
+                              return (
+                                <div
+                                  key={cls.id}
+                                  className="bg-white rounded-3xl border border-slate-150 flex flex-col justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group opacity-80 hover:opacity-100"
+                                >
+                                  <div className="p-5 bg-slate-50/60 border-b border-slate-100">
+                                    <div className="flex justify-between items-center mb-2.5">
+                                      <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                        {getCategoryFromTitle(cls.title)}
+                                      </span>
+                                      {parseFloat(cls.fee) > 0 ? (
+                                        <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                          LKR {parseFloat(cls.fee).toFixed(2)}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                          Free
+                                        </span>
+                                      )}
+                                    </div>
+                                    <h4 className="text-[13px] font-bold text-slate-800 leading-snug min-h-[38px] line-clamp-2 group-hover:text-primary transition-colors">
+                                      {cls.title}
+                                    </h4>
+                                  </div>
+
+                                  <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600">
+                                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-50">
+                                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary shrink-0 text-white flex items-center justify-center font-bold text-xs shadow-inner">
+                                        {cls.creator_name ? cls.creator_name.charAt(0).toUpperCase() : "I"}
+                                      </div>
+                                      <div>
+                                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">Instructor</p>
+                                        <span className="font-bold text-slate-700 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-2.5">
+                                      <Calendar className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                                      <div>
+                                        <p className="font-bold text-slate-800 leading-none mb-0.5">{date}</p>
+                                        <p className="text-[9px] text-slate-450 font-medium">{timeRange} ({cls.duration} mins)</p>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2.5">
+                                      <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                      <span className="font-medium">Platform: <strong className="text-slate-800 font-bold">{cls.platform || "Zoom Meetings"}</strong></span>
+                                    </div>
+                                  </div>
+
+                                  <div className="px-5 pb-5">
+                                    <Link href="/home/online-class" className="w-full block">
+                                      <div className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 transition-opacity text-white text-[11px] font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <Play className="w-3.5 h-3.5" /> View & Enroll
+                                      </div>
+                                    </Link>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
       </div>
