@@ -115,7 +115,15 @@ exports.getQuiz = async (req, res) => {
 
     if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found." });
 
-    res.json({ success: true, quiz });
+    res.json({ 
+      success: true, 
+      quiz: {
+        ...quiz,
+        startTime: quiz.start_time,
+        endTime: quiz.end_time,
+        now: new Date().toISOString()
+      } 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -125,7 +133,6 @@ exports.createQuiz = async (req, res) => {
   try {
     const data = req.body;
 
-    // Detailed validation with specific field info
     const missing = [];
     if (!data.teacherId) missing.push('teacherId');
     if (!data.title) missing.push('title');
@@ -140,13 +147,24 @@ exports.createQuiz = async (req, res) => {
       });
     }
 
+    const start = new Date(data.startTime);
+    const end = new Date(data.endTime);
+    const now = new Date();
+
+    if (start < now) {
+      return res.status(400).json({ success: false, message: "Cannot create a quiz in the past. Please select a future start time." });
+    }
+    if (end <= start) {
+      return res.status(400).json({ success: false, message: "End time must be after the start time." });
+    }
+
     const fee = parseFloat(data.fee) || 0;
 
     const quiz = await prisma.quizzes.create({
       data: {
         created_by: parseInt(data.teacherId),
         title: data.title.trim(),
-        start_time: new Date(data.startTime),
+        start_time: start,
         end_time: new Date(data.endTime),
         fee: fee,
         questions: {
@@ -177,6 +195,25 @@ exports.editQuiz = async (req, res) => {
     const data = req.body;
     if (!data.quizId || !data.title || !data.questions) {
       return res.status(400).json({ success: false, message: "Missing required fields." });
+    }
+
+    // Validate times — prevent saving a quiz with a past start time
+    if (!data.startTime || !data.endTime) {
+      return res.status(400).json({ success: false, message: "Start time and end time are required." });
+    }
+
+    const start = new Date(data.startTime);
+    const end   = new Date(data.endTime);
+    const now   = new Date();
+
+    if (start < now) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot set a quiz start time in the past. Please select a future start time."
+      });
+    }
+    if (end <= start) {
+      return res.status(400).json({ success: false, message: "End time must be after the start time." });
     }
 
     const fee = parseFloat(data.fee) || 0;
@@ -667,46 +704,61 @@ exports.payForQuiz = async (req, res) => {
     if (!userId || !quizId) return res.status(400).json({ success: false, message: "Missing data." });
 
     const quiz = await prisma.quizzes.findUnique({ where: { id: parseInt(quizId) } });
-    if (!quiz || !quiz.is_paid) return res.json({ success: true, message: "Quiz is free." });
+    const fee = quiz ? parseFloat(quiz.fee) : 0;
+    
+    if (!quiz || fee <= 0) return res.json({ success: true, message: "Quiz is free." });
 
-    // Calculate user balance
-    const balanceAgg = await prisma.wallet_transactions.aggregate({
-      where: { user_id: parseInt(userId), status: 'approved' },
-      _sum: { amount: true }
-    });
-    const balance = balanceAgg._sum.amount || 0;
+    const user = await prisma.users.findUnique({ where: { id: parseInt(userId) } });
+    const balance = user ? parseFloat(user.wallet_balance) : 0;
 
-    if (balance < quiz.price) {
-      return res.json({ success: false, message: `Insufficient balance. Quiz costs ${quiz.price} LKR, but your balance is ${balance} LKR.` });
+    if (balance < fee) {
+      return res.json({ success: false, message: `Insufficient balance. Quiz costs ${fee} LKR, but your balance is ${balance} LKR.` });
     }
 
-    // Deduct
-    await prisma.wallet_transactions.create({
-      data: {
-        user_id: parseInt(userId),
-        amount: -quiz.price,
-        type: 'debit',
-        status: 'approved',
-        description: `Paid for quiz: ${quiz.title}`
-      }
-    });
+    await prisma.$transaction(async (tx) => {
+      // Deduct wallet balance
+      await tx.users.update({
+        where: { id: parseInt(userId) },
+        data: { wallet_balance: { decrement: fee } }
+      });
+      
+      // Add wallet transaction
+      await tx.wallet_transactions.create({
+        data: {
+          user_id: parseInt(userId),
+          amount: fee,
+          type: 'debit',
+          status: 'approved',
+          description: `Paid for quiz: ${quiz.title}`
+        }
+      });
+      
+      // Add to quiz_payments
+      await tx.quiz_payments.create({
+        data: {
+          user_id: parseInt(userId),
+          quiz_id: parseInt(quizId),
+          amount: fee
+        }
+      });
 
-    // Record teacher earning (80% by default if not set in teacher_commissions)
-    const comm = await prisma.teacher_commissions.findUnique({ where: { teacher_id: quiz.created_by } });
-    let percentage = 80;
-    if (comm && comm.commission_type === 'percentage') percentage = comm.commission_value;
-    
-    const netEarning = quiz.price * (percentage / 100);
+      // Record teacher earning (80% by default if not set in teacher_commissions)
+      const comm = await tx.teacher_commissions.findUnique({ where: { teacher_id: quiz.created_by } });
+      let percentage = 80;
+      if (comm && comm.commission_type === 'percentage') percentage = parseFloat(comm.commission_value);
+      
+      const netEarning = fee * (percentage / 100);
 
-    await prisma.teacher_earnings_history.create({
-      data: {
-        teacher_id: quiz.created_by,
-        amount: quiz.price,
-        commission_rate: percentage,
-        net_earning: netEarning,
-        source: 'Quiz',
-        source_id: quiz.id
-      }
+      await tx.teacher_earnings_history.create({
+        data: {
+          teacher_id: quiz.created_by,
+          amount: fee,
+          commission_type: 'percentage',
+          commission_value: percentage,
+          net_earning: netEarning,
+          description: `Earning from quiz: ${quiz.title}`
+        }
+      });
     });
 
     res.json({ success: true, message: "Payment successful." });

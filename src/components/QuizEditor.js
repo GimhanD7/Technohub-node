@@ -232,6 +232,10 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
       setErrorMsg("Please select start and end times.");
       return;
     }
+    if (new Date(startTime) <= new Date()) {
+      setErrorMsg("Start time must be in the future. You cannot create or update a quiz with a past start time.");
+      return;
+    }
     if (new Date(endTime) <= new Date(startTime)) {
       setErrorMsg("End time must be after start time.");
       return;
@@ -352,7 +356,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
               >
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center shrink-0">
                   {t.profile_picture ? (
-                    <img src={t.profile_picture} alt={t.full_name} className="w-10 h-10 rounded-full object-cover" />
+                    <img src={t.profile_picture.startsWith('http') ? t.profile_picture : `${BASE_URL}${t.profile_picture}`} alt={t.full_name} className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <User className="w-5 h-5 text-primary" />
                   )}
@@ -452,6 +456,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
               value={startTime} 
               onChange={(e) => setStartTime(e.target.value)} 
               disabled={isReadOnly}
+              min={new Date(Date.now() + 60000).toISOString().substring(0, 16)}
               className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-50 dark:disabled:bg-slate-800/50 bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200"
             />
           </div>
@@ -462,6 +467,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
               value={endTime} 
               onChange={(e) => setEndTime(e.target.value)} 
               disabled={isReadOnly}
+              min={startTime || new Date(Date.now() + 60000).toISOString().substring(0, 16)}
               className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-50 dark:disabled:bg-slate-800/50 bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200"
             />
           </div>
