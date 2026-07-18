@@ -569,37 +569,54 @@ exports.getSubmissions = async (req, res) => {
 exports.getRankings = async (req, res) => {
   try {
     const { quizId } = req.query;
+    if (!quizId) return res.status(400).json({ success: false, message: 'quizId is required.' });
+
+    const qId = parseInt(quizId);
+
     const attempts = await prisma.quiz_attempts.findMany({
-      where: { quiz_id: parseInt(quizId), is_submitted: 1 },
+      where: { quiz_id: qId, is_submitted: true },
       include: { users: { select: { full_name: true, index_number: true } } },
       orderBy: [{ score: 'desc' }, { submitted_at: 'asc' }]
     });
+
+    // Calculate max possible marks for this quiz
+    const questionsAgg = await prisma.questions.aggregate({
+      where: { quiz_id: qId },
+      _sum: { marks: true }
+    });
+    const maxMarks = questionsAgg._sum.marks || 0;
 
     let currentRank = 1;
     let displayRank = 1;
     let prevScore = null;
 
-    const formatted = attempts.map((a, index) => {
+    const formatted = attempts.map((a) => {
       if (prevScore !== null && a.score < prevScore) {
         displayRank = currentRank;
       }
       prevScore = a.score;
       currentRank++;
 
+      const timeTaken = a.submitted_at && a.started_at
+        ? Math.round((new Date(a.submitted_at) - new Date(a.started_at)) / 1000)
+        : null;
+
       return {
         rank: displayRank,
         score: a.score,
         submitted_at: a.submitted_at,
-        student_name: a.users?.full_name || 'Unknown',
-        student_index: a.users?.index_number || 'Unknown',
+        fullName: a.users?.full_name || 'Unknown',
+        indexNumber: a.users?.index_number || '-',
+        timeTaken,
       };
     });
 
-    res.json({ success: true, rankings: formatted });
+    res.json({ success: true, rankings: formatted, maxMarks });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 exports.getReview = async (req, res) => {
   try {

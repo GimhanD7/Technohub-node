@@ -145,7 +145,7 @@ export default function RankerPage() {
                     <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-sm flex flex-col items-center text-center order-2 md:order-1 relative overflow-hidden">
                       <div className="absolute top-0 inset-x-0 h-1 bg-slate-400"></div>
                       <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-xl mb-4 border-2 border-slate-200 dark:border-slate-700">
-                        {silver.fullName.charAt(0)}
+                        {silver.fullName?.charAt(0) ?? '?'}
                       </div>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-3">
                         🥈 2nd Place
@@ -161,7 +161,7 @@ export default function RankerPage() {
                       <div className="absolute top-0 inset-x-0 h-1.5 bg-amber-400"></div>
                       <Crown className="w-8 h-8 text-amber-500 dark:text-amber-400 mb-3" />
                       <div className="w-20 h-20 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400 font-black text-2xl mb-4 border-4 border-amber-100 dark:border-amber-800">
-                        {gold.fullName.charAt(0)}
+                        {gold.fullName?.charAt(0) ?? '?'}
                       </div>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-[11px] font-bold uppercase text-amber-600 dark:text-amber-400 mb-3">
                         🥇 1st Place
@@ -176,7 +176,7 @@ export default function RankerPage() {
                     <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-sm flex flex-col items-center text-center order-3 relative overflow-hidden">
                       <div className="absolute top-0 inset-x-0 h-1 bg-orange-400"></div>
                       <div className="w-16 h-16 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-xl mb-4 border-2 border-orange-100 dark:border-orange-800/50">
-                        {bronze.fullName.charAt(0)}
+                        {bronze.fullName?.charAt(0) ?? '?'}
                       </div>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 dark:bg-orange-900/30 px-2.5 py-1 text-[10px] font-bold uppercase text-orange-600 dark:text-orange-400 mb-3">
                         🥉 3rd Place
