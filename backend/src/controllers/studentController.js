@@ -327,3 +327,124 @@ exports.getDashboardSummary = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.getGradesReports = async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    if (!student_id) return res.status(400).json({ success: false, message: 'Student ID required.' });
+
+    const sid = parseInt(student_id);
+
+    // Fetch student info
+    const user = await prisma.users.findUnique({ where: { id: sid, role: 'student' } });
+    if (!user) return res.status(404).json({ success: false, message: 'Student not found.' });
+
+    // --- Exam Results ---
+    const examRows = await prisma.$queryRaw`
+      SELECT
+        qa.id AS attempt_id,
+        qa.quiz_id,
+        q.title AS exam_title,
+        qa.score,
+        qa.submitted_at,
+        u.full_name AS teacher_name,
+        COALESCE((SELECT SUM(qs2.marks) FROM questions qs2 WHERE qs2.quiz_id = q.id), 0) AS total_possible_score,
+        (SELECT COUNT(*) FROM questions qs3 WHERE qs3.quiz_id = q.id) AS question_count
+      FROM quiz_attempts qa
+      JOIN quizzes q ON qa.quiz_id = q.id
+      JOIN users u ON q.created_by = u.id
+      WHERE qa.user_id = ${sid} AND qa.is_submitted = 1
+      ORDER BY qa.submitted_at DESC
+    `;
+
+    const exams = examRows.map(row => {
+      const score = Number(row.score) || 0;
+      const total = Number(row.total_possible_score) || 0;
+      const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+      let grade = 'F';
+      if (percentage >= 75) grade = 'A';
+      else if (percentage >= 65) grade = 'B';
+      else if (percentage >= 50) grade = 'C';
+      else if (percentage >= 35) grade = 'D';
+      return {
+        attempt_id: Number(row.attempt_id),
+        quiz_id: Number(row.quiz_id),
+        exam_title: row.exam_title,
+        teacher_name: row.teacher_name,
+        score,
+        total_possible_score: total,
+        question_count: Number(row.question_count) || 0,
+        percentage,
+        grade,
+        status: percentage >= 35 ? 'Passed' : 'Failed',
+        submitted_at: row.submitted_at,
+      };
+    });
+
+    // --- Course Progress ---
+    const courseRows = await prisma.$queryRaw`
+      SELECT
+        c.id,
+        c.title,
+        c.banner_url,
+        u.full_name AS teacher_name,
+        ce.enrolled_at,
+        COALESCE((SELECT COUNT(*) FROM course_materials cm JOIN course_modules cmod ON cm.module_id = cmod.id WHERE cmod.course_id = c.id), 0) AS total_materials,
+        COALESCE((SELECT COUNT(*) FROM material_completions mc JOIN course_materials cm ON mc.material_id = cm.id JOIN course_modules cmod ON cm.module_id = cmod.id WHERE cmod.course_id = c.id AND mc.student_id = ${sid}), 0) AS completed_materials
+      FROM course_enrollments ce
+      JOIN courses c ON ce.course_id = c.id
+      JOIN users u ON c.teacher_id = u.id
+      WHERE ce.student_id = ${sid}
+      ORDER BY ce.enrolled_at DESC
+    `;
+
+    const courses = courseRows.map(row => {
+      const total = Number(row.total_materials) || 0;
+      const completed = Number(row.completed_materials) || 0;
+      const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return {
+        id: Number(row.id),
+        title: row.title,
+        banner_url: row.banner_url,
+        teacher_name: row.teacher_name,
+        enrolled_at: row.enrolled_at,
+        total_materials: total,
+        completed_materials: completed,
+        progress_percentage: progress,
+        is_completed: total > 0 && completed >= total,
+      };
+    });
+
+    // --- Summary Stats ---
+    const totalExamsTaken = exams.length;
+    const bestScore = exams.length > 0 ? Math.max(...exams.map(e => e.percentage)) : 0;
+    const avgScore = exams.length > 0 ? Math.round(exams.reduce((sum, e) => sum + e.percentage, 0) / exams.length) : 0;
+    const completedCourses = courses.filter(c => c.is_completed).length;
+    const totalEnrolled = courses.length;
+    const totalMats = courses.reduce((s, c) => s + c.total_materials, 0);
+    const completedMats = courses.reduce((s, c) => s + c.completed_materials, 0);
+    const overallProgress = totalMats > 0 ? Math.round((completedMats / totalMats) * 100) : 0;
+
+    res.json({
+      success: true,
+      student: {
+        fullName: user.full_name,
+        educationCategory: user.education_category,
+        joinedAt: user.created_at,
+      },
+      exams,
+      courses,
+      stats: {
+        total_exams_taken: totalExamsTaken,
+        best_score: bestScore,
+        average_score: avgScore,
+        completed_courses: completedCourses,
+        total_enrolled: totalEnrolled,
+        overall_progress: overallProgress,
+      },
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
