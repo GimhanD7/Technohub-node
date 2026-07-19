@@ -22,7 +22,7 @@ exports.listQuizzes = async (req, res) => {
     let quizzes;
     if (userRole === 'teacher') {
       quizzes = await prisma.$queryRaw`
-        SELECT q.*, u.full_name AS creator_name, COUNT(qs.id) AS question_count 
+        SELECT q.*, u.full_name AS creator_name, COUNT(qs.id) AS question_count, COALESCE(SUM(qs.marks), 0) AS max_score
         FROM quizzes q 
         LEFT JOIN users u ON q.created_by = u.id
         LEFT JOIN questions qs ON q.id = qs.quiz_id
@@ -32,7 +32,7 @@ exports.listQuizzes = async (req, res) => {
       `;
     } else {
       quizzes = await prisma.$queryRaw`
-        SELECT q.*, u.full_name AS creator_name, COUNT(qs.id) AS question_count 
+        SELECT q.*, u.full_name AS creator_name, COUNT(qs.id) AS question_count, COALESCE(SUM(qs.marks), 0) AS max_score
         FROM quizzes q 
         LEFT JOIN users u ON q.created_by = u.id
         LEFT JOIN questions qs ON q.id = qs.quiz_id
@@ -70,6 +70,13 @@ exports.listQuizzes = async (req, res) => {
         }
       }
 
+      let attemptScorePercentage = 0;
+      if (attempt) {
+        const rawScore = Number(attempt.score) || 0;
+        const maxScore = Number(quiz.max_score) || 0;
+        attemptScorePercentage = maxScore > 0 ? Math.round((rawScore / maxScore) * 100) : 0;
+      }
+
       const formattedQuiz = {
         id: quiz.id,
         title: quiz.title,
@@ -83,7 +90,7 @@ exports.listQuizzes = async (req, res) => {
         isPaid: isPaid,
         attempt: attempt ? {
           id: attempt.id,
-          score: attempt.score,
+          score: attemptScorePercentage,
           startedAt: attempt.start_time,
           submittedAt: attempt.submitted_at,
           isSubmitted: Boolean(attempt.is_submitted)
