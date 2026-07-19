@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, Users, ClipboardList, User, ChevronDown, PanelLeftClose, PanelLeftOpen, Video, DollarSign, Settings } from "lucide-react";
+import { BookOpen, Users, ClipboardList, User, ChevronDown, PanelLeftClose, PanelLeftOpen, Video, DollarSign, Settings, Library, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import TopNavbar from "@/components/TopNavbar";
@@ -112,6 +112,20 @@ export default function TeacherLayout({ children }) {
             </Link>
 
             <p className="text-[10px] font-bold text-gray-400 dark:text-white uppercase tracking-wider mt-8 mb-3 px-2">Management</p>
+
+            <Link href="/dashboard/teacher/e-books" className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-[13px] font-medium ${isActive('/dashboard/teacher/e-books') ? 'bg-primary/5 text-primary' : 'text-slate-600 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:text-white'}`}>
+              <div className="flex items-center gap-3">
+                <Library className="w-[18px] h-[18px]" />
+                <span className={labelClass}>E-Book Library</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/teacher/messages" className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-[13px] font-medium ${isActive('/dashboard/teacher/messages') ? 'bg-primary/5 text-primary' : 'text-slate-600 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:text-white'}`}>
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-[18px] h-[18px]" />
+                <span className={labelClass}>Message Admin</span>
+              </div>
+            </Link>
 
             {/* <Link href="#" className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-[13px] font-medium text-slate-600 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:text-white`}>
               <div className="flex items-center gap-3">

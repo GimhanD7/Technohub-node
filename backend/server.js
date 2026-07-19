@@ -22,6 +22,7 @@ const teacherRoutes = require('./src/routes/teacherRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const walletRoutes = require('./src/routes/walletRoutes');
 const globalUploadRoutes = require('./src/routes/globalUploadRoutes');
+const teacherMessageRoutes = require('./src/routes/teacherMessageRoutes');
 
 const path = require('path');
 
@@ -53,6 +54,7 @@ app.use('/api/teacher', teacherRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/upload', globalUploadRoutes);
+app.use('/api/teacher-messages', teacherMessageRoutes);
 
 // Test Route
 app.get('/', (req, res) => {

@@ -66,5 +66,6 @@ const moduleStorage = multer.diskStorage({
 const moduleUpload = multer({ storage: moduleStorage });
 
 router.post('/upload_module_image', moduleUpload.single('image'), courseController.uploadModuleImage);
+router.get('/enrolled_students', courseController.getEnrolledStudents);
 
 module.exports = router;
