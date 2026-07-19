@@ -772,6 +772,57 @@ export default function AdminCourseManagement() {
                 <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Description (Optional)</label>
                 <textarea value={moduleForm.description} onChange={e => setModuleForm({...moduleForm, description: e.target.value})} className="w-full p-2.5 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-slate-800 dark:focus:ring-slate-400 focus:outline-none" />
               </div>
+              <div className="border-t border-gray-100 dark:border-slate-800/50 pt-4">
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Module Images</label>
+                
+                <div className="space-y-3 mb-3 max-h-48 overflow-y-auto">
+                  {moduleImages.map((img, idx) => (
+                    <div key={idx} className="flex gap-2 items-center bg-gray-50 dark:bg-[#0f172a] p-2 rounded border border-gray-200 dark:border-slate-800">
+                      <img 
+                        src={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                        alt={img.name} 
+                        className="w-10 h-10 object-cover rounded shrink-0" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <input 
+                          type="text" 
+                          value={img.name} 
+                          onChange={(e) => {
+                            const updated = [...moduleImages];
+                            updated[idx].name = e.target.value;
+                            setModuleImages(updated);
+                          }} 
+                          placeholder="Image name/caption" 
+                          className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-slate-800 rounded bg-white dark:bg-[#1e293b] text-slate-800 dark:text-white"
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setModuleImages(moduleImages.filter((_, i) => i !== idx));
+                        }} 
+                        className="text-red-500 hover:text-red-700 p-1 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <label className="flex-1 cursor-pointer bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white text-xs font-semibold py-2.5 px-4 rounded flex items-center justify-center gap-2 transition-colors border border-gray-200 dark:border-slate-800">
+                    <Upload className="w-4 h-4" />
+                    Upload Image(s) (Single/Bulk)
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      multiple 
+                      onChange={handleModuleImagesUpload} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+              </div>
               <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-slate-800/50">
                 <button type="button" onClick={() => setShowModuleModal(false)} className="px-4 py-2 text-[12px] font-medium text-slate-600 dark:text-white bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">Cancel</button>
                 <button type="submit" disabled={actionLoading} className="px-4 py-2 text-[12px] font-medium text-white bg-slate-800 rounded hover:bg-slate-900 dark:hover:bg-slate-600 flex items-center gap-2">
