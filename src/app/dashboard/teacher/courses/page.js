@@ -2,7 +2,7 @@
 
 import { toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
-import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search } from "lucide-react";
+import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search, UserCheck } from "lucide-react";
 import { API_BASE_URL, fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import { BASE_URL } from "@/lib/api";
@@ -41,6 +41,9 @@ export default function TeacherCourseManagement() {
   const [materialSource, setMaterialSource] = useState('link');
   const [materialUploadName, setMaterialUploadName] = useState('');
   const [moduleImages, setModuleImages] = useState([]);
+
+  // Enrolled Students Modal
+  const [enrolledModal, setEnrolledModal] = useState({ isOpen: false, courseId: null, courseTitle: "", students: [], isLoading: false, search: "" });
 
   // Form Data
   const [courseForm, setCourseForm] = useState({ title: '', category_id: '', description: '', duration: '', points: 0, banner_url: '' });
@@ -394,6 +397,16 @@ export default function TeacherCourseManagement() {
     });
   };
 
+  const openEnrolledStudents = async (course) => {
+    setEnrolledModal({ isOpen: true, courseId: course.id, courseTitle: course.title, students: [], isLoading: true, search: "" });
+    const data = await fetchApi(`/course/enrolled_students?course_id=${course.id}&teacher_id=${user.id}`);
+    setEnrolledModal(prev => ({
+      ...prev,
+      isLoading: false,
+      students: data.success ? data.students : []
+    }));
+  };
+
   const getMaterialIcon = (type) => {
     if (type === 'video') return <Video className="w-4 h-4 text-rose-500" />;
     if (type === 'pdf') return <FileText className="w-4 h-4 text-blue-500" />;
@@ -417,6 +430,75 @@ export default function TeacherCourseManagement() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 relative pb-12">
       <CustomDialog {...dialogState} />
+
+      {/* Enrolled Students Modal */}
+      {enrolledModal.isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col border border-gray-200 dark:border-slate-800">
+            <div className="p-5 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h2 className="text-[16px] font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-primary" />
+                  Enrolled Students
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-slate-400">{enrolledModal.courseTitle} · {enrolledModal.students.length} student{enrolledModal.students.length !== 1 ? 's' : ''}</p>
+              </div>
+              <button onClick={() => setEnrolledModal(p => ({ ...p, isOpen: false }))} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-4 border-b border-gray-100 dark:border-slate-800">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input value={enrolledModal.search} onChange={e => setEnrolledModal(p => ({ ...p, search: e.target.value }))}
+                  placeholder="Search students..." className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary dark:bg-[#0f172a] dark:text-white" />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {enrolledModal.isLoading ? (
+                <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+              ) : enrolledModal.students.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12">
+                  <Users className="w-10 h-10 text-gray-300 dark:text-slate-600 mb-3" />
+                  <p className="text-sm text-gray-400 dark:text-slate-500">No students enrolled yet.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-gray-50 dark:bg-slate-800">
+                    <tr className="border-b border-gray-200 dark:border-slate-700 text-[10px] uppercase tracking-wider text-gray-400 dark:text-slate-500 font-bold">
+                      <th className="text-left px-5 py-3">Student</th>
+                      <th className="text-left px-5 py-3">Index No.</th>
+                      <th className="text-left px-5 py-3">Contact</th>
+                      <th className="text-left px-5 py-3">Enrolled</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                    {enrolledModal.students
+                      .filter(s => !enrolledModal.search || s.fullName.toLowerCase().includes(enrolledModal.search.toLowerCase()) || (s.email || '').toLowerCase().includes(enrolledModal.search.toLowerCase()))
+                      .map(s => (
+                        <tr key={s.enrollmentId} className="hover:bg-gray-50 dark:hover:bg-slate-800/40">
+                          <td className="px-5 py-3">
+                            <p className="font-semibold text-slate-800 dark:text-white text-[13px]">{s.fullName}</p>
+                            <p className="text-[10px] text-gray-400">{s.studentCategory}</p>
+                          </td>
+                          <td className="px-5 py-3 text-[12px] text-slate-600 dark:text-slate-300">{s.indexNumber}</td>
+                          <td className="px-5 py-3">
+                            <p className="text-[12px] text-slate-600 dark:text-slate-300">{s.email}</p>
+                            <p className="text-[11px] text-gray-400">{s.phone}</p>
+                          </td>
+                          <td className="px-5 py-3 text-[11px] text-gray-400">{s.enrolledAt ? new Date(s.enrolledAt).toLocaleDateString() : '-'}</td>
+                        </tr>
+                      ))
+                    }
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stage 1: Manage Courses for logged-in Teacher */}
       {!selectedCourse && (
@@ -505,12 +587,18 @@ export default function TeacherCourseManagement() {
                       <span className="text-[11px] font-medium text-slate-600 dark:text-white bg-slate-100 px-2 py-1 rounded">{c.duration || "N/A"}</span>
                       {c.points > 0 && <span className="text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded flex items-center gap-1"><Star className="w-3 h-3 fill-amber-500" /> LKR {c.points}</span>}
                     </div>
-                    <button 
-                      onClick={() => handleToggleCourseStatus(c)}
-                      className={`text-[11px] font-medium flex items-center gap-1.5 ${c.status === 'disabled' ? 'text-green-600 hover:text-green-700' : 'text-amber-600 hover:text-amber-700'}`}
-                    >
-                      {c.status === 'disabled' ? <><Eye className="w-3.5 h-3.5"/> Enable</> : <><EyeOff className="w-3.5 h-3.5"/> Disable</>}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEnrolledStudents(c)}
+                        className="text-[11px] font-medium flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded transition-colors">
+                        <Users className="w-3.5 h-3.5" /> {c.enrollment_count ?? 0} Students
+                      </button>
+                      <button 
+                        onClick={() => handleToggleCourseStatus(c)}
+                        className={`text-[11px] font-medium flex items-center gap-1.5 ${c.status === 'disabled' ? 'text-green-600 hover:text-green-700' : 'text-amber-600 hover:text-amber-700'}`}
+                      >
+                        {c.status === 'disabled' ? <><Eye className="w-3.5 h-3.5"/>Enable</> : <><EyeOff className="w-3.5 h-3.5"/>Disable</>}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
