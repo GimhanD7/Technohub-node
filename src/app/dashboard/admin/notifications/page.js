@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { fetchApi } from "@/lib/api";
-import { Bell, Search, Loader2, Send, Users, Globe, BookOpen, FileText, CreditCard, Info } from "lucide-react";
+import { Bell, Search, Loader2, Send, Users, Globe, BookOpen, FileText, CreditCard, Info, X, Check, Target } from "lucide-react";
 import Button from "@/components/ui/Button";
 
 export default function NotificationManagement() {
@@ -14,11 +14,18 @@ export default function NotificationManagement() {
   // Form State
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [type, setType] = useState("system");
+  const [type, setType] = useState("system"); // system, course, exam, payment, custom
+  const [customType, setCustomType] = useState("");
   const [link, setLink] = useState("");
-  const [targetUser, setTargetUser] = useState("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState(null);
+
+  // Target Audience Selection Split
+  const [targetAudienceType, setTargetAudienceType] = useState("all"); // all, all_students, all_teachers, specific_teacher, specific_student
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("techno_hub_user");
@@ -34,23 +41,79 @@ export default function NotificationManagement() {
     // Fetch users list
     const usersRes = await fetchApi("/admin/get_users_list");
     if (usersRes.success) {
-      setUsersList(usersRes.users);
+      setUsersList(usersRes.users || []);
     }
 
     // Fetch notifications
     const notifsRes = await fetchApi("/admin/get_notifications");
     if (notifsRes.success) {
-      setNotifications(notifsRes.notifications);
+      setNotifications(notifsRes.notifications || []);
     }
     
     setIsLoading(false);
   };
+
+  // Filter teachers list
+  const teachersList = useMemo(() => {
+    return usersList.filter(u => u.role === "teacher" && u.status !== "deleted");
+  }, [usersList]);
+
+  // Filter students list for search autocomplete
+  const filteredStudents = useMemo(() => {
+    if (!studentSearch.trim()) return [];
+    return usersList.filter(u => 
+      u.role === "student" && 
+      u.status !== "deleted" &&
+      ((u.full_name || "").toLowerCase().includes(studentSearch.toLowerCase()) || 
+       (u.phone_number || "").toLowerCase().includes(studentSearch.toLowerCase()) ||
+       (u.index_number || "").toLowerCase().includes(studentSearch.toLowerCase()))
+    );
+  }, [usersList, studentSearch]);
 
   const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!title.trim() || !message.trim()) {
       setAlert({ type: "error", msg: "Title and Message are required." });
       return;
+    }
+
+    // Determine final target user id & target role
+    let finalUserId = null;
+    let finalTargetRole = "all";
+
+    if (targetAudienceType === "all") {
+      finalUserId = "all";
+      finalTargetRole = "all";
+    } else if (targetAudienceType === "all_students") {
+      finalUserId = "all_students";
+      finalTargetRole = "student";
+    } else if (targetAudienceType === "all_teachers") {
+      finalUserId = "all_teachers";
+      finalTargetRole = "teacher";
+    } else if (targetAudienceType === "specific_teacher") {
+      if (!selectedTeacherId) {
+        setAlert({ type: "error", msg: "Please select a specific teacher." });
+        return;
+      }
+      finalUserId = parseInt(selectedTeacherId);
+      finalTargetRole = "teacher";
+    } else if (targetAudienceType === "specific_student") {
+      if (!selectedStudent) {
+        setAlert({ type: "error", msg: "Please search and select a student." });
+        return;
+      }
+      finalUserId = parseInt(selectedStudent.id);
+      finalTargetRole = "student";
+    }
+
+    // Custom notification type validation
+    let finalType = type;
+    if (type === "custom") {
+      if (!customType.trim()) {
+        setAlert({ type: "error", msg: "Please enter a label for your custom notification type." });
+        return;
+      }
+      finalType = customType.trim();
     }
 
     setIsSubmitting(true);
@@ -60,9 +123,10 @@ export default function NotificationManagement() {
       created_by: user?.id,
       title: title.trim(),
       message: message.trim(),
-      type,
+      type: finalType,
       link: link.trim() || null,
-      user_id: targetUser === "all" ? null : targetUser
+      user_id: finalUserId,
+      target_role: finalTargetRole
     };
 
     const res = await fetchApi("/notifications/add", {
@@ -70,7 +134,7 @@ export default function NotificationManagement() {
       body: JSON.stringify(payload)
     });
 
-    setIsSubmitting(false);
+    setIsSubmitting(true);
 
     if (res.success) {
       setAlert({ type: "success", msg: "Notification sent successfully!" });
@@ -78,11 +142,16 @@ export default function NotificationManagement() {
       setMessage("");
       setLink("");
       setType("system");
-      setTargetUser("all");
+      setCustomType("");
+      setTargetAudienceType("all");
+      setSelectedTeacherId("");
+      setSelectedStudent(null);
+      setStudentSearch("");
       loadData(); // Refresh list
     } else {
       setAlert({ type: "error", msg: res.message || "Failed to send notification." });
     }
+    setIsSubmitting(false);
   };
 
   const getNotifIcon = (t) => {
@@ -90,7 +159,8 @@ export default function NotificationManagement() {
       case 'course': return <BookOpen className="w-4 h-4 text-blue-500" />;
       case 'exam': return <FileText className="w-4 h-4 text-purple-500" />;
       case 'payment': return <CreditCard className="w-4 h-4 text-emerald-500" />;
-      default: return <Info className="w-4 h-4 text-amber-500" />;
+      case 'system': return <Info className="w-4 h-4 text-amber-500" />;
+      default: return <Target className="w-4 h-4 text-pink-500" />;
     }
   };
 
@@ -103,7 +173,7 @@ export default function NotificationManagement() {
             Notification Management
           </h1>
           <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">
-            Broadcast messages globally or target specific users.
+            Broadcast messages globally, target roles, or search specifically for teachers and students.
           </p>
         </div>
       </div>
@@ -124,24 +194,27 @@ export default function NotificationManagement() {
             )}
 
             <form onSubmit={handleSendNotification} className="space-y-4">
+              {/* Target Type Selector */}
               <div>
                 <label className="block text-[12px] font-bold text-slate-700 dark:text-gray-300 mb-1">Target Audience</label>
                 <div className="relative">
                   <select
-                    value={targetUser}
-                    onChange={(e) => setTargetUser(e.target.value)}
+                    value={targetAudienceType}
+                    onChange={(e) => {
+                      setTargetAudienceType(e.target.value);
+                      setSelectedTeacherId("");
+                      setSelectedStudent(null);
+                      setStudentSearch("");
+                    }}
                     className="w-full h-10 pl-9 pr-3 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-[#0f172a] text-[13px] text-slate-700 dark:text-white focus:outline-none focus:border-primary"
                   >
                     <option value="all">All Users (Global Broadcast)</option>
                     <option value="all_students">All Students Only</option>
                     <option value="all_teachers">All Teachers Only</option>
-                    {usersList.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name} ({u.role})
-                      </option>
-                    ))}
+                    <option value="specific_teacher">Specific Teacher</option>
+                    <option value="specific_student">Specific Student (Search Filters)</option>
                   </select>
-                  {targetUser === "all" ? (
+                  {targetAudienceType === "all" ? (
                     <Globe className="w-4 h-4 text-primary absolute left-3 top-1/2 -translate-y-1/2" />
                   ) : (
                     <Users className="w-4 h-4 text-emerald-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -149,6 +222,87 @@ export default function NotificationManagement() {
                 </div>
               </div>
 
+              {/* Specific Teacher Selection */}
+              {targetAudienceType === "specific_teacher" && (
+                <div className="animate-in slide-in-from-top-1 duration-150">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-gray-400 mb-1">Select Teacher</label>
+                  <select
+                    required
+                    value={selectedTeacherId}
+                    onChange={e => setSelectedTeacherId(e.target.value)}
+                    className="w-full h-10 px-3 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-[#0f172a] text-[13px] text-slate-700 dark:text-white focus:outline-none focus:border-primary"
+                  >
+                    <option value="">-- Select Teacher --</option>
+                    {teachersList.map(t => (
+                      <option key={t.id} value={t.id}>{t.full_name} ({t.subject || 'N/A'})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Specific Student Autocomplete Search Box */}
+              {targetAudienceType === "specific_student" && (
+                <div className="space-y-1.5 animate-in slide-in-from-top-1 duration-150 relative">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-gray-400 mb-1">Search Student</label>
+                  
+                  {selectedStudent ? (
+                    <div className="flex items-center justify-between p-2.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded text-slate-800 dark:text-white text-[13px]">
+                      <div>
+                        <p className="font-semibold">{selectedStudent.full_name}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Index: {selectedStudent.index_number || 'N/A'} | Phone: {selectedStudent.phone_number}</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedStudent(null)} 
+                        className="p-1 hover:bg-emerald-100 rounded-full text-slate-500"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input 
+                        type="text"
+                        placeholder="Type name, phone or index..."
+                        value={studentSearch}
+                        onChange={e => {
+                          setStudentSearch(e.target.value);
+                          setShowStudentDropdown(true);
+                        }}
+                        onFocus={() => setShowStudentDropdown(true)}
+                        className="w-full h-10 pl-9 pr-3 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-[#0f172a] text-[13px] text-slate-700 dark:text-white focus:outline-none focus:border-primary"
+                      />
+                      
+                      {showStudentDropdown && studentSearch.trim() && (
+                        <div className="absolute z-55 left-0 right-0 mt-1 bg-white dark:bg-[#1e293b] border border-gray-250 dark:border-slate-750 rounded shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800">
+                          {filteredStudents.length === 0 ? (
+                            <div className="p-3 text-[12px] text-slate-400 italic">No matching students found.</div>
+                          ) : (
+                            filteredStudents.map(student => (
+                              <button
+                                key={student.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedStudent(student);
+                                  setShowStudentDropdown(false);
+                                  setStudentSearch("");
+                                }}
+                                className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-[13px] block"
+                              >
+                                <p className="font-semibold text-slate-850 dark:text-white">{student.full_name}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Index: {student.index_number || 'N/A'} | Phone: {student.phone_number}</p>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Notification Type Selector */}
               <div>
                 <label className="block text-[12px] font-bold text-slate-700 dark:text-gray-300 mb-1">Type</label>
                 <select
@@ -160,8 +314,24 @@ export default function NotificationManagement() {
                   <option value="course">Course Update</option>
                   <option value="exam">Exam Alert</option>
                   <option value="payment">Payment Notice</option>
+                  <option value="custom">Custom Notification Type...</option>
                 </select>
               </div>
+
+              {/* Custom Notification Type text field */}
+              {type === "custom" && (
+                <div className="animate-in slide-in-from-top-1 duration-150">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-gray-400 mb-1">Custom Type Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={customType}
+                    onChange={(e) => setCustomType(e.target.value)}
+                    placeholder="E.g. promotion, update, holiday"
+                    className="w-full h-10 px-3 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-[#0f172a] text-[13px] text-slate-700 dark:text-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-[12px] font-bold text-slate-700 dark:text-gray-300 mb-1">Title</label>
@@ -203,63 +373,59 @@ export default function NotificationManagement() {
         </div>
 
         {/* Notification History */}
-        <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-            <div className="p-4 border-b border-gray-100 dark:border-slate-800/50 flex items-center justify-between bg-gray-50/30 dark:bg-slate-800/30">
-              <h3 className="text-[14px] font-bold text-slate-800 dark:text-white">Notification History</h3>
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[14px] font-bold text-slate-800 dark:text-white font-sans uppercase tracking-wider">Notification History</h3>
+              <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-semibold">Last 50 Sent</span>
             </div>
-            
+
             {isLoading ? (
-              <div className="flex-1 flex items-center justify-center">
+              <div className="flex justify-center items-center py-20">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : notifications.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-500 py-12">
-                <Bell className="w-12 h-12 text-gray-300 mb-3" />
-                <p>No notifications sent yet.</p>
+              <div className="text-center py-20 text-slate-400 dark:text-slate-550 border border-dashed border-gray-200 dark:border-slate-800 rounded-lg">
+                <p className="text-[13px]">No notifications sent yet.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto flex-1">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50/50 dark:bg-[#0f172a] border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                      <th className="py-3 px-4 font-bold">Details</th>
-                      <th className="py-3 px-4 font-bold">Target Audience</th>
-                      <th className="py-3 px-4 font-bold">Sender</th>
-                      <th className="py-3 px-4 font-bold">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-[13px] text-slate-600 dark:text-white divide-y divide-gray-100 dark:divide-slate-800/50">
-                    {notifications.map((notif) => (
-                      <tr key={notif.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex gap-3">
-                            <div className="mt-1 shrink-0">{getNotifIcon(notif.type)}</div>
-                            <div>
-                              <p className="font-bold text-slate-800 dark:text-white">{notif.title}</p>
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{notif.message}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          {notif.user_id === null ? (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-bold uppercase">
-                              <Globe className="w-3 h-3" /> Global
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-bold uppercase">
-                              <Users className="w-3 h-3" /> {notif.target_user_name || `User #${notif.user_id}`}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-[12px]">{notif.creator_name || "System"}</td>
-                        <td className="py-3 px-4 text-[11px] text-gray-500 dark:text-gray-400">
-                          {new Date(notif.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="divide-y divide-gray-100 dark:divide-slate-800/80">
+                {notifications.map((notif) => (
+                  <div key={notif.id} className="py-4 first:pt-0 last:pb-0 flex items-start gap-4">
+                    <div className="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-lg shrink-0">
+                      {getNotifIcon(notif.type)}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <h4 className="text-[13px] font-bold text-slate-850 dark:text-white leading-snug">{notif.title}</h4>
+                        <span className="text-[10px] text-slate-400">{new Date(notif.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p className="text-[12px] text-slate-500 dark:text-slate-350 leading-relaxed font-sans">{notif.message}</p>
+                      
+                      <div className="flex flex-wrap gap-2 pt-2.5">
+                        <span className="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded text-[9px] font-bold uppercase tracking-wider">
+                          Type: {notif.type}
+                        </span>
+                        
+                        {notif.target_role && (
+                          <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 rounded text-[9px] font-bold uppercase tracking-wider">
+                            Audience: {notif.target_role}
+                          </span>
+                        )}
+                        
+                        {notif.user_id ? (
+                          <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 rounded text-[9px] font-bold uppercase tracking-wider">
+                            Direct message (ID: {notif.user_id})
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded text-[9px] font-semibold">
+                            Broadcasting
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

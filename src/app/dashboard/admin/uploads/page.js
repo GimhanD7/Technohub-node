@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Database, Trash2, ExternalLink, HardDrive, FileImage, File, FileText, Search, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL, BASE_URL } from "@/lib/api";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 
 export default function UploadsManagerPage() {
   const [data, setData] = useState({ files: [], totalSize: 0, totalFiles: 0 });
@@ -11,6 +12,7 @@ export default function UploadsManagerPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFolder, setActiveFolder] = useState("All");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
 
   useEffect(() => {
     fetchUploads();
@@ -33,9 +35,7 @@ export default function UploadsManagerPage() {
     }
   };
 
-  const handleDelete = async (filePath) => {
-    if (!confirm("Are you sure you want to permanently delete this file? This action cannot be undone.")) return;
-
+  const executeDelete = async (filePath) => {
     try {
       setIsDeleting(true);
       const res = await fetch(`${API_BASE_URL}/admin/uploads`, {
@@ -58,6 +58,23 @@ export default function UploadsManagerPage() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleDelete = (filePath) => {
+    setDialogState({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete File Permanently?',
+      message: 'Are you sure you want to permanently delete this file? This will remove it from the server and cannot be undone.',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        await executeDelete(filePath);
+      },
+      onCancel: () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const formatSize = (bytes) => {
@@ -238,6 +255,7 @@ export default function UploadsManagerPage() {
           </table>
         </div>
       </div>
+      <CustomDialog {...dialogState} />
     </div>
   );
 }

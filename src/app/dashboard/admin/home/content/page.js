@@ -28,6 +28,8 @@ const initialSettings = {
   timetableHeading: "",
   timetableSubtitle: "",
   faqHeading: "",
+  aitiDescription: "",
+  aitiLogo: "",
 };
 
 function normalizeSettings(settings) {
@@ -140,6 +142,8 @@ export default function HomePageContentManager() {
             ["primaryCtaUrl", "Primary Button Link"],
             ["secondaryCtaLabel", "Secondary Button Label"],
             ["secondaryCtaUrl", "Secondary Button Link"],
+            ["aitiLogo", "AITI Logo (URL or Path)"],
+            ["aitiDescription", "AITI Description"],
             ["coursesHeading", "Courses Heading"],
             ["coursesSubtitle", "Courses Subtitle"],
             ["lecturersHeading", "Lecturers Heading"],
@@ -150,9 +154,9 @@ export default function HomePageContentManager() {
             ["timetableSubtitle", "Timetable Text"],
             ["faqHeading", "FAQ Heading"],
           ].map(([field, label]) => (
-            <div key={field} className={field.toLowerCase().includes("subtitle") || field === "whySubtitle" ? "md:col-span-2" : ""}>
+            <div key={field} className={field.toLowerCase().includes("subtitle") || field === "whySubtitle" || field.toLowerCase().includes("description") ? "md:col-span-2" : ""}>
               <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">{label}</label>
-              {field.toLowerCase().includes("subtitle") || field === "whySubtitle" ? (
+              {field.toLowerCase().includes("subtitle") || field === "whySubtitle" || field.toLowerCase().includes("description") ? (
                 <textarea value={settings[field] ?? ""} onChange={(event) => updateSettingsField(field, event.target.value)} rows={3} className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a] resize-none" />
               ) : (
                 <input value={settings[field] ?? ""} onChange={(event) => updateSettingsField(field, event.target.value)} className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />

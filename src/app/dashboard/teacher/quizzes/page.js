@@ -291,14 +291,7 @@ export default function TeacherQuizzesPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white sticky top-0 z-10">
-                <th className="py-3 px-5 w-10">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.length === filteredQuizzes.length && filteredQuizzes.length > 0} 
-                    onChange={toggleSelectAll} 
-                    className="w-3.5 h-3.5 rounded border-gray-300 accent-primary" 
-                  />
-                </th>
+
                 <th className="py-3 px-5 font-bold">Quiz</th>
                 <th className="py-3 px-5 font-bold">Status</th>
                 <th className="py-3 px-5 font-bold hidden md:table-cell">Fee</th>
@@ -321,14 +314,7 @@ export default function TeacherQuizzesPage() {
 
                   return (
                     <tr key={quiz.id} className={`hover:bg-gray-50/50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors ${isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
-                      <td className="py-3 px-5">
-                        <input 
-                          type="checkbox" 
-                          checked={isSelected} 
-                          onChange={() => toggleSelect(quiz.id)} 
-                          className="w-3.5 h-3.5 rounded border-gray-300 accent-primary" 
-                        />
-                      </td>
+
                       <td className="py-3 px-5">
                         <div className="font-medium text-slate-800 dark:text-white">{quiz.title}</div>
                         <div className="text-[11px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">Exam #{quiz.id}</div>

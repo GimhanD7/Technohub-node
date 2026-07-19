@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
   AlertCircle,
   CalendarDays,
@@ -90,6 +91,8 @@ export default function AdminGalleryPage() {
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [viewingItem, setViewingItem] = useState(null);
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
 
   const stats = useMemo(() => {
     const published = items.filter((item) => item.isPublished).length;
@@ -252,9 +255,7 @@ export default function AdminGalleryPage() {
     }
   };
 
-  const handleDeleteItem = async (itemId) => {
-    if (!confirm("Delete this gallery item?")) return;
-
+  const executeDeleteItem = async (itemId) => {
     setIsDeletingId(itemId);
     setErrorMsg("");
     setSuccessMsg("");
@@ -278,6 +279,23 @@ export default function AdminGalleryPage() {
     } else {
       setErrorMsg(response.message || "Failed to delete gallery item.");
     }
+  };
+
+  const handleDeleteItem = (itemId) => {
+    setDialogState({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete Gallery Item?',
+      message: 'Are you sure you want to permanently delete this gallery item and all associated pictures?',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        await executeDeleteItem(itemId);
+      },
+      onCancel: () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   return (
@@ -571,6 +589,13 @@ export default function AdminGalleryPage() {
                     </div>
                     <div className="flex lg:flex-col gap-2">
                       <button
+                        onClick={() => setViewingItem(item)}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 px-3 text-xs font-bold text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
+                      >
+                        <Eye className="w-4 h-4 text-blue-500" />
+                        View Images
+                      </button>
+                      <button
                         onClick={() => beginEdit(item)}
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-primary/15 px-3 text-xs font-bold text-primary hover:bg-primary/5"
                       >
@@ -593,6 +618,59 @@ export default function AdminGalleryPage() {
           )}
         </div>
       </div>
+
+      {/* View Images Modal */}
+      {viewingItem && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm px-4 py-6 overflow-y-auto flex items-center justify-center animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 bg-gray-50/80 dark:bg-slate-800/80">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{viewingItem.title}</h3>
+                <p className="text-xs text-gray-500 dark:text-white mt-1">{getItemImageUrls(viewingItem).length} Images in this entry</p>
+              </div>
+              <button
+                onClick={() => setViewingItem(null)}
+                className="h-10 w-10 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-white hover:text-slate-950 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+                {getItemImageUrls(viewingItem).map((url, idx) => (
+                  <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 aspect-video bg-slate-100 dark:bg-slate-900 shadow-sm flex items-center justify-center">
+                    <img 
+                      src={getFullImageUrl(url)} 
+                      alt={`Gallery item image ${idx + 1}`}
+                      className="w-full h-full object-cover" 
+                    />
+                    <a
+                      href={getFullImageUrl(url)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1"
+                    >
+                      Open Full Size
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50/80 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-800/50 flex justify-end">
+              <button
+                onClick={() => setViewingItem(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-white bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <CustomDialog {...dialogState} />
     </div>
   );
 }

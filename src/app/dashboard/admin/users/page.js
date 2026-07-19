@@ -22,14 +22,15 @@ export default function UserManagement() {
   const [editUser, setEditUser] = useState(null);
   
   // Custom Alert / Confirm Dialog State
-  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, requirePassword: false, onConfirm: null, onCancel: null });
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const showConfirm = (title, message, type, onConfirmAction) => {
+  const showConfirm = (title, message, type, onConfirmAction, requirePassword = false) => {
     setDialogState({
-      isOpen: true, title, message, type, isAlertOnly: false,
-      onConfirm: () => {
+      isOpen: true, title, message, type, isAlertOnly: false, requirePassword,
+      onConfirm: (enteredPassword) => {
         setDialogState(s => ({ ...s, isOpen: false }));
-        onConfirmAction();
+        onConfirmAction(enteredPassword);
       },
       onCancel: () => setDialogState(s => ({ ...s, isOpen: false }))
     });
@@ -61,6 +62,12 @@ export default function UserManagement() {
 
   useEffect(() => {
     loadUsers();
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("techno_hub_user");
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+      }
+    }
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -86,20 +93,22 @@ export default function UserManagement() {
       "Delete User", 
       "Are you sure you want to delete this user? This action is permanent and cannot be undone.", 
       "error", 
-      async () => {
+      async (enteredPassword) => {
         setActionLoading(id);
         const data = await fetchApi("/user/delete_user", {
           method: "POST",
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ id, adminId: currentUser?.id, password: enteredPassword })
         });
         
         if (data.success) {
           setUsers(users.filter(u => u.id !== id));
+          showAlert("Success", "User deleted successfully", "success");
         } else {
           showAlert("Deletion Failed", data.message, "error");
         }
         setActionLoading(null);
-      }
+      },
+      true
     );
   };
 

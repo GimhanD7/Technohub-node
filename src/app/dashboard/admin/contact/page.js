@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
   AlertCircle,
   CheckCircle2,
@@ -67,6 +68,7 @@ export default function AdminContactPage() {
   const [updatingMessageId, setUpdatingMessageId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
 
   const stats = useMemo(() => {
     const fresh = messages.filter((message) => message.status === "new").length;
@@ -159,9 +161,7 @@ export default function AdminContactPage() {
     }
   };
 
-  const deleteMessage = async (messageId) => {
-    if (!confirm("Delete this contact message?")) return;
-
+  const executeDeleteMessage = async (messageId) => {
     setUpdatingMessageId(messageId);
     setErrorMsg("");
 
@@ -180,6 +180,23 @@ export default function AdminContactPage() {
     } else {
       setErrorMsg(response.message || "Failed to delete contact message.");
     }
+  };
+
+  const deleteMessage = (messageId) => {
+    setDialogState({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete Contact Message?',
+      message: 'Are you sure you want to permanently delete this contact message from the log?',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        await executeDeleteMessage(messageId);
+      },
+      onCancel: () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   return (
@@ -401,6 +418,7 @@ export default function AdminContactPage() {
           </div>
         </div>
       </div>
+      <CustomDialog {...dialogState} />
     </div>
   );
 }

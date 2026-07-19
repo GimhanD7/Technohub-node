@@ -84,6 +84,7 @@ model course_modules {
   title            String             @db.VarChar(255)
   description      String?            @db.Text
   order_index      Int?               @default(0)
+  images           String?            @db.Text
   created_at       DateTime           @default(now()) @db.Timestamp(0)
   course_materials course_materials[]
   courses          courses            @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "course_modules_ibfk_1")
@@ -196,6 +197,8 @@ model home_settings {
   timetable_heading   String?  @db.VarChar(255)
   timetable_subtitle  String?  @db.Text
   faq_heading         String?  @db.VarChar(255)
+  aiti_description    String?  @db.Text
+  aiti_logo           String?  @db.VarChar(500)
   updated_by          Int?
   updated_at          DateTime @default(now()) @db.Timestamp(0)
   users               users?   @relation(fields: [updated_by], references: [id], onUpdate: Restrict, map: "home_settings_ibfk_1")
@@ -569,4 +572,17 @@ enum users_role {
 enum users_status {
   active
   suspended
+  deleted
+}
+
+model deleted_users {
+  id            Int      @id @default(autoincrement())
+  original_id   Int
+  full_name     String   @db.VarChar(255)
+  phone_number  String   @db.VarChar(50)
+  email         String?  @db.VarChar(255)
+  role          String   @db.VarChar(50)
+  index_number  String?  @db.VarChar(50)
+  deleted_at    DateTime @default(now()) @db.Timestamp(0)
+  deleted_by    Int?
 }

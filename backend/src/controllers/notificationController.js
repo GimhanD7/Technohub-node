@@ -4,7 +4,7 @@ const { logActivity } = require('../utils/logger');
 
 exports.addNotification = async (req, res) => {
   try {
-    const { user_id, title, message, type, link, created_by } = req.body;
+    const { user_id, target_role, title, message, type, link, created_by } = req.body;
     
     if (!title || !message) {
       return res.status(400).json({ success: false, message: "Title and message are required." });
@@ -12,7 +12,8 @@ exports.addNotification = async (req, res) => {
 
     await prisma.notifications.create({
       data: {
-        user_id: user_id === 'all' ? null : parseInt(user_id),
+        user_id: (!user_id || user_id === 'all' || user_id === 'all_students' || user_id === 'all_teachers') ? null : parseInt(user_id),
+        target_role: target_role || (user_id === 'all_students' ? 'student' : (user_id === 'all_teachers' ? 'teacher' : 'all')),
         title,
         message,
         type: type || 'info',
@@ -36,23 +37,34 @@ exports.getNotifications = async (req, res) => {
     const { user_id } = req.query;
     if (!user_id) return res.status(400).json({ success: false, message: "User ID required" });
 
+    const userObj = await prisma.users.findUnique({
+      where: { id: parseInt(user_id) },
+      select: { role: true, last_notification_read_at: true }
+    });
+
+    if (!userObj) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
     const notifications = await prisma.notifications.findMany({
       where: {
         OR: [
           { user_id: parseInt(user_id) },
-          { user_id: null }
+          { 
+            user_id: null,
+            OR: [
+              { target_role: 'all' },
+              { target_role: null },
+              { target_role: userObj.role }
+            ]
+          }
         ]
       },
       orderBy: { created_at: 'desc' },
       take: 50
     });
 
-    const user = await prisma.users.findUnique({
-      where: { id: parseInt(user_id) },
-      select: { last_notification_read_at: true }
-    });
-
-    const lastRead = user?.last_notification_read_at ? new Date(user.last_notification_read_at) : new Date(0);
+    const lastRead = userObj?.last_notification_read_at ? new Date(userObj.last_notification_read_at) : new Date(0);
 
     const formatted = notifications.map(n => {
       let isRead = false;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
-import { LogIn, Phone, KeyRound, Cpu, ArrowLeft, User, Mail, MessageCircle, X } from "lucide-react";
+import { LogIn, Phone, KeyRound, Cpu, ArrowLeft, User, Mail, MessageCircle, X, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [showSupportModal, setShowSupportModal] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Load remembered credentials on mount
   useEffect(() => {
@@ -147,13 +148,20 @@ export default function LoginPage() {
                     <KeyRound className="h-5 w-5 text-zinc-400" />
                   </div>
                   <input 
-                    type="password" 
+                    type={showPassword ? "text" : "password"} 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
+                    className="w-full pl-12 pr-12 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
                     placeholder="••••••••" 
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-slate-600 focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
               
@@ -234,13 +242,20 @@ export default function LoginPage() {
             <div className="relative shadow-[0_2px_15px_-5px_rgba(0,0,0,0.05)] rounded-full">
               <KeyRound className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input 
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-16 pr-6 py-4 rounded-full bg-white dark:bg-slate-800 border-none focus:ring-2 focus:ring-primary text-[15px] dark:text-white" 
+                className="w-full pl-16 pr-12 py-4 rounded-full bg-white dark:bg-slate-800 border-none focus:ring-2 focus:ring-primary text-[15px] dark:text-white" 
                 placeholder="••••••••••••" 
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-5 flex items-center text-gray-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
 
             <button type="submit" disabled={isLoading} className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg shadow-[0_8px_20px_-8px_rgba(37,99,235,0.6)] mt-8 flex justify-center items-center">

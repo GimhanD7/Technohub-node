@@ -264,6 +264,7 @@ export default function AdminWalletPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Student</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Amount</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Reference</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Description/Reason</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Slip</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Actions</th>
@@ -272,7 +273,7 @@ export default function AdminWalletPage() {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/50">
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center">
+                    <td colSpan="8" className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center text-slate-500 dark:text-white">
                         <AlertCircle className="w-8 h-8 text-slate-300 mb-2" />
                         <p>No transactions found for this filter.</p>
@@ -301,6 +302,11 @@ export default function AdminWalletPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-slate-600 dark:text-white font-mono">
                           {tx.reference_number || <span className="text-slate-400 italic">None</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs text-slate-600 dark:text-white max-w-[220px] break-words whitespace-normal">
+                          {tx.description || <span className="text-slate-400 italic">No description</span>}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

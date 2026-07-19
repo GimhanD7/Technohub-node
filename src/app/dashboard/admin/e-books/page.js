@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, fetchApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
   AlertCircle,
   ArrowUpToLine,
@@ -62,6 +63,7 @@ export default function AdminEBooksPage() {
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
 
   const stats = useMemo(() => {
     const published = resources.filter((item) => item.isPublished).length;
@@ -191,9 +193,7 @@ export default function AdminEBooksPage() {
     }
   };
 
-  const handleDeleteResource = async (resourceId) => {
-    if (!confirm("Delete this e-book resource from the library?")) return;
-
+  const executeDeleteResource = async (resourceId) => {
     setIsDeletingId(resourceId);
     setErrorMsg("");
     setSuccessMsg("");
@@ -216,6 +216,23 @@ export default function AdminEBooksPage() {
     } else {
       setErrorMsg(response.message || "Failed to delete resource.");
     }
+  };
+
+  const handleDeleteResource = (resourceId) => {
+    setDialogState({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete E-Book Resource?',
+      message: 'Are you sure you want to permanently delete this e-book resource from the library?',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        await executeDeleteResource(resourceId);
+      },
+      onCancel: () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   return (
@@ -497,6 +514,7 @@ export default function AdminEBooksPage() {
           )}
         </div>
       </div>
+      <CustomDialog {...dialogState} />
     </div>
   );
 }

@@ -305,3 +305,48 @@ exports.updateBalance = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.exportSummaryCSV = async (req, res) => {
+  try {
+    const { role } = req.query;
+    if (role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Unauthorized. Admin role required." });
+    }
+
+    const history = await prisma.wallet_transactions.findMany({
+      include: { users: { select: { full_name: true, phone_number: true } } },
+      orderBy: { created_at: 'desc' }
+    });
+
+    const csvHeaders = ["Transaction ID", "Date", "Student Name", "Phone", "Amount (LKR)", "Reference", "Description/Reason", "Type", "Status"];
+    const csvRows = [];
+    csvRows.push(csvHeaders.join(','));
+
+    for (const tx of history) {
+      const formattedDate = new Date(tx.created_at).toLocaleString().replace(/,/g, '');
+      const values = [
+        tx.id,
+        formattedDate,
+        tx.users?.full_name || 'N/A',
+        tx.users?.phone_number || 'N/A',
+        parseFloat(tx.amount).toFixed(2),
+        tx.reference_number || 'N/A',
+        tx.description || 'N/A',
+        tx.type,
+        tx.status
+      ].map(val => {
+        const escaped = ('' + (val ?? '')).replace(/"/g, '""');
+        return `"${escaped}"`;
+      });
+      csvRows.push(values.join(','));
+    }
+
+    const csvContent = csvRows.join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="wallet_transactions_summary.csv"');
+    res.status(200).send(csvContent);
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
