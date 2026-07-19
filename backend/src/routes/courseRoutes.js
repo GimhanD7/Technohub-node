@@ -48,4 +48,23 @@ router.delete('/manage_materials', courseController.deleteMaterial);
 router.post('/upload_banner', courseController.uploadBanner);
 router.post('/upload_material', upload.single('resource'), courseController.uploadMaterial);
 
+const moduleStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.resolve(__dirname, '../../../../uploads/modules/');
+    const fs = require('fs');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const filename = `module_${Date.now()}_${crypto.randomBytes(5).toString('hex')}${ext}`;
+    cb(null, filename);
+  }
+});
+const moduleUpload = multer({ storage: moduleStorage });
+
+router.post('/upload_module_image', moduleUpload.single('image'), courseController.uploadModuleImage);
+
 module.exports = router;

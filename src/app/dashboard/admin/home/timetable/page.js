@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import { fetchApi } from "@/lib/api";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
   AlertCircle,
   CheckCircle2,
@@ -38,6 +39,7 @@ export default function HomePageTimetableManager() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
 
   const loadContent = useCallback(async () => {
     setIsLoading(true);
@@ -90,14 +92,30 @@ export default function HomePageTimetableManager() {
     }
   };
 
-  const deleteTimetable = async (rowId) => {
-    if (!confirm("Delete this timetable row?")) return;
+  const executeDelete = async (rowId) => {
     const response = await fetchApi("/home/delete_timetable", {
       method: "POST",
       body: JSON.stringify({ rowId, role: user?.role }),
     });
     if (response.success) loadContent();
     else setErrorMsg(response.message || "Failed to delete timetable row.");
+  };
+
+  const deleteTimetable = (rowId) => {
+    setDialogState({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete Timetable Row?',
+      message: 'Are you sure you want to permanently delete this timetable row from the homepage schedule?',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        await executeDelete(rowId);
+      },
+      onCancel: () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const editTimetable = (row) => {
@@ -209,6 +227,7 @@ export default function HomePageTimetableManager() {
           )}
         </div>
       </section>
+      <CustomDialog {...dialogState} />
     </div>
   );
 }

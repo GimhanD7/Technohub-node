@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
   AlertCircle,
   CalendarDays,
@@ -91,6 +92,7 @@ export default function AdminGalleryPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [viewingItem, setViewingItem] = useState(null);
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
 
   const stats = useMemo(() => {
     const published = items.filter((item) => item.isPublished).length;
@@ -253,9 +255,7 @@ export default function AdminGalleryPage() {
     }
   };
 
-  const handleDeleteItem = async (itemId) => {
-    if (!confirm("Delete this gallery item?")) return;
-
+  const executeDeleteItem = async (itemId) => {
     setIsDeletingId(itemId);
     setErrorMsg("");
     setSuccessMsg("");
@@ -279,6 +279,23 @@ export default function AdminGalleryPage() {
     } else {
       setErrorMsg(response.message || "Failed to delete gallery item.");
     }
+  };
+
+  const handleDeleteItem = (itemId) => {
+    setDialogState({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete Gallery Item?',
+      message: 'Are you sure you want to permanently delete this gallery item and all associated pictures?',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        await executeDeleteItem(itemId);
+      },
+      onCancel: () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   return (
@@ -653,6 +670,7 @@ export default function AdminGalleryPage() {
           </div>
         </div>
       )}
+      <CustomDialog {...dialogState} />
     </div>
   );
 }

@@ -40,6 +40,7 @@ export default function TeacherCourseManagement() {
   const [editMaterialId, setEditMaterialId] = useState(null);
   const [materialSource, setMaterialSource] = useState('link');
   const [materialUploadName, setMaterialUploadName] = useState('');
+  const [moduleImages, setModuleImages] = useState([]);
 
   // Form Data
   const [courseForm, setCourseForm] = useState({ title: '', category_id: '', description: '', duration: '', points: 0, banner_url: '' });
@@ -238,11 +239,44 @@ export default function TeacherCourseManagement() {
     if (module) {
       setEditModuleId(module.id);
       setModuleForm({ title: module.title, description: module.description || '' });
+      try {
+        setModuleImages(module.images ? JSON.parse(module.images) : []);
+      } catch {
+        setModuleImages([]);
+      }
     } else {
       setEditModuleId(null);
       setModuleForm({ title: '', description: '' });
+      setModuleImages([]);
     }
     setShowModuleModal(true);
+  };
+
+  const handleModuleImagesUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setActionLoading(true);
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/course/upload_module_image`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+          setModuleImages(prev => [...prev, { name: file.name.split('.').slice(0, -1).join('.'), url: data.imageUrl }]);
+        } else {
+          toast.error(`Upload failed: ${data.message}`);
+        }
+      } catch (err) {
+        toast.error("Upload error. Please try again.");
+      }
+    }
+    setActionLoading(false);
   };
 
   const handleSaveModule = async (e) => {
@@ -250,8 +284,8 @@ export default function TeacherCourseManagement() {
     setActionLoading(true);
     const method = editModuleId ? "PUT" : "POST";
     const body = editModuleId 
-      ? { id: editModuleId, ...moduleForm }
-      : { course_id: selectedCourse.id, ...moduleForm };
+      ? { id: editModuleId, ...moduleForm, images: JSON.stringify(moduleImages) }
+      : { course_id: selectedCourse.id, ...moduleForm, images: JSON.stringify(moduleImages) };
 
     const data = await fetchApi("/course/manage_modules", {
       method, body: JSON.stringify(body)
@@ -514,6 +548,39 @@ export default function TeacherCourseManagement() {
                   <div>
                     <h3 className="text-[14px] font-bold text-slate-800 dark:text-white">Module {index + 1}: {mod.title}</h3>
                     {mod.description && <p className="text-[12px] text-gray-500 dark:text-white mt-0.5">{mod.description}</p>}
+                    {mod.images && (() => {
+                      try {
+                        const parsedImages = JSON.parse(mod.images);
+                        if (parsedImages.length > 0) {
+                          return (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {parsedImages.map((img, idx) => (
+                                <a 
+                                  key={idx} 
+                                  href={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="group relative h-12 w-16 rounded border border-gray-200 dark:border-slate-800 overflow-hidden bg-gray-50 flex items-center justify-center shrink-0 shadow-sm"
+                                  title={img.name}
+                                >
+                                  <img 
+                                    src={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                                    alt={img.name} 
+                                    className="h-full w-full object-cover group-hover:scale-105 transition-transform" 
+                                  />
+                                  <div className="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 truncate text-[8px] font-medium text-white text-center">
+                                    {img.name}
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          );
+                        }
+                      } catch (e) {
+                        return null;
+                      }
+                      return null;
+                    })()}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button 
@@ -665,6 +732,57 @@ export default function TeacherCourseManagement() {
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Description (Optional)</label>
                 <textarea value={moduleForm.description} onChange={e => setModuleForm({...moduleForm, description: e.target.value})} className="w-full p-2.5 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-slate-800 dark:focus:ring-slate-400 focus:outline-none" />
+              </div>
+              <div className="border-t border-gray-100 dark:border-slate-800/50 pt-4">
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Module Images</label>
+                
+                <div className="space-y-3 mb-3 max-h-48 overflow-y-auto">
+                  {moduleImages.map((img, idx) => (
+                    <div key={idx} className="flex gap-2 items-center bg-gray-50 dark:bg-[#0f172a] p-2 rounded border border-gray-200 dark:border-slate-800">
+                      <img 
+                        src={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                        alt={img.name} 
+                        className="w-10 h-10 object-cover rounded shrink-0" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <input 
+                          type="text" 
+                          value={img.name} 
+                          onChange={(e) => {
+                            const updated = [...moduleImages];
+                            updated[idx].name = e.target.value;
+                            setModuleImages(updated);
+                          }} 
+                          placeholder="Image name/caption" 
+                          className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-slate-800 rounded bg-white dark:bg-[#1e293b] text-slate-800 dark:text-white"
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setModuleImages(moduleImages.filter((_, i) => i !== idx));
+                        }} 
+                        className="text-red-500 hover:text-red-700 p-1 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <label className="flex-1 cursor-pointer bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white text-xs font-semibold py-2.5 px-4 rounded flex items-center justify-center gap-2 transition-colors border border-gray-200 dark:border-slate-800">
+                    <Upload className="w-4 h-4" />
+                    Upload Image(s) (Single/Bulk)
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      multiple 
+                      onChange={handleModuleImagesUpload} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
               </div>
               <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-slate-800/50">
                 <button type="button" onClick={() => setShowModuleModal(false)} className="px-4 py-2 text-[12px] font-medium text-slate-600 dark:text-white bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">Cancel</button>

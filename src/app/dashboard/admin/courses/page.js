@@ -38,6 +38,7 @@ export default function AdminCourseManagement() {
   const [editMaterialId, setEditMaterialId] = useState(null);
   const [materialSource, setMaterialSource] = useState('link');
   const [materialUploadName, setMaterialUploadName] = useState('');
+  const [moduleImages, setModuleImages] = useState([]);
 
   // Form Data
   const [courseForm, setCourseForm] = useState({ title: '', category_id: '', description: '', duration: '', points: 0, banner_url: '' });
@@ -246,11 +247,44 @@ export default function AdminCourseManagement() {
     if (module) {
       setEditModuleId(module.id);
       setModuleForm({ title: module.title, description: module.description || '' });
+      try {
+        setModuleImages(module.images ? JSON.parse(module.images) : []);
+      } catch {
+        setModuleImages([]);
+      }
     } else {
       setEditModuleId(null);
       setModuleForm({ title: '', description: '' });
+      setModuleImages([]);
     }
     setShowModuleModal(true);
+  };
+
+  const handleModuleImagesUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setActionLoading(true);
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/course/upload_module_image`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+          setModuleImages(prev => [...prev, { name: file.name.split('.').slice(0, -1).join('.'), url: data.imageUrl }]);
+        } else {
+          toast.error(`Upload failed: ${data.message}`);
+        }
+      } catch (err) {
+        toast.error("Upload error. Please try again.");
+      }
+    }
+    setActionLoading(false);
   };
 
   const handleSaveModule = async (e) => {
@@ -258,8 +292,8 @@ export default function AdminCourseManagement() {
     setActionLoading(true);
     const method = editModuleId ? "PUT" : "POST";
     const body = editModuleId 
-      ? { id: editModuleId, ...moduleForm }
-      : { course_id: selectedCourse.id, ...moduleForm };
+      ? { id: editModuleId, ...moduleForm, images: JSON.stringify(moduleImages) }
+      : { course_id: selectedCourse.id, ...moduleForm, images: JSON.stringify(moduleImages) };
 
     const data = await fetchApi("/course/manage_modules", {
       method, body: JSON.stringify(body)
@@ -553,6 +587,39 @@ export default function AdminCourseManagement() {
                   <div>
                     <h3 className="text-[14px] font-bold text-slate-800 dark:text-white">Module {index + 1}: {mod.title}</h3>
                     {mod.description && <p className="text-[12px] text-gray-500 dark:text-white mt-0.5">{mod.description}</p>}
+                    {mod.images && (() => {
+                      try {
+                        const parsedImages = JSON.parse(mod.images);
+                        if (parsedImages.length > 0) {
+                          return (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {parsedImages.map((img, idx) => (
+                                <a 
+                                  key={idx} 
+                                  href={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="group relative h-12 w-16 rounded border border-gray-200 dark:border-slate-800 overflow-hidden bg-gray-50 flex items-center justify-center shrink-0 shadow-sm"
+                                  title={img.name}
+                                >
+                                  <img 
+                                    src={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                                    alt={img.name} 
+                                    className="h-full w-full object-cover group-hover:scale-105 transition-transform" 
+                                  />
+                                  <div className="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 truncate text-[8px] font-medium text-white text-center">
+                                    {img.name}
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          );
+                        }
+                      } catch (e) {
+                        return null;
+                      }
+                      return null;
+                    })()}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button 

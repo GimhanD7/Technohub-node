@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
   AlertCircle,
   CheckCircle2,
@@ -43,6 +44,7 @@ export default function HomePageLecturersManager() {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
 
   const loadContent = useCallback(async () => {
     setIsLoading(true);
@@ -121,14 +123,30 @@ export default function HomePageLecturersManager() {
     }
   };
 
-  const deleteLecturer = async (lecturerId) => {
-    if (!confirm("Delete this lecturer card?")) return;
+  const executeDelete = async (lecturerId) => {
     const response = await fetchApi("/home/delete_lecturer", {
       method: "POST",
       body: JSON.stringify({ lecturerId, role: user?.role }),
     });
     if (response.success) loadContent();
     else setErrorMsg(response.message || "Failed to delete lecturer.");
+  };
+
+  const deleteLecturer = (lecturerId) => {
+    setDialogState({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete Lecturer Card?',
+      message: 'Are you sure you want to permanently delete this lecturer profile card? This action cannot be undone.',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        await executeDelete(lecturerId);
+      },
+      onCancel: () => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const editLecturer = (lecturer) => {
@@ -243,6 +261,7 @@ export default function HomePageLecturersManager() {
           )}
         </div>
       </section>
+      <CustomDialog {...dialogState} />
     </div>
   );
 }

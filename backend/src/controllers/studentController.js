@@ -525,6 +525,7 @@ exports.getCourseContent = async (req, res) => {
       id: mod.id,
       title: mod.title,
       description: mod.description,
+      images: mod.images,
       materials: (mod.course_materials || []).map(mat => ({
         id: mat.id,
         title: mat.title,

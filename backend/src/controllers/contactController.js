@@ -97,15 +97,38 @@ exports.getSettings = async (req, res) => {
   try {
     let settings = await prisma.contact_settings.findUnique({ where: { id: 1 } });
     if (!settings) {
-      settings = {
-        hero_badge: "Student Support Desk",
-        title: "Contact Techno-Hub",
-        subtitle: "", phone: "", whatsapp: "", email: "", address: "", office_hours: "",
-        map_url: "", facebook_url: "", instagram_url: "", linkedin_url: "", youtube_url: "",
-        primary_cta_label: "", primary_cta_url: ""
-      };
+      res.json({
+        success: true,
+        settings: {
+          heroBadge: "Student Support Desk",
+          title: "Contact Techno-Hub",
+          subtitle: "", phone: "", whatsapp: "", email: "", address: "", officeHours: "",
+          mapUrl: "", facebookUrl: "", instagramUrl: "", linkedinUrl: "", youtubeUrl: "",
+          primaryCtaLabel: "", primaryCtaUrl: ""
+        }
+      });
+    } else {
+      res.json({
+        success: true,
+        settings: {
+          heroBadge: settings.hero_badge,
+          title: settings.title,
+          subtitle: settings.subtitle,
+          phone: settings.phone,
+          whatsapp: settings.whatsapp,
+          email: settings.email,
+          address: settings.address,
+          officeHours: settings.office_hours,
+          mapUrl: settings.map_url,
+          facebookUrl: settings.facebook_url,
+          instagramUrl: settings.instagram_url,
+          linkedinUrl: settings.linkedin_url,
+          youtubeUrl: settings.youtube_url,
+          primaryCtaLabel: settings.primary_cta_label,
+          primaryCtaUrl: settings.primary_cta_url
+        }
+      });
     }
-    res.json({ success: true, settings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -140,7 +163,27 @@ exports.updateSettings = async (req, res) => {
       create: { id: 1, ...updateData }
     });
 
-    res.json({ success: true, message: "Contact page details updated successfully.", settings });
+    res.json({ 
+      success: true, 
+      message: "Contact page details updated successfully.", 
+      settings: {
+        heroBadge: settings.hero_badge,
+        title: settings.title,
+        subtitle: settings.subtitle,
+        phone: settings.phone,
+        whatsapp: settings.whatsapp,
+        email: settings.email,
+        address: settings.address,
+        officeHours: settings.office_hours,
+        mapUrl: settings.map_url,
+        facebookUrl: settings.facebook_url,
+        instagramUrl: settings.instagram_url,
+        linkedinUrl: settings.linkedin_url,
+        youtubeUrl: settings.youtube_url,
+        primaryCtaLabel: settings.primary_cta_label,
+        primaryCtaUrl: settings.primary_cta_url
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to update contact details: " + error.message });
   }

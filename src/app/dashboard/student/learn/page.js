@@ -218,6 +218,41 @@ export default function CourseViewer() {
 
                 {expandedModules[module.id] && (
                   <div className="divide-y divide-gray-50 dark:divide-slate-800/50">
+                    {(module.description || module.images) && (
+                      <div className="p-3.5 bg-slate-50/50 border-b border-gray-100 dark:border-slate-800/50">
+                        {module.description && <p className="text-[11.5px] text-slate-500 dark:text-white leading-relaxed mb-2">{module.description}</p>}
+                        {module.images && (() => {
+                          try {
+                            const parsedImages = JSON.parse(module.images);
+                            if (parsedImages.length > 0) {
+                              return (
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {parsedImages.map((img, idx) => (
+                                    <a 
+                                      key={idx} 
+                                      href={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                                      target="_blank" 
+                                      rel="noreferrer"
+                                      className="group relative h-10 w-14 rounded border border-gray-200 dark:border-slate-800 overflow-hidden bg-gray-50 flex items-center justify-center shrink-0 shadow-sm"
+                                      title={img.name}
+                                    >
+                                      <img 
+                                        src={img.url.startsWith('http') ? img.url : `${BASE_URL}${img.url}`} 
+                                        alt={img.name} 
+                                        className="h-full w-full object-cover group-hover:scale-105 transition-transform" 
+                                      />
+                                    </a>
+                                  ))}
+                                </div>
+                              );
+                            }
+                          } catch (e) {
+                            return null;
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    )}
                     {(!module.materials || module.materials.length === 0) && (
                       <div className="p-4 text-[12px] text-gray-400 dark:text-white italic">No lessons added to this module.</div>
                     )}

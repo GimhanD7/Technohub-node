@@ -197,7 +197,7 @@ exports.getModules = async (req, res) => {
 
 exports.addModule = async (req, res) => {
   try {
-    const { course_id, title, description, order_index } = req.body;
+    const { course_id, title, description, order_index, images } = req.body;
     if (!course_id || !title) return res.status(400).json({ success: false, message: "Course ID and Title are required." });
 
     await prisma.course_modules.create({
@@ -205,24 +205,26 @@ exports.addModule = async (req, res) => {
         course_id: parseInt(course_id),
         title,
         description: description || '',
-        order_index: order_index || 0
+        order_index: order_index || 0,
+        images: images || null
       }
     });
 
     res.json({ success: true, message: "Module created successfully." });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to create module." });
+    res.status(500).json({ success: false, message: "Failed to create module: " + error.message });
   }
 };
 
 exports.updateModule = async (req, res) => {
   try {
-    const { id, title, description } = req.body;
+    const { id, title, description, images } = req.body;
     if (!id) return res.status(400).json({ success: false, message: "Module ID is required." });
 
     const updateData = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
+    if (images !== undefined) updateData.images = images;
 
     if (Object.keys(updateData).length === 0) return res.json({ success: true, message: "No changes." });
 
@@ -233,7 +235,7 @@ exports.updateModule = async (req, res) => {
 
     res.json({ success: true, message: "Module updated successfully." });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to update module." });
+    res.status(500).json({ success: false, message: "Failed to update module: " + error.message });
   }
 };
 
@@ -404,6 +406,22 @@ exports.uploadMaterial = async (req, res) => {
       fileSize: file.size
     });
 
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Upload error: " + error.message });
+  }
+};
+
+exports.uploadModuleImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Choose an image file to upload." });
+    }
+    res.json({
+      success: true,
+      message: "Image uploaded successfully.",
+      imageUrl: `/uploads/modules/${req.file.filename}`,
+      fileName: req.file.originalname
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: "Upload error: " + error.message });
   }
