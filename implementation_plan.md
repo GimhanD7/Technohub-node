@@ -1,143 +1,106 @@
-# Implementation Plan: E-Book Approval, Enrolled Students View & Teacher Message Requests
+# Feature Implementation Plan
 
-This plan covers three interconnected features:
-1. **E-Book Library for Teachers** — with approval/reject workflow and toggleable edit permissions
-2. **Enrolled Students View** — per-course student list in teacher & admin dashboards
-3. **Teacher Message Requests** — teachers send system messages/reports to admin; admin reviews and takes action
+## Issues & Features Summary
+
+### 1. Download Details for Earnings Pages (Teacher + Admin)
+Add CSV/PDF-style download for earnings data. For teacher side: total summary + per-month breakdown. For admin side: per-teacher earnings downloadable.
+
+### 2. Admin-Managed Bank Transfer Details
+Currently hard-coded. Need a dynamic system:
+- Admin can add **1–5 bank accounts** (Bank Name, Account Name, Account Number)
+- Each account can be **shown/hidden**
+- Student wallet page fetches and displays these dynamically
+
+### 3. Wallet Approvals Refresh Button
+Simple: add a manual refresh button to the top of the admin wallet approvals page.
+
+### 4. Reference Field Bug Fix
+**Root cause found**: Student sends `reference` in FormData, but `walletController.js` reads `req.body.reference_number`. Field name mismatch causes it to always be null → shows "None". Fix: align field name in controller (read `reference` OR `reference_number`), and store it in the `description` field OR a dedicated column.
+
+> [!NOTE]
+> The `wallet_transactions` schema currently stores reference inside `description`. We need to either add a `reference_number` column to schema or fix the reading. Since `reference_number` is used in `exportSummaryCSV`, adding it to the schema is cleaner.
+
+### 5. Settings Icon Does Nothing → Remove It
+The `<Settings />` icon in `TopNavbar.js` (line 187) has no `onClick` handler, no link. It just floats there confusingly. **Fix: remove it** from the navbar.
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Earnings Download format**: Should the download be a **CSV file** (opens in Excel) or a styled **printable HTML** that opens in a new tab? CSV is simpler and more universally useful — recommending CSV.
+
+> [!IMPORTANT]  
+> **Bank Details Storage**: Since there's no table for bank details yet, I'll store them in the existing `settings` table as a JSON value (key: `bank_accounts`). This avoids schema changes. Is that acceptable?
 
 ---
 
 ## Proposed Changes
 
-### 1. Database Schema Updates
+### Fix 1: Reference Field (Backend)
 
-#### [MODIFY] [schema.prisma](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/prisma/schema.prisma)
-- Add fields to `ebook_resources`:
-  - `approval_status String @default("approved") @db.VarChar(20)`
-  - `rejection_reason String? @db.Text`
-  - `teacher_editable Boolean @default(false)`
-- Add new model `teacher_messages`:
-```prisma
-model teacher_messages {
-  id          Int      @id @default(autoincrement())
-  teacher_id  Int
-  subject     String   @db.VarChar(255)
-  message     String   @db.Text
-  category    String   @default("general") @db.VarChar(80)
-  status      String   @default("unread") @db.VarChar(20)
-  admin_reply String?  @db.Text
-  created_at  DateTime @default(now()) @db.Timestamp(0)
-  replied_at  DateTime? @db.Timestamp(0)
-  users       users    @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
-}
-```
-- Run `npx prisma db push`.
+#### [MODIFY] walletController.js
+- Change `const { user_id, amount, reference_number } = req.body;` to also read `req.body.reference` as fallback
+- Store reference in a proper `reference_number` field
+
+#### [MODIFY] schema.prisma  
+- Add `reference_number String?` to `wallet_transactions` model
+- Run `prisma db push`
 
 ---
 
-### 2. Backend: E-Book Workflow
+### Fix 2: Settings Icon
 
-#### [MODIFY] [ebookController.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/src/controllers/ebookController.js)
-- `listEbooks`: filter by `role` (admin=all, teacher=own, public=approved+published). Map `approvalStatus`, `rejectionReason`, `teacherEditable`.
-- `createEbook`: teacher → `approval_status='pending'`, `is_published=false`, `teacher_editable=false`. Admin → `approval_status='approved'`, `is_published=true`.
-- `updateEbook`: teacher must have `teacher_editable=true` & own resource → revert to pending on save. Admin = unrestricted.
-- `deleteEbook`: teacher = own only, admin = unrestricted.
-- **New** `approveEbook`: set `approval_status='approved'`, `is_published=true`, clear reason.
-- **New** `rejectEbook`: set `approval_status='rejected'`, `is_published=false`, save `rejection_reason`.
-- **New** `toggleEditable`: flip `teacher_editable` for a resource.
-
-#### [MODIFY] [ebookRoutes.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/src/routes/ebookRoutes.js)
-- `router.post('/approve', ebookController.approveEbook)`
-- `router.post('/reject', ebookController.rejectEbook)`
-- `router.post('/toggle_editable', ebookController.toggleEditable)`
+#### [MODIFY] TopNavbar.js
+- Remove the orphan `<Settings />` icon at line 187
 
 ---
 
-### 3. Backend: Enrolled Students
+### Feature 1: Wallet Approvals Refresh Button
 
-#### [MODIFY] [courseController.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/src/controllers/courseController.js)
-- `getCourses`: include `_count: { select: { course_enrollments: true } }` → add `enrollmentCount` field in formatted response.
-- **New** `getEnrolledStudents`: accept `course_id` and `teacher_id`. Return full list of enrolled students with name, email, phone, index number, education category, enrolled date.
-
-#### [MODIFY] [courseRoutes.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/src/routes/courseRoutes.js)
-- `router.get('/enrolled_students', courseController.getEnrolledStudents)`
+#### [MODIFY] `src/app/dashboard/admin/wallet/page.js`
+- Add a `RefreshCw` button near the tabs header that calls `fetchTransactions()`
 
 ---
 
-### 4. Backend: Teacher Message Requests
+### Feature 2: Admin Bank Details Manager
 
-#### [NEW] [teacherMessageController.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/src/controllers/teacherMessageController.js)
-- `sendMessage`: create a new `teacher_messages` row from teacher.
-- `getMyMessages`: list messages by `teacher_id`, ordered newest first.
-- `listAllMessages`: (admin) return all messages with teacher name, ordered by `status=unread` first then newest.
-- `replyToMessage`: admin adds reply text and sets `status='replied'`.
-- `markResolved`: admin sets `status='resolved'`.
-- `deleteMessage`: teacher deletes their own message, or admin deletes any.
+#### [NEW] Backend route + controller
+- `GET /api/settings/bank_accounts` — returns all bank accounts from settings
+- `POST /api/settings/bank_accounts` — saves/updates bank accounts array (admin only)
 
-#### [NEW] [teacherMessageRoutes.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/src/routes/teacherMessageRoutes.js)
-- Register all message CRUD and admin action routes.
+#### [MODIFY] `src/app/dashboard/admin/wallet/page.js`
+- Add a new "Bank Transfer Accounts" section below the stats with a form to add/edit/hide up to 5 accounts
 
-#### [MODIFY] [server.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/backend/server.js)
-- Mount `/api/teacher-messages` router.
+#### [MODIFY] `src/app/dashboard/student/wallet/page.js`
+- Fetch bank accounts from API instead of hard-coded values
+- Display each visible account as a card
 
 ---
 
-### 5. Teacher Sidebar
+### Feature 3: Download Earnings (Teacher)
 
-#### [MODIFY] [layout.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/src/app/dashboard/teacher/layout.js)
-- Add link to `/dashboard/teacher/e-books` (BookOpen icon, "E-Book Library").
-- Add link to `/dashboard/teacher/messages` (MessageSquare icon, "Message Admin").
+#### [MODIFY] `backend/src/controllers/teacherController.js`
+- Add `exportEarningsCSV` function: returns monthly breakdown + course/exam details as CSV
+- Accepts `?teacher_id=&month=` (month optional for full history)
 
----
+#### [MODIFY] `backend/src/routes/teacherRoutes.js`
+- Register `GET /earnings/export`
 
-### 6. Teacher E-Books Page
-
-#### [NEW] [/dashboard/teacher/e-books/page.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/src/app/dashboard/teacher/e-books/page.js)
-- Teacher's own resources listed with Pending/Approved/Rejected badges.
-- Add/upload new resource → submitted as pending, won't appear publicly.
-- Edit allowed only if `teacherEditable=true` (otherwise lock icon tooltip).
-- Rejection reason shown if status=rejected.
-- Delete own resources via CustomDialog.
+#### [MODIFY] `src/app/dashboard/teacher/earnings/page.js`
+- Add "Download CSV" button (full summary + per-month filter with download)
 
 ---
 
-### 7. Admin E-Books Page
+### Feature 4: Download Earnings (Admin)
 
-#### [MODIFY] [/dashboard/admin/e-books/page.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/src/app/dashboard/admin/e-books/page.js)
-- Show `approvalStatus` badge on each row.
-- For `pending` entries: **Approve** & **Reject** action buttons.
-- Reject opens inline dialog for rejection reason.
-- **Allow Edit / Lock Edit** toggle button per resource.
-
----
-
-### 8. Enrolled Students View
-
-#### [MODIFY] [teacher/courses/page.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/src/app/dashboard/teacher/courses/page.js) & [admin/courses/page.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/src/app/dashboard/admin/courses/page.js)
-- On each course card: clickable `👥 N Students` enrollment badge.
-- Clicking badge opens an **Enrolled Students Modal** with a searchable table: Name, Email, Phone, Index No., Education, Enrolled Date.
-
----
-
-### 9. Teacher Message Requests Pages
-
-#### [NEW] [/dashboard/teacher/messages/page.js](file:///c:/Users/gimha/Downloads/New%20folder/Technohub-node/src/app/dashboard/teacher/messages/page.js)
-- "Compose Message" form: Subject, Category (Report / Request / Feedback / Other), Message text.
-- List of past sent messages with status badges (Unread, Replied, Resolved).
-- Expand each message to view admin reply.
-- Delete own messages.
-
-#### [NEW or MODIFY] Admin Messages Page
-- Add an "Teacher Messages" section in admin (sidebar entry or sub-page).
-- List all messages, sortable by status (Unread first).
-- Admin can read message, type reply, and mark as Resolved.
+#### [MODIFY] `src/app/dashboard/admin/earnings/page.js`
+- Add "Download CSV" button for per-teacher or all-teacher earnings
 
 ---
 
 ## Verification Plan
-
-1. **E-Book Approval**: Submit as teacher → verify pending → admin approve → verify live on public page.
-2. **E-Book Rejection**: Reject with reason → verify teacher sees it → toggle edit → verify teacher can edit → save reverts to pending.
-3. **Enrolled Students**: In teacher dashboard course list, click enrollment badge → verify modal shows correct students.
-4. **Teacher Messages**: Teacher composes message → admin sees it unread → admin replies → teacher sees reply → admin marks resolved.
-5. **Build check**: `npm run build` passes cleanly.
+- Test reference field: submit recharge with reference → check admin wallet shows it
+- Test bank accounts: add/hide from admin → check student wallet updates
+- Test downloads: click download → CSV downloads correctly
+- Confirm settings icon is gone from all three dashboards

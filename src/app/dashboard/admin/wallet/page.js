@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, X, Clock, Eye, AlertCircle, TrendingUp, DollarSign, Trash2, KeyRound, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, X, Clock, Eye, AlertCircle, TrendingUp, DollarSign, Trash2, KeyRound, Download, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "@/lib/api";
 
@@ -247,6 +247,14 @@ export default function AdminWalletPage() {
             className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'all' ? 'text-primary border-b-2 border-primary bg-white dark:bg-[#1e293b]' : 'text-slate-500 dark:text-white hover:text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'}`}
           >
             All History
+          </button>
+          <button
+            onClick={() => { fetchTransactions(); fetchStats(); }}
+            className="px-4 py-4 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors border-l border-slate-200 dark:border-slate-700 flex items-center gap-1.5 text-sm font-medium"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
         </div>
 
