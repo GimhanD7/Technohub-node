@@ -90,7 +90,7 @@ export default function StudentWalletPage() {
       const formData = new FormData();
       formData.append("user_id", user.id);
       formData.append("amount", amount);
-      if (reference) formData.append("reference", reference);
+      if (reference) formData.append("reference_number", reference);
       formData.append("slip", slipFile);
 
       const res = await fetch(`${API_BASE_URL}/wallet/recharge`, {

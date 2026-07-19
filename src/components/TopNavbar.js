@@ -184,7 +184,6 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
              </div>
            </div>
            
-           <Settings className="w-[18px] h-[18px] cursor-pointer hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition-colors" />
            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} suppressHydrationWarning className="flex items-center justify-center cursor-pointer transition-colors text-gray-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white">
              <Sun className="hidden dark:block w-[18px] h-[18px]" />
              <Moon className="block dark:hidden w-[18px] h-[18px]" />

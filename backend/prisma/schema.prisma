@@ -113,24 +113,42 @@ model courses {
 }
 
 model ebook_resources {
-  id           Int      @id @default(autoincrement())
-  title        String   @db.VarChar(255)
-  author       String?  @db.VarChar(255)
-  subject      String   @db.VarChar(120)
-  category     String   @db.VarChar(80)
-  level        String   @db.VarChar(80)
-  description  String?  @db.Text
-  file_url     String   @db.VarChar(500)
-  cover_url    String?  @db.VarChar(500)
-  file_type    String?  @db.VarChar(80)
-  file_size    Int?
-  is_featured  Boolean  @default(false)
-  is_published Boolean  @default(true)
-  created_by   Int?
-  created_at   DateTime @default(now()) @db.Timestamp(0)
-  users        users?   @relation(fields: [created_by], references: [id], onUpdate: Restrict, map: "ebook_resources_ibfk_1")
+  id               Int      @id @default(autoincrement())
+  title            String   @db.VarChar(255)
+  author           String?  @db.VarChar(255)
+  subject          String   @db.VarChar(120)
+  category         String   @db.VarChar(80)
+  level            String   @db.VarChar(80)
+  description      String?  @db.Text
+  file_url         String   @db.VarChar(500)
+  cover_url        String?  @db.VarChar(500)
+  file_type        String?  @db.VarChar(80)
+  file_size        Int?
+  is_featured      Boolean  @default(false)
+  is_published     Boolean  @default(true)
+  approval_status  String   @default("approved") @db.VarChar(20)
+  rejection_reason String?  @db.Text
+  teacher_editable Boolean  @default(false)
+  created_by       Int?
+  created_at       DateTime @default(now()) @db.Timestamp(0)
+  users            users?   @relation(fields: [created_by], references: [id], onUpdate: Restrict, map: "ebook_resources_ibfk_1")
 
   @@index([created_by], map: "created_by")
+}
+
+model teacher_messages {
+  id          Int       @id @default(autoincrement())
+  teacher_id  Int
+  subject     String    @db.VarChar(255)
+  message     String    @db.Text
+  category    String    @default("general") @db.VarChar(80)
+  status      String    @default("unread") @db.VarChar(20)
+  admin_reply String?   @db.Text
+  created_at  DateTime  @default(now()) @db.Timestamp(0)
+  replied_at  DateTime? @db.Timestamp(0)
+  users       users     @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "teacher_messages_ibfk_1")
+
+  @@index([teacher_id], map: "teacher_messages_teacher_id")
 }
 
 model gallery_images {
@@ -485,6 +503,7 @@ model users {
   system_logs                                   system_logs[]
   teacher_commissions                           teacher_commissions?
   teacher_earnings_history                      teacher_earnings_history[]
+  teacher_messages                              teacher_messages[]
   wallet_transactions                           wallet_transactions[]
 }
 

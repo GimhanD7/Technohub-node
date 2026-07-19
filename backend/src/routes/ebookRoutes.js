@@ -27,6 +27,9 @@ router.get('/get_resources', ebookController.listEbooks);
 router.post('/create', ebookController.createEbook);
 router.post('/update', ebookController.updateEbook);
 router.post('/delete', ebookController.deleteEbook);
+router.post('/approve', ebookController.approveEbook);
+router.post('/reject', ebookController.rejectEbook);
+router.post('/toggle_editable', ebookController.toggleEditable);
 
 router.post('/upload', upload.single('resource'), ebookController.uploadEbook);
 

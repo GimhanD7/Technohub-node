@@ -16,7 +16,11 @@ import {
   Plus,
   RefreshCw,
   Save,
+  ShieldCheck,
+  ShieldAlert,
   Trash2,
+  Unlock,
+  Lock,
   X,
 } from "lucide-react";
 
@@ -33,6 +37,16 @@ const initialForm = {
   fileSize: "",
   isFeatured: false,
   isPublished: true,
+};
+
+const ApprovalBadge = ({ status }) => {
+  const map = {
+    pending:  { bg: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400", label: "Pending" },
+    approved: { bg: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400", label: "Approved" },
+    rejected: { bg: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400", label: "Rejected" },
+  };
+  const s = map[status] || map.approved;
+  return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider ${s.bg}`}>{s.label}</span>;
 };
 
 function formatFileSize(size) {
@@ -67,10 +81,10 @@ export default function AdminEBooksPage() {
 
   const stats = useMemo(() => {
     const published = resources.filter((item) => item.isPublished).length;
-    const featured = resources.filter((item) => item.isFeatured).length;
-    const subjects = new Set(resources.map((item) => item.subject).filter(Boolean)).size;
-
-    return { published, featured, subjects };
+    const featured  = resources.filter((item) => item.isFeatured).length;
+    const pending   = resources.filter((item) => item.approvalStatus === "pending").length;
+    const subjects  = new Set(resources.map((item) => item.subject).filter(Boolean)).size;
+    return { published, featured, pending, subjects };
   }, [resources]);
 
   const loadResources = useCallback(async () => {
@@ -235,6 +249,37 @@ export default function AdminEBooksPage() {
     });
   };
 
+  const handleApprove = async (resourceId) => {
+    const res = await fetchApi("/ebook/approve", { method: "POST", body: JSON.stringify({ id: resourceId }) });
+    if (res.success) { setSuccessMsg("Resource approved and published."); loadResources(); setTimeout(() => setSuccessMsg(""), 3000); }
+    else setErrorMsg(res.message || "Approval failed.");
+  };
+
+  const handleReject = (resourceId) => {
+    let rejectionReason = "";
+    setDialogState({
+      isOpen: true, type: "warning", title: "Reject Resource",
+      message: "Please provide a reason for rejection:",
+      isAlertOnly: false,
+      inputValue: "",
+      showInput: true,
+      onConfirm: async (reason) => {
+        setDialogState(prev => ({ ...prev, isOpen: false }));
+        if (!reason?.trim()) { setErrorMsg("Rejection reason is required."); return; }
+        const res = await fetchApi("/ebook/reject", { method: "POST", body: JSON.stringify({ id: resourceId, reason }) });
+        if (res.success) { setSuccessMsg("Resource rejected."); loadResources(); setTimeout(() => setSuccessMsg(""), 3000); }
+        else setErrorMsg(res.message || "Rejection failed.");
+      },
+      onCancel: () => setDialogState(prev => ({ ...prev, isOpen: false }))
+    });
+  };
+
+  const handleToggleEditable = async (resourceId) => {
+    const res = await fetchApi("/ebook/toggle_editable", { method: "POST", body: JSON.stringify({ id: resourceId }) });
+    if (res.success) { setSuccessMsg(`Teacher edit ${res.teacherEditable ? "enabled" : "disabled"}.`); loadResources(); setTimeout(() => setSuccessMsg(""), 3000); }
+    else setErrorMsg(res.message || "Toggle failed.");
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 border-b border-gray-200 dark:border-slate-800 pb-5">
@@ -246,10 +291,14 @@ export default function AdminEBooksPage() {
           <p className="text-xs text-gray-500 dark:text-white">Add and manage digital learning resources shown in the public e-book library.</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 min-w-[360px]">
+        <div className="grid grid-cols-4 gap-3 min-w-[480px]">
           <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded-lg p-3">
             <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-white">Published</p>
             <p className="text-xl font-bold text-slate-800 dark:text-white">{stats.published}</p>
+          </div>
+          <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded-lg p-3">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-white">Pending</p>
+            <p className="text-xl font-bold text-amber-500">{stats.pending}</p>
           </div>
           <div className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded-lg p-3">
             <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-white">Featured</p>
@@ -448,10 +497,13 @@ export default function AdminEBooksPage() {
                 </thead>
                 <tbody>
                   {resources.map((resource) => (
-                    <tr key={resource.id} className={`border-b border-gray-100 dark:border-slate-800/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 ${editingId === resource.id ? "bg-primary/5 dark:bg-primary/20" : ""}`}>
+                    <tr key={resource.id} className={`border-b border-gray-100 dark:border-slate-800/50 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 ${editingId === resource.id ? "bg-primary/5 dark:bg-primary/20" : ""} ${resource.approvalStatus === "pending" ? "bg-amber-50/40 dark:bg-amber-900/10" : ""}`}>
                       <td className="py-4 pr-4 min-w-[260px]">
                         <p className="font-semibold text-slate-800 dark:text-white text-[13px]">{resource.title}</p>
                         <p className="text-[11px] text-slate-400">{resource.author || "No author"} · {formatFileSize(resource.fileSize)}</p>
+                        {resource.creatorName && (
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">By: {resource.creatorName} ({resource.creatorRole})</p>
+                        )}
                       </td>
                       <td className="py-4 text-[12px] text-slate-600 dark:text-white">
                         <p className="font-medium">{resource.subject}</p>
@@ -460,41 +512,46 @@ export default function AdminEBooksPage() {
                       <td className="py-4 text-[12px] text-slate-600 dark:text-white">{resource.category}</td>
                       <td className="py-4 text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider ${resource.isPublished ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50" : "bg-gray-50 dark:bg-slate-800/50 text-gray-600 dark:text-white border-gray-200 dark:border-slate-800"}`}>
-                            {resource.isPublished ? "Published" : "Draft"}
-                          </span>
+                          <ApprovalBadge status={resource.approvalStatus} />
+                          {resource.isPublished && resource.approvalStatus === "approved" && <span className="text-[10px] font-bold text-green-600 dark:text-green-400">Live</span>}
                           {resource.isFeatured && <span className="text-[10px] font-bold text-amber-600">Featured</span>}
+                          {resource.teacherEditable && <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400">Edit On</span>}
                         </div>
                       </td>
                       <td className="py-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={getResourceHref(resource.fileUrl)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded transition-colors inline-flex items-center"
-                            title="Open resource"
-                          >
+                        <div className="flex items-center justify-end gap-1 flex-wrap">
+                          {/* Approve/Reject for pending */}
+                          {resource.approvalStatus === "pending" && (
+                            <>
+                              <button onClick={() => handleApprove(resource.id)}
+                                className="px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 rounded text-[10px] font-bold flex items-center gap-1 transition-colors" title="Approve">
+                                <ShieldCheck className="w-3 h-3" /> Approve
+                              </button>
+                              <button onClick={() => handleReject(resource.id)}
+                                className="px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 rounded text-[10px] font-bold flex items-center gap-1 transition-colors" title="Reject">
+                                <ShieldAlert className="w-3 h-3" /> Reject
+                              </button>
+                            </>
+                          )}
+                          {/* Toggle teacher editable (only for teacher-uploaded resources) */}
+                          {resource.creatorRole === "teacher" && resource.approvalStatus === "approved" && (
+                            <button onClick={() => handleToggleEditable(resource.id)}
+                              className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 transition-colors ${resource.teacherEditable ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100" : "bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-100"}`}
+                              title={resource.teacherEditable ? "Lock teacher edit" : "Allow teacher edit"}>
+                              {resource.teacherEditable ? <><Unlock className="w-3 h-3" /> Lock Edit</> : <><Lock className="w-3 h-3" /> Allow Edit</>}
+                            </button>
+                          )}
+                          <a href={getResourceHref(resource.fileUrl)} target="_blank" rel="noreferrer"
+                            className="p-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded transition-colors inline-flex items-center" title="Open resource">
                             <ExternalLink className="w-4 h-4" />
                           </a>
-                          <button
-                            onClick={() => beginEditResource(resource)}
-                            className="p-1.5 bg-primary/5 text-primary hover:bg-primary/10 rounded transition-colors inline-flex items-center"
-                            title="Edit resource"
-                          >
+                          <button onClick={() => beginEditResource(resource)}
+                            className="p-1.5 bg-primary/5 text-primary hover:bg-primary/10 rounded transition-colors inline-flex items-center" title="Edit resource">
                             <Edit3 className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteResource(resource.id)}
-                            disabled={isDeletingId === resource.id}
-                            className="p-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded transition-colors inline-flex items-center disabled:opacity-50"
-                            title="Delete resource"
-                          >
-                            {isDeletingId === resource.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
+                          <button onClick={() => handleDeleteResource(resource.id)} disabled={isDeletingId === resource.id}
+                            className="p-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded transition-colors inline-flex items-center disabled:opacity-50" title="Delete resource">
+                            {isDeletingId === resource.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                           </button>
                         </div>
                       </td>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shield, Database, Users, User, ChevronDown, Activity, Settings, BookOpen, ClipboardList, Wallet, Images, MessageCircle, Home, DollarSign, ShieldAlert, Video, Tags, Bell } from "lucide-react";
+import { Shield, Database, Users, User, ChevronDown, Activity, Settings, BookOpen, ClipboardList, Wallet, Images, MessageCircle, Home, DollarSign, ShieldAlert, Video, Tags, Bell, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import TopNavbar from "@/components/TopNavbar";
@@ -175,6 +175,13 @@ export default function AdminLayout({ children }) {
               <div className="flex items-center gap-3">
                 <DollarSign className="w-[18px] h-[18px]" />
                 <span>Teacher Earnings</span>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/admin/teacher-messages" className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-[13px] font-medium ${isActive('/dashboard/admin/teacher-messages') ? 'bg-primary/5 dark:bg-primary/20 text-primary dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}>
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-[18px] h-[18px]" />
+                <span>Teacher Messages</span>
               </div>
             </Link>
              <Link href="/dashboard/admin/courses" className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-[13px] font-medium ${isActive('/dashboard/admin/courses') ? 'bg-primary/5 dark:bg-primary/20 text-primary dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}>

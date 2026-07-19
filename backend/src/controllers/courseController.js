@@ -100,14 +100,19 @@ exports.getCourses = async (req, res) => {
 
     const courses = await prisma.courses.findMany({
       where: { teacher_id: parseInt(teacher_id) },
-      include: { course_categories: { select: { name: true } } },
+      include: {
+        course_categories: { select: { name: true } },
+        _count: { select: { course_enrollments: true } }
+      },
       orderBy: { created_at: 'desc' }
     });
 
     const formatted = courses.map(c => ({
       ...c,
       category_name: c.course_categories?.name || null,
-      course_categories: undefined
+      enrollment_count: c._count?.course_enrollments ?? 0,
+      course_categories: undefined,
+      _count: undefined
     }));
 
     res.json({ success: true, courses: formatted });
@@ -424,5 +429,57 @@ exports.uploadModuleImage = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Upload error: " + error.message });
+  }
+};
+
+// --- ENROLLED STUDENTS ---
+exports.getEnrolledStudents = async (req, res) => {
+  try {
+    const { course_id, teacher_id } = req.query;
+    if (!course_id) return res.status(400).json({ success: false, message: "Course ID is required." });
+
+    // Verify this course belongs to the requesting teacher (when teacher_id is provided)
+    if (teacher_id) {
+      const course = await prisma.courses.findFirst({
+        where: { id: parseInt(course_id), teacher_id: parseInt(teacher_id) }
+      });
+      if (!course) return res.status(403).json({ success: false, message: "Access denied." });
+    }
+
+    const enrollments = await prisma.course_enrollments.findMany({
+      where: { course_id: parseInt(course_id) },
+      include: {
+        users: {
+          select: {
+            id: true,
+            full_name: true,
+            index_number: true,
+            email: true,
+            phone_number: true,
+            education_category: true,
+            student_category: true,
+            profile_picture: true
+          }
+        }
+      },
+      orderBy: { enrolled_at: 'desc' }
+    });
+
+    const students = enrollments.map(e => ({
+      enrollmentId: e.id,
+      enrolledAt: e.enrolled_at,
+      studentId: e.users?.id,
+      fullName: e.users?.full_name || 'Unknown',
+      indexNumber: e.users?.index_number || '-',
+      email: e.users?.email || '-',
+      phone: e.users?.phone_number || '-',
+      educationCategory: e.users?.education_category || '-',
+      studentCategory: e.users?.student_category || '-',
+      profilePicture: e.users?.profile_picture || null
+    }));
+
+    res.json({ success: true, students, total: students.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
