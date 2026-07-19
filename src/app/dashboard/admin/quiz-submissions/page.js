@@ -24,13 +24,13 @@ export default function QuizSubmissions() {
       router.push("/login");
       return;
     }
-    
+
     const parsedUser = JSON.parse(savedUser);
     if (!["teacher", "admin"].includes(parsedUser.role)) {
       router.push("/dashboard");
       return;
     }
-    
+
     setUser(parsedUser);
 
     // Get quizId from URL - handle both /quiz/[id] and dynamic routes
@@ -56,10 +56,10 @@ export default function QuizSubmissions() {
   const loadSubmissions = async (id, currentUser) => {
     setIsLoading(true);
     setError("");
-    
+
     const data = await fetchApi(`/quiz/submissions?quizId=${id}&userId=${currentUser.id}&role=${currentUser.role}`);
     setIsLoading(false);
-    
+
     if (data.success) {
       setQuiz(data.quiz);
       setSubmissions(data.submissions);
@@ -68,6 +68,16 @@ export default function QuizSubmissions() {
     } else {
       setError(data.message || "Failed to load submissions.");
     }
+  };
+
+  const formatDuration = (start, end) => {
+    if (!start || !end) return "—";
+    const minutes = Math.round((new Date(end) - new Date(start)) / 60000);
+    if (isNaN(minutes) || minutes < 0) return "—";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    return `${mins} min`;
   };
 
   if (isLoading) {
@@ -96,10 +106,10 @@ export default function QuizSubmissions() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 py-8">
-      
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <button 
+        <button
           onClick={() => router.back()}
           className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg transition-colors"
         >
@@ -147,8 +157,11 @@ export default function QuizSubmissions() {
             <h3 className="text-sm font-semibold text-slate-600 dark:text-white">Quiz Duration</h3>
             <Clock className="w-5 h-5 text-purple-500" />
           </div>
-          <p className="text-sm text-slate-800 dark:text-white">
-            {quiz.startTime ? new Date(quiz.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'} to {quiz.endTime ? new Date(quiz.endTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">
+            {formatDuration(quiz.startTime, quiz.endTime)}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-white mt-1">
+            {quiz.startTime ? new Date(quiz.startTime).toLocaleDateString([], { dateStyle: 'medium' }) : '—'}
           </p>
         </div>
       </div>
@@ -255,7 +268,3 @@ export default function QuizSubmissions() {
     </div>
   );
 }
-
-
-
-
