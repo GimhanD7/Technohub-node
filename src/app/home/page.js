@@ -191,7 +191,12 @@ function getInitials(name) {
     .join("");
 }
 
-const getFullImageUrl = (url) => url?.startsWith('/uploads/') ? `${BASE_URL}${url}` : url;
+const getFullImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const cleanUrl = url.startsWith("/") ? url : "/" + url;
+  return `${BASE_URL}${cleanUrl}`;
+};
 
 function mergeDisplayItems(adminItems, fallbackItems, minimumCount) {
   const activeItems = Array.isArray(adminItems) ? adminItems.filter(Boolean) : [];
@@ -350,9 +355,24 @@ export default function Home() {
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-950 leading-tight mb-6">
                 {settings.heroTitle}
               </h1>
-              <p className="text-slate-600 dark:text-white text-lg leading-8 max-w-2xl">
+              <p className="text-slate-600 dark:text-white text-lg leading-8 max-w-2xl mb-4">
                 {settings.heroSubtitle}
               </p>
+
+              {settings.aitiDescription && (
+                <div className="p-4 my-5 rounded-xl bg-slate-50 dark:bg-slate-850/40 border border-slate-150 dark:border-slate-800 flex items-center gap-4 animate-in fade-in duration-300 max-w-2xl">
+                  {settings.aitiLogo && (
+                    <img 
+                      src={getFullImageUrl(settings.aitiLogo)} 
+                      alt="AITI Logo" 
+                      className="h-11 w-auto object-contain shrink-0 max-w-[120px]" 
+                    />
+                  )}
+                  <p className="text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {settings.aitiDescription}
+                  </p>
+                </div>
+              )}
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link href={settings.primaryCtaUrl || "/register"}>

@@ -23,6 +23,7 @@ const upload = multer({ storage: storage });
 router.get('/balance', walletController.getBalance);
 router.get('/history', walletController.getHistory);
 router.get('/stats', walletController.getStats);
+router.get('/export_summary_csv', walletController.exportSummaryCSV);
 
 router.post('/recharge', upload.single('slip'), walletController.recharge);
 router.post('/approve', walletController.approveOrReject);

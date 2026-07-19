@@ -113,13 +113,7 @@ export default function TeacherLayout({ children }) {
 
             <p className="text-[10px] font-bold text-gray-400 dark:text-white uppercase tracking-wider mt-8 mb-3 px-2">Management</p>
 
-            <Link href="#" className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-[13px] font-medium text-slate-600 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:text-white`}>
-              <div className="flex items-center gap-3">
-                <ClipboardList className="w-[18px] h-[18px]" />
-                <span className={labelClass}>Assignments</span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-white" />
-            </Link>
+
 
             <Link href="/dashboard/teacher/profile" className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-[13px] font-medium ${isActive('/dashboard/teacher/profile') ? 'bg-primary/5 text-primary' : 'text-slate-600 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:text-white'}`}>
               <div className="flex items-center gap-3">

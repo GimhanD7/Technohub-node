@@ -37,7 +37,9 @@ exports.getContent = async (req, res) => {
         whySubtitle: settings.why_subtitle,
         timetableHeading: settings.timetable_heading,
         timetableSubtitle: settings.timetable_subtitle,
-        faqHeading: settings.faq_heading
+        faqHeading: settings.faq_heading,
+        aitiDescription: settings.aiti_description,
+        aitiLogo: settings.aiti_logo
       } : {},
       slides: slides.map(s => ({ ...s, imageUrl: s.image_url, isActive: Boolean(s.is_active), sortOrder: s.sort_order })),
       lecturers: lecturers.map(l => ({ ...l, imageUrl: l.image_url, isActive: Boolean(l.is_active), sortOrder: l.sort_order })),
@@ -62,7 +64,7 @@ exports.updateSettings = async (req, res) => {
       heroBadge, heroTitle, heroSubtitle, primaryCtaLabel, primaryCtaUrl,
       secondaryCtaLabel, secondaryCtaUrl, coursesHeading, coursesSubtitle,
       lecturersHeading, lecturersSubtitle, whyHeading, whySubtitle,
-      timetableHeading, timetableSubtitle, faqHeading, userId
+      timetableHeading, timetableSubtitle, faqHeading, aitiDescription, aitiLogo, userId
     } = req.body;
 
     const updateData = {
@@ -82,6 +84,8 @@ exports.updateSettings = async (req, res) => {
       timetable_heading: timetableHeading,
       timetable_subtitle: timetableSubtitle,
       faq_heading: faqHeading,
+      aiti_description: aitiDescription,
+      aiti_logo: aitiLogo,
       updated_by: userId ? parseInt(userId) : null
     };
 

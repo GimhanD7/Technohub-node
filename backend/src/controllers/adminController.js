@@ -281,8 +281,9 @@ exports.getUploads = async (req, res) => {
         category,
         size: stats.size,
         modifiedAt: Math.floor(stats.mtimeMs / 1000)
-      };
     });
+
+    filesData.sort((a, b) => b.modifiedAt - a.modifiedAt);
 
     res.json({ success: true, files: filesData, totalSize, totalFiles: filesData.length });
   } catch (error) {
