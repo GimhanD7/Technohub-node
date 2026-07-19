@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Button from "@/components/ui/Button";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import {
   ArrowRight,
   CalendarDays,
@@ -96,10 +96,19 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function getResourceUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("data:")) return url;
+  return `${BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 function getItemImages(item) {
-  const urls = (item.images || []).map((image) => image.imageUrl).filter(Boolean);
-  if (item.imageUrl && !urls.includes(item.imageUrl)) {
-    urls.unshift(item.imageUrl);
+  const urls = (item.images || []).map((image) => getResourceUrl(image.imageUrl)).filter(Boolean);
+  if (item.imageUrl) {
+    const mainUrl = getResourceUrl(item.imageUrl);
+    if (!urls.includes(mainUrl)) {
+      urls.unshift(mainUrl);
+    }
   }
   return urls;
 }

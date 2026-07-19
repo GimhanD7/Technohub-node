@@ -24,7 +24,26 @@ exports.listEbooks = async (req, res) => {
 
     const totalPages = Math.ceil(total / parseInt(limit));
 
-    res.json({ success: true, resources: ebooks, total, totalPages, currentPage: parseInt(page) });
+    // Map snake_case database columns to camelCase frontend properties
+    const formattedEbooks = ebooks.map(ebook => ({
+      id: ebook.id,
+      title: ebook.title,
+      author: ebook.author,
+      subject: ebook.subject,
+      category: ebook.category,
+      level: ebook.level,
+      description: ebook.description,
+      fileUrl: ebook.file_url,
+      coverUrl: ebook.cover_url,
+      fileType: ebook.file_type,
+      fileSize: ebook.file_size,
+      isFeatured: ebook.is_featured,
+      isPublished: ebook.is_published,
+      createdBy: ebook.created_by,
+      createdAt: ebook.created_at
+    }));
+
+    res.json({ success: true, resources: formattedEbooks, total, totalPages, currentPage: parseInt(page) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -32,8 +51,26 @@ exports.listEbooks = async (req, res) => {
 
 exports.createEbook = async (req, res) => {
   try {
-    const { title, author, subject, category, level, description, fileUrl, coverUrl, fileType, fileSize, isFeatured, isPublished, userId } = req.body;
-    if (!title || !subject || !fileUrl) {
+    const { 
+      title, author, subject, category, level, description, 
+      fileUrl, file_url, 
+      coverUrl, cover_url, 
+      fileType, file_type, 
+      fileSize, file_size, 
+      isFeatured, is_featured, 
+      isPublished, is_published, 
+      userId, user_id 
+    } = req.body;
+    
+    const finalFileUrl = fileUrl || file_url;
+    const finalCoverUrl = coverUrl !== undefined ? coverUrl : cover_url;
+    const finalFileType = fileType || file_type;
+    const finalFileSize = fileSize !== undefined ? fileSize : file_size;
+    const finalIsFeatured = isFeatured !== undefined ? isFeatured : is_featured;
+    const finalIsPublished = isPublished !== undefined ? isPublished : is_published;
+    const finalUserId = userId !== undefined ? userId : user_id;
+
+    if (!title || !subject || !finalFileUrl) {
       return res.status(400).json({ success: false, message: "Title, subject, and resource file are required." });
     }
 
@@ -45,13 +82,13 @@ exports.createEbook = async (req, res) => {
         category: category || "E-Book",
         level: level || "Advanced Level",
         description: description || '',
-        file_url: fileUrl,
-        cover_url: coverUrl || null,
-        file_type: fileType || 'application/pdf',
-        file_size: fileSize ? parseInt(fileSize) : 0,
-        is_featured: isFeatured === true,
-        is_published: isPublished !== false,
-        created_by: userId ? parseInt(userId) : null
+        file_url: finalFileUrl,
+        cover_url: finalCoverUrl || null,
+        file_type: finalFileType || 'application/pdf',
+        file_size: finalFileSize ? parseInt(finalFileSize) : 0,
+        is_featured: finalIsFeatured === true,
+        is_published: finalIsPublished !== false,
+        created_by: finalUserId ? parseInt(finalUserId) : null
       }
     });
 
@@ -63,12 +100,24 @@ exports.createEbook = async (req, res) => {
 
 exports.updateEbook = async (req, res) => {
   try {
-    const { resourceId, id, title, author, subject, category, level, description, fileUrl, coverUrl, fileType, fileSize, isFeatured, isPublished } = req.body;
+    const { 
+      resourceId, id, title, author, subject, category, level, description, 
+      fileUrl, file_url, 
+      coverUrl, cover_url, 
+      fileType, file_type, 
+      fileSize, file_size, 
+      isFeatured, is_featured, 
+      isPublished, is_published 
+    } = req.body;
+    
     const targetId = resourceId || id;
     
     if (!targetId || !title || !subject) {
       return res.status(400).json({ success: false, message: "ID, Title, and Subject are required." });
     }
+
+    const finalIsFeatured = isFeatured !== undefined ? isFeatured : is_featured;
+    const finalIsPublished = isPublished !== undefined ? isPublished : is_published;
 
     const updateData = { 
       title, 
@@ -77,18 +126,21 @@ exports.updateEbook = async (req, res) => {
       category: category || "E-Book",
       level: level || "Advanced Level",
       description: description || '',
-      is_featured: isFeatured === true,
-      is_published: isPublished !== false,
+      is_featured: finalIsFeatured === true,
+      is_published: finalIsPublished !== false,
     };
     
-    if (fileUrl) {
-      updateData.file_url = fileUrl;
-      updateData.file_type = fileType;
-      updateData.file_size = fileSize ? parseInt(fileSize) : 0;
+    const finalFileUrl = fileUrl || file_url;
+    if (finalFileUrl) {
+      updateData.file_url = finalFileUrl;
+      updateData.file_type = fileType || file_type;
+      const finalFileSize = fileSize !== undefined ? fileSize : file_size;
+      updateData.file_size = finalFileSize ? parseInt(finalFileSize) : 0;
     }
     
-    if (coverUrl !== undefined) {
-      updateData.cover_url = coverUrl;
+    const finalCoverUrl = coverUrl !== undefined ? coverUrl : cover_url;
+    if (finalCoverUrl !== undefined) {
+      updateData.cover_url = finalCoverUrl;
     }
 
     await prisma.ebook_resources.update({

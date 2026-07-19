@@ -139,7 +139,27 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id, adminId, password } = req.body;
+
+    if (!adminId || !password) {
+      return res.status(400).json({ success: false, message: "Admin confirmation is required for deletion." });
+    }
+
+    // Verify admin
+    const adminUser = await prisma.users.findUnique({
+      where: { id: parseInt(adminId) }
+    });
+
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Unauthorized. Admin privileges required." });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, adminUser.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect password. Deletion denied." });
+    }
+
     await prisma.users.delete({ where: { id: parseInt(id) } });
     res.json({ success: true, message: "User deleted successfully." });
   } catch (error) {

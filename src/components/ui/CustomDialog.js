@@ -1,6 +1,27 @@
+import { useState, useEffect } from "react";
 import { AlertTriangle, Info, CheckCircle2, X } from "lucide-react";
 
-export function CustomDialog({ isOpen, type = "info", title, message, onConfirm, onCancel, confirmText = "Confirm", cancelText = "Cancel", isAlertOnly = false }) {
+export function CustomDialog({ 
+  isOpen, 
+  type = "info", 
+  title, 
+  message, 
+  onConfirm, 
+  onCancel, 
+  confirmText = "Confirm", 
+  cancelText = "Cancel", 
+  isAlertOnly = false,
+  requirePassword = false,
+  passwordPlaceholder = "Enter password to confirm"
+}) {
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setPassword("");
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const icons = {
@@ -20,7 +41,7 @@ export function CustomDialog({ isOpen, type = "info", title, message, onConfirm,
   const btnColors = {
     warning: "bg-amber-500 hover:bg-amber-600 focus:ring-amber-500",
     error: "bg-red-500 hover:bg-red-600 focus:ring-red-500",
-    success: "bg-green-500 hover:bg-green-600 focus:ring-green-500",
+    success: "bg-green-50 hover:bg-green-600 focus:ring-green-500",
     info: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
   };
 
@@ -32,9 +53,22 @@ export function CustomDialog({ isOpen, type = "info", title, message, onConfirm,
             <div className={`p-2 rounded-full shrink-0 border ${colors[type]} bg-opacity-50`}>
               {icons[type]}
             </div>
-            <div className="pt-1">
+            <div className="pt-1 flex-1">
               <h3 className="text-[15px] font-bold text-slate-800 tracking-tight leading-none mb-2">{title}</h3>
-              <div className="text-[13px] text-gray-500 leading-relaxed">{message}</div>
+              <div className="text-[13px] text-gray-500 leading-relaxed mb-1">{message}</div>
+              
+              {requirePassword && (
+                <div className="mt-3">
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={passwordPlaceholder}
+                    className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white text-slate-800"
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -50,10 +84,17 @@ export function CustomDialog({ isOpen, type = "info", title, message, onConfirm,
           )}
           <button 
             onClick={() => {
-              if (onConfirm) onConfirm();
+              if (onConfirm) {
+                if (requirePassword) {
+                  onConfirm(password);
+                } else {
+                  onConfirm();
+                }
+              }
               if (isAlertOnly && onCancel) onCancel(); // For alerts, clicking OK just closes it
             }}
-            className={`px-4 py-2 text-[12px] font-medium text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${btnColors[type]}`}
+            disabled={requirePassword && !password.trim()}
+            className={`px-4 py-2 text-[12px] font-medium text-white rounded transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${btnColors[type]} disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {isAlertOnly ? "OK" : confirmText}
           </button>
@@ -62,3 +103,4 @@ export function CustomDialog({ isOpen, type = "info", title, message, onConfirm,
     </div>
   );
 }
+

@@ -9,5 +9,6 @@ router.get('/get_my_courses', studentController.getMyCourses);
 router.post('/mark_material_complete', studentController.markMaterialComplete);
 router.get('/get_dashboard_summary', studentController.getDashboardSummary);
 router.get('/get_grades_reports', studentController.getGradesReports);
+router.get('/get_course_content', studentController.getCourseContent);
 
 module.exports = router;

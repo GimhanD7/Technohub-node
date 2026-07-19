@@ -448,3 +448,72 @@ exports.getGradesReports = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.getCourseContent = async (req, res) => {
+  try {
+    const { course_id, student_id } = req.query;
+    if (!course_id || !student_id) {
+      return res.status(400).json({ success: false, message: "Course ID and Student ID are required." });
+    }
+
+    const cId = parseInt(course_id);
+    const sId = parseInt(student_id);
+
+    const course = await prisma.courses.findUnique({
+      where: { id: cId },
+      include: {
+        users: { select: { full_name: true } }
+      }
+    });
+
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found." });
+    }
+
+    const modules = await prisma.course_modules.findMany({
+      where: { course_id: cId },
+      orderBy: { order_index: 'asc' },
+      include: {
+        course_materials: {
+          orderBy: { order_index: 'asc' }
+        }
+      }
+    });
+
+    const completions = await prisma.material_completions.findMany({
+      where: { student_id: sId }
+    });
+    const completedSet = new Set(completions.map(c => c.material_id));
+
+    const formattedCourse = {
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      banner_url: course.banner_url,
+      teacher_name: course.users?.full_name || "Unknown Teacher"
+    };
+
+    const formattedModules = modules.map(mod => ({
+      id: mod.id,
+      title: mod.title,
+      description: mod.description,
+      materials: (mod.course_materials || []).map(mat => ({
+        id: mat.id,
+        title: mat.title,
+        description: mat.description,
+        type: mat.type,
+        content_url: mat.content_url,
+        is_completed: completedSet.has(mat.id)
+      }))
+    }));
+
+    res.json({
+      success: true,
+      course: formattedCourse,
+      modules: formattedModules
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
