@@ -9,7 +9,7 @@ const { logActivity } = require('../utils/logger');
 exports.getUsers = async (req, res) => {
   try {
     const { role } = req.query;
-    let whereClause = {};
+    let whereClause = { status: { not: 'deleted' } };
     if (role && role !== 'all') {
       whereClause.role = role;
     }
@@ -160,7 +160,34 @@ exports.deleteUser = async (req, res) => {
       return res.status(401).json({ success: false, message: "Incorrect password. Deletion denied." });
     }
 
-    await prisma.users.delete({ where: { id: parseInt(id) } });
+    // Fetch target user details
+    const targetUser = await prisma.users.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Insert into deleted_users table for audit logging
+    await prisma.deleted_users.create({
+      data: {
+        original_id: targetUser.id,
+        full_name: targetUser.full_name,
+        phone_number: targetUser.phone_number,
+        email: targetUser.email,
+        role: targetUser.role || "student",
+        index_number: targetUser.index_number,
+        deleted_by: parseInt(adminId)
+      }
+    });
+
+    // Mark as deleted in users table to preserve foreign key data
+    await prisma.users.update({
+      where: { id: targetUser.id },
+      data: { status: 'deleted' }
+    });
+
     res.json({ success: true, message: "User deleted successfully." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -317,6 +344,30 @@ exports.uploadProfile = async (req, res) => {
     }
 
     res.json({ success: true, message: "Avatar updated.", imageUrl: relativePath });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getDeletedUsers = async (req, res) => {
+  try {
+    const deletedList = await prisma.deleted_users.findMany({
+      orderBy: { deleted_at: 'desc' }
+    });
+    
+    // Resolve deleting admin names
+    const admins = await prisma.users.findMany({
+      where: { role: 'admin' },
+      select: { id: true, full_name: true }
+    });
+    const adminMap = new Map(admins.map(a => [a.id, a.full_name]));
+
+    const formattedList = deletedList.map(item => ({
+      ...item,
+      deleted_by_name: adminMap.get(item.deleted_by) || "Admin"
+    }));
+
+    res.json({ success: true, deletedUsers: formattedList });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

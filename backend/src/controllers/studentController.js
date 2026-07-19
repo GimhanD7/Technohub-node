@@ -47,6 +47,34 @@ exports.enrollCourse = async (req, res) => {
         await tx.course_enrollments.create({
           data: { student_id: sId, course_id: cId }
         });
+
+        // Record teacher commission (80% default if not set in teacher_commissions)
+        const comm = await tx.teacher_commissions.findUnique({ where: { teacher_id: course.teacher_id } });
+        let percentage = 80;
+        let commType = 'percentage';
+        let commValue = 80;
+        let netEarning = fee * 0.8;
+
+        if (comm) {
+          commType = comm.commission_type || 'percentage';
+          commValue = parseFloat(comm.commission_value || '80');
+          if (commType === 'percentage') {
+            netEarning = fee * (commValue / 100);
+          } else {
+            netEarning = commValue; // Fixed commission
+          }
+        }
+        
+        await tx.teacher_earnings_history.create({
+          data: {
+            teacher_id: course.teacher_id,
+            amount: fee,
+            commission_type: commType,
+            commission_value: commValue,
+            net_earning: netEarning,
+            description: `Earning from course: ${course.title} (Student: ${user.full_name})`
+          }
+        });
       });
     } else {
       await prisma.course_enrollments.create({

@@ -26,6 +26,10 @@ exports.login = async (req, res) => {
       return res.status(403).json({ success: false, message: "Your account has been suspended. Please contact the administrator." });
     }
 
+    if (user.status === 'deleted') {
+      return res.status(403).json({ success: false, message: "This account has been deleted." });
+    }
+
     // Compare with bcrypt (compatible with PHP password_hash)
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {

@@ -17,7 +17,11 @@ router.get('/get_notifications', adminController.getNotifications);
 router.get('/get_teacher_earnings', adminController.getTeacherEarnings);
 router.get('/get_teacher_earnings_history', adminController.getTeacherEarningsHistory);
 router.post('/update_teacher_commission', adminController.updateTeacherCommission);
+router.get('/get_teacher_monthly_report', adminController.getTeacherMonthlyReport);
+router.post('/record_teacher_payout', adminController.recordTeacherPayout);
+router.get('/get_teacher_earnings_trends', adminController.getTeacherEarningsTrends);
 
+router.get('/get_deleted_users', adminController.getDeletedUsers);
 router.get('/get_user_history_summary', adminController.getUserHistorySummary);
 
 router.get('/uploads', adminController.getUploads);
