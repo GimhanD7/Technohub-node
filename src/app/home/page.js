@@ -527,10 +527,10 @@ export default function Home() {
 
             <div className="grid md:grid-cols-3 gap-5">
               {feedback.map((item) => (
-                <article key={item.name} className="rounded-lg border border-white/15 bg-white dark:bg-[#1e293b]/10 p-5">
-                  <p className="text-sm leading-7 text-white/80">&ldquo;{item.quote}&rdquo;</p>
-                  <div className="mt-5 pt-4 border-t border-white/10">
-                    <h3 className="font-bold">{item.name}</h3>
+                <article key={item.name} className="rounded-lg border border-slate-200 dark:border-white/15 bg-white dark:bg-[#1e293b]/10 p-5">
+                  <p className="text-sm leading-7 text-slate-700 dark:text-white/80">&ldquo;{item.quote}&rdquo;</p>
+                  <div className="mt-5 pt-4 border-t border-slate-200 dark:border-white/10">
+                    <h3 className="font-bold text-slate-900 dark:text-white">{item.name}</h3>
                     <p className="text-xs font-semibold text-secondary mt-1">{item.role}</p>
                   </div>
                 </article>
