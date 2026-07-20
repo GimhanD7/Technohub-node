@@ -141,7 +141,7 @@ export default function UserActivityPage() {
                 <div key={i} className="flex gap-3 text-sm border-b border-gray-100 dark:border-slate-800/50 pb-2 last:border-0 justify-between items-center">
                   <div>
                     <p className="font-medium text-slate-700 dark:text-slate-200">
-                      {payment.quizzes ? \`Quiz: \${payment.quizzes.title}\` : 'Payment'}
+                      {payment.quizzes ? `Quiz: ${payment.quizzes.title}` : 'Payment'}
                     </p>
                     <p className="text-xs text-gray-500">{new Date(payment.paid_at).toLocaleString()}</p>
                   </div>
