@@ -161,11 +161,11 @@ export default function EBookPage() {
 
                 <div className="grid grid-cols-3 gap-3 mt-10">
                   {["Notes", "Guides", "Workbooks"].map((item, index) => (
-                    <div key={item} className="rounded-lg bg-white dark:bg-[#1e293b]/10 border border-white/15 p-4 min-h-32 flex flex-col justify-between">
-                      <div className={`w-10 h-10 rounded-md flex items-center justify-center ${index === 1 ? "bg-secondary text-slate-950" : "bg-white dark:bg-[#1e293b]/15 text-white"}`}>
+                    <div key={item} className="rounded-lg bg-white dark:bg-[#1e293b]/10 border border-slate-200 dark:border-white/15 p-4 min-h-32 flex flex-col justify-between">
+                      <div className={`w-10 h-10 rounded-md flex items-center justify-center ${index === 1 ? "bg-secondary text-slate-950" : "bg-primary dark:bg-[#1e293b]/15 text-white"}`}>
                         <BookOpen className="w-5 h-5" />
                       </div>
-                      <p className="text-sm font-semibold">{item}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{item}</p>
                     </div>
                   ))}
                 </div>

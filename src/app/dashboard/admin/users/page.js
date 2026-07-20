@@ -1,9 +1,9 @@
 "use client";
 
 import { toast } from "react-hot-toast";
-import { useEffect, useState, useMemo } from "react";
-import { Users, Trash2, Shield, BookOpen, GraduationCap, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Filter, Ban, CheckCircle2, Activity } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Users, Trash2, Shield, BookOpen, GraduationCap, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Filter, Ban, CheckCircle2, Activity, Eye, Wallet, MapPin, Calendar, Clock, Mail, Phone, Hash, Award, Briefcase, MonitorPlay } from "lucide-react";
+import { fetchApi, BASE_URL } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 
 export default function UserManagement() {
@@ -24,6 +24,9 @@ export default function UserManagement() {
   // Custom Alert / Confirm Dialog State
   const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, requirePassword: false, onConfirm: null, onCancel: null });
   const [currentUser, setCurrentUser] = useState(null);
+  const [profileUser, setProfileUser] = useState(null);
+  const [profileStats, setProfileStats] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const showConfirm = (title, message, type, onConfirmAction, requirePassword = false) => {
     setDialogState({
@@ -230,6 +233,20 @@ export default function UserManagement() {
     setShowAddModal(true);
   };
 
+  const handleViewProfile = useCallback(async (userId) => {
+    setProfileLoading(true);
+    setProfileUser(null);
+    setProfileStats(null);
+    const data = await fetchApi(`/user/get_user_profile?id=${userId}`);
+    if (data.success) {
+      setProfileUser(data.user);
+      setProfileStats(data.stats);
+    } else {
+      toast.error(data.message || "Failed to load user profile.");
+    }
+    setProfileLoading(false);
+  }, []);
+
   const getRoleBadge = (role) => {
     switch(role) {
       case 'admin':
@@ -388,6 +405,15 @@ export default function UserManagement() {
                         <div className="w-px h-4 bg-gray-200 mx-1"></div>
 
                         <button 
+                          onClick={() => handleViewProfile(u.id)}
+                          disabled={actionLoading === u.id}
+                          className="p-1.5 text-cyan-500 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:text-cyan-600 rounded transition-colors disabled:opacity-50"
+                          title="View Profile"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        <button 
                           onClick={() => window.location.href = `/dashboard/admin/users/${u.id}/activity`}
                           disabled={actionLoading === u.id}
                           className="p-1.5 text-purple-500 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 rounded transition-colors disabled:opacity-50"
@@ -430,6 +456,232 @@ export default function UserManagement() {
           </div>
         </div>
       </div>
+
+      {/* User Profile Drawer */}
+      {(profileUser || profileLoading) && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => { if (e.target === e.currentTarget) { setProfileUser(null); setProfileStats(null); } }}>
+          <div className="bg-white dark:bg-[#1e293b] w-full max-w-lg h-full shadow-2xl overflow-y-auto border-l border-gray-200 dark:border-slate-800 animate-in slide-in-from-right duration-300">
+            {/* Drawer Header */}
+            <div className="sticky top-0 z-10 bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-[16px] font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <Eye className="w-5 h-5 text-cyan-500" />
+                User Profile
+              </h2>
+              <button onClick={() => { setProfileUser(null); setProfileStats(null); }} className="p-1.5 text-gray-400 hover:text-slate-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {profileLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              </div>
+            ) : profileUser ? (
+              <div className="p-6 space-y-6">
+                {/* Profile Header */}
+                <div className="flex items-center gap-4">
+                  {profileUser.profile_picture ? (
+                    <img src={profileUser.profile_picture.startsWith('http') ? profileUser.profile_picture : `${BASE_URL}${profileUser.profile_picture}`} alt="Profile" className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-slate-700 shadow-md" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center font-bold text-2xl shadow-md">
+                      {profileUser.full_name?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white truncate">{profileUser.full_name}</h3>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {getRoleBadge(profileUser.role)}
+                      {profileUser.status === 'suspended' ? (
+                        <span className="px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded text-[10px] font-bold uppercase tracking-wider border border-red-200 dark:border-red-900/50">Suspended</span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded text-[10px] font-bold uppercase tracking-wider border border-green-200 dark:border-green-900/50">Active</span>
+                      )}
+                    </div>
+                    {profileUser.index_number && (
+                      <p className="text-[11px] text-gray-400 dark:text-slate-500 font-mono mt-1">ID: {profileUser.index_number}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Info Cards */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Phone className="w-3.5 h-3.5 text-blue-500" />
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Phone</span>
+                    </div>
+                    <p className="text-[13px] font-medium text-slate-800 dark:text-white truncate">{profileUser.phone_number || 'N/A'}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Mail className="w-3.5 h-3.5 text-purple-500" />
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Email</span>
+                    </div>
+                    <p className="text-[13px] font-medium text-slate-800 dark:text-white truncate">{profileUser.email || 'N/A'}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Wallet className="w-3.5 h-3.5 text-green-500" />
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Wallet</span>
+                    </div>
+                    <p className="text-[13px] font-bold text-green-600 dark:text-green-400">Rs. {(profileUser.wallet_balance || 0).toFixed(2)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 border border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="w-3.5 h-3.5 text-orange-500" />
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Joined</span>
+                    </div>
+                    <p className="text-[13px] font-medium text-slate-800 dark:text-white">{profileUser.created_at ? new Date(profileUser.created_at).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Personal Details */}
+                <div className="bg-white dark:bg-slate-800/30 rounded-lg border border-gray-200 dark:border-slate-800 overflow-hidden">
+                  <div className="px-4 py-3 bg-gray-50/80 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800/50">
+                    <h4 className="text-[12px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Personal Details</h4>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Address</p>
+                        <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5">{profileUser.address || 'Not provided'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Calendar className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Date of Birth</p>
+                        <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5">{profileUser.birthdate ? new Date(profileUser.birthdate).toLocaleDateString() : 'Not provided'}</p>
+                      </div>
+                    </div>
+                    {profileUser.role === 'student' && (
+                      <>
+                        <div className="flex items-start gap-3">
+                          <GraduationCap className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Education Category</p>
+                            <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5 capitalize">{profileUser.education_category || 'Not set'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Hash className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Student Category</p>
+                            <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5">{profileUser.student_category || 'Not set'}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {profileUser.education_info && (
+                      <div className="flex items-start gap-3">
+                        <BookOpen className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Education Info</p>
+                          <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5 whitespace-pre-line">{profileUser.education_info}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Teacher-specific Section */}
+                {profileUser.role === 'teacher' && (
+                  <div className="bg-white dark:bg-slate-800/30 rounded-lg border border-blue-200 dark:border-blue-900/50 overflow-hidden">
+                    <div className="px-4 py-3 bg-blue-50/80 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-900/30">
+                      <h4 className="text-[12px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Teacher Information</h4>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <BookOpen className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Subject</p>
+                          <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5">{profileUser.subject || 'Not specified'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Briefcase className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Experience</p>
+                          <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5 whitespace-pre-line">{profileUser.experience || 'Not provided'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Award className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Certifications</p>
+                          <p className="text-[13px] text-slate-700 dark:text-slate-300 mt-0.5 whitespace-pre-line">{profileUser.certifications || 'Not provided'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Activity Summary */}
+                {profileStats && (
+                  <div className="bg-white dark:bg-slate-800/30 rounded-lg border border-gray-200 dark:border-slate-800 overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50/80 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800/50">
+                      <h4 className="text-[12px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Activity Summary</h4>
+                    </div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{profileStats.enrolled_courses}</p>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Courses</p>
+                        </div>
+                        <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-900/30">
+                          <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{profileStats.quiz_attempts}</p>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Quizzes</p>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/30">
+                          <p className="text-xl font-bold text-green-600 dark:text-green-400">Rs. {profileStats.total_payments.toFixed(0)}</p>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Payments</p>
+                        </div>
+                        <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-900/30">
+                          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{profileStats.online_classes}</p>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Online Classes</p>
+                        </div>
+                        <div className="text-center p-3 bg-cyan-50 dark:bg-cyan-900/10 rounded-lg border border-cyan-100 dark:border-cyan-900/30">
+                          <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400">{profileStats.wallet_transactions}</p>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Wallet Txns</p>
+                        </div>
+                        <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <div className="flex items-center justify-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-500" />
+                          </div>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Last Login</p>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">{profileStats.last_login ? new Date(profileStats.last_login).toLocaleDateString() : 'Never'}</p>
+                        </div>
+                      </div>
+                      {profileStats.last_login_ip && (
+                        <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-3 text-center">Last login IP: {profileStats.last_login_ip}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { const u = profileUser; setProfileUser(null); setProfileStats(null); openEditModal(u); }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-[12px] font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Edit User
+                  </button>
+                  <button
+                    onClick={() => { const id = profileUser.id; setProfileUser(null); setProfileStats(null); window.location.href = `/dashboard/admin/users/${id}/activity`; }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-900/50 rounded-lg text-[12px] font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    View Activity
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       {/* Add / Edit Modal Overlay */}
       {(showAddModal || editUser) && (
