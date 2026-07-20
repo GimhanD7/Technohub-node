@@ -16,10 +16,7 @@ export default function AdminQuizzesPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedIds, setSelectedIds] = useState([]);
-
   const [isDeletingId, setIsDeletingId] = useState(null);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Custom Alert / Confirm Dialog State
   const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
@@ -73,23 +70,6 @@ export default function AdminQuizzesPage() {
     }
   };
 
-  // Selection Handlers
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredQuizzes.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredQuizzes.map((q) => q.id));
-    }
-  };
-
-  const clearSelection = () => setSelectedIds([]);
-
   // Delete Handlers
   const handleDeleteQuiz = (quizId) => {
     showConfirm(
@@ -114,45 +94,6 @@ export default function AdminQuizzesPage() {
           showAlert("Error", "Delete failed", "error");
         } finally {
           setIsDeletingId(null);
-        }
-      }
-    );
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
-
-    showConfirm(
-      `Delete ${selectedIds.length} Quiz${selectedIds.length > 1 ? "zes" : ""}`,
-      `This action will permanently delete ${selectedIds.length} quiz(es) and all associated student data. This cannot be undone.`,
-      "error",
-      async () => {
-        setIsBulkDeleting(true);
-        let successCount = 0;
-        let failCount = 0;
-
-        for (const quizId of selectedIds) {
-          try {
-            const res = await fetchApi("/quiz/delete", {
-              method: "POST",
-              body: JSON.stringify({ quizId, role: user?.role }),
-            });
-            if (res.success) successCount++;
-            else failCount++;
-          } catch {
-            failCount++;
-          }
-        }
-
-        setIsBulkDeleting(false);
-        clearSelection();
-
-        if (successCount > 0) {
-          showAlert("Success", `${successCount} quiz(es) deleted successfully`, "success");
-          loadQuizzes(user.id);
-        }
-        if (failCount > 0) {
-          showAlert("Error", `${failCount} deletion(s) failed`, "error");
         }
       }
     );
@@ -272,33 +213,13 @@ export default function AdminQuizzesPage() {
             <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">Quizzes List ({filteredQuizzes.length})</h3>
           </div>
           
-          {selectedIds.length > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="text-[12px] text-blue-600 font-medium">{selectedIds.length} selected</span>
-              <button 
-                onClick={handleBulkDelete} 
-                disabled={isBulkDeleting} 
-                className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded text-[12px] font-medium transition-colors disabled:opacity-50"
-              >
-                {isBulkDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                Delete Selected
-              </button>
-            </div>
-          )}
+          
         </div>
 
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white sticky top-0 z-10">
-                <th className="py-3 px-5 w-10">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.length === filteredQuizzes.length && filteredQuizzes.length > 0} 
-                    onChange={toggleSelectAll} 
-                    className="w-3.5 h-3.5 rounded border-gray-300 accent-primary" 
-                  />
-                </th>
                 <th className="py-3 px-5 font-bold">Quiz</th>
                 <th className="py-3 px-5 font-bold">Status</th>
                 <th className="py-3 px-5 font-bold hidden md:table-cell">Fee</th>
@@ -317,18 +238,8 @@ export default function AdminQuizzesPage() {
                 filteredQuizzes.map(quiz => {
                   const meta = STATUS_META[quiz._status];
                   const hasFee = parseFloat(quiz.fee || 0) > 0;
-                  const isSelected = selectedIds.includes(quiz.id);
-
                   return (
-                    <tr key={quiz.id} className={`hover:bg-gray-50/50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors ${isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
-                      <td className="py-3 px-5">
-                        <input 
-                          type="checkbox" 
-                          checked={isSelected} 
-                          onChange={() => toggleSelect(quiz.id)} 
-                          className="w-3.5 h-3.5 rounded border-gray-300 accent-primary" 
-                        />
-                      </td>
+                    <tr key={quiz.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors">
                       <td className="py-3 px-5">
                         <div className="font-medium text-slate-800 dark:text-white">{quiz.title}</div>
                         <div className="text-[11px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">Exam #{quiz.id}</div>

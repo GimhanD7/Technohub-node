@@ -168,13 +168,22 @@ export default function AdminWalletPage() {
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Wallet Approvals</h1>
           <p className="text-sm text-slate-500 dark:text-white mt-1">Review and manage student wallet recharge requests.</p>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-700 transition-colors flex items-center gap-2 shadow-sm"
-        >
-          <Download className="w-4 h-4" />
-          Export Summary (CSV)
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { fetchTransactions(); fetchStats(); }}
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-700 transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <Download className="w-4 h-4" />
+            Export Summary (CSV)
+          </button>
+        </div>
       </div>
 
       {stats && (

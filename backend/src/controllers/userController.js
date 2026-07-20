@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const { logActivity } = require('../utils/logger');
+const { generateNextIndexNumber } = require('../utils/helpers');
 
 // --- ADMIN CRUD ---
 exports.getUsers = async (req, res) => {
@@ -33,6 +34,53 @@ exports.getUsers = async (req, res) => {
     res.json({ success: true, users: formatted });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getActivity = async (req, res) => {
+  try {
+    const { id } = req.query;
+    if (!id) return res.json({ success: false, message: "User ID required" });
+
+    const userId = parseInt(id, 10);
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: { id: true, full_name: true, email: true, phone_number: true, role: true }
+    });
+
+    if (!user) return res.json({ success: false, message: "User not found" });
+
+    const logs = await prisma.system_logs.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: 'desc' },
+      take: 20
+    });
+
+    const quizzes = await prisma.quiz_attempts.findMany({
+      where: { user_id: userId },
+      include: { quizzes: { select: { title: true } } },
+      orderBy: { started_at: 'desc' },
+      take: 20
+    });
+
+    const payments = await prisma.quiz_payments.findMany({
+      where: { user_id: userId },
+      include: { quizzes: { select: { title: true } } },
+      orderBy: { paid_at: 'desc' },
+      take: 20
+    });
+
+    const courses = await prisma.course_enrollments.findMany({
+      where: { student_id: userId },
+      include: { courses: { select: { title: true } } },
+      orderBy: { enrolled_at: 'desc' },
+      take: 20
+    });
+
+    res.json({ success: true, user, logs, quizzes, payments, courses });
+  } catch (error) {
+    console.error("Error getting user activity:", error);
+    res.json({ success: false, message: "Server error loading user activity" });
   }
 };
 
@@ -70,10 +118,11 @@ exports.addUser = async (req, res) => {
     }
 
     const hash = password ? await bcrypt.hash(password, 10) : await bcrypt.hash("password123", 10);
+    const finalIndex = mappedIndex || await generateNextIndexNumber();
     
     await prisma.users.create({
       data: {
-        index_number: mappedIndex || null, 
+        index_number: finalIndex, 
         full_name: mappedFullName || "Unknown", 
         email: mappedEmail || null, 
         phone_number: mappedPhone || "", 

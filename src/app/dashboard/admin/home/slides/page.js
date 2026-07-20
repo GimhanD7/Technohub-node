@@ -14,6 +14,7 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 
 const getFullImageUrl = (url) => url?.startsWith('/uploads/') ? `${BASE_URL}${url}` : url;
 
@@ -41,6 +42,18 @@ export default function HomePageSlidesManager() {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, requirePassword: false, onConfirm: null, onCancel: null });
+
+  const showConfirm = (title, message, type, onConfirmAction, requirePassword = false) => {
+    setDialogState({
+      isOpen: true, title, message, type, isAlertOnly: false, requirePassword,
+      onConfirm: (enteredPassword) => {
+        setDialogState(s => ({ ...s, isOpen: false }));
+        onConfirmAction(enteredPassword);
+      },
+      onCancel: () => setDialogState(s => ({ ...s, isOpen: false }))
+    });
+  };
 
   const loadContent = useCallback(async () => {
     setIsLoading(true);
@@ -120,13 +133,19 @@ export default function HomePageSlidesManager() {
   };
 
   const deleteSlide = async (slideId) => {
-    if (!confirm("Delete this homepage slide?")) return;
-    const response = await fetchApi("/home/delete_slide", {
-      method: "POST",
-      body: JSON.stringify({ slideId, role: user?.role }),
-    });
-    if (response.success) loadContent();
-    else setErrorMsg(response.message || "Failed to delete slide.");
+    showConfirm(
+      "Delete Slide",
+      "Are you sure you want to delete this homepage slide? This action cannot be undone.",
+      "error",
+      async () => {
+        const response = await fetchApi("/home/delete_slide", {
+          method: "POST",
+          body: JSON.stringify({ slideId, role: user?.role }),
+        });
+        if (response.success) loadContent();
+        else setErrorMsg(response.message || "Failed to delete slide.");
+      }
+    );
   };
 
   const editSlide = (slide) => {
@@ -142,6 +161,7 @@ export default function HomePageSlidesManager() {
 
   return (
     <div className="max-w-5xl space-y-6">
+      <CustomDialog {...dialogState} />
       <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 border-b border-gray-200 dark:border-slate-800 pb-5">
         <div>
           <h1 className="text-[20px] font-bold text-slate-800 dark:text-white flex items-center gap-2">

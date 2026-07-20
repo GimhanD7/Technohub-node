@@ -2,7 +2,7 @@
 
 import { toast } from "react-hot-toast";
 import { useEffect, useState, useMemo } from "react";
-import { Users, Trash2, Shield, BookOpen, GraduationCap, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Filter, Ban, CheckCircle2 } from "lucide-react";
+import { Users, Trash2, Shield, BookOpen, GraduationCap, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Filter, Ban, CheckCircle2, Activity } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 
@@ -76,7 +76,8 @@ export default function UserManagement() {
         (u.full_name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
         (u.phone_number || "").includes(searchQuery) ||
         (u.index_number || "").toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesRole = roleFilter === "all" || u.role === roleFilter;
+      const matchesRole = roleFilter === "all" || 
+        (roleFilter === "suspended" ? u.status === "suspended" : u.role === roleFilter);
       return matchesSearch && matchesRole;
     });
   }, [users, searchQuery, roleFilter]);
@@ -88,29 +89,6 @@ export default function UserManagement() {
     setCurrentPage(1);
   }, [searchQuery, roleFilter]);
 
-  const handleDelete = (id) => {
-    showConfirm(
-      "Delete User", 
-      "Are you sure you want to delete this user? This action is permanent and cannot be undone.", 
-      "error", 
-      async (enteredPassword) => {
-        setActionLoading(id);
-        const data = await fetchApi("/user/delete_user", {
-          method: "POST",
-          body: JSON.stringify({ id, adminId: currentUser?.id, password: enteredPassword })
-        });
-        
-        if (data.success) {
-          setUsers(users.filter(u => u.id !== id));
-          showAlert("Success", "User deleted successfully", "success");
-        } else {
-          showAlert("Deletion Failed", data.message, "error");
-        }
-        setActionLoading(null);
-      },
-      true
-    );
-  };
 
   const handleRoleChange = (phone, newRole, id) => {
     showConfirm(
@@ -276,6 +254,7 @@ export default function UserManagement() {
             <option value="admin">Admins</option>
             <option value="teacher">Teachers</option>
             <option value="student">Students</option>
+            <option value="suspended">Suspended Status</option>
           </select>
         </div>
       </div>
@@ -358,12 +337,12 @@ export default function UserManagement() {
                         <div className="w-px h-4 bg-gray-200 mx-1"></div>
 
                         <button 
-                          onClick={() => handleDelete(u.id)}
+                          onClick={() => window.location.href = `/dashboard/admin/users/${u.id}/activity`}
                           disabled={actionLoading === u.id}
-                          className="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded transition-colors disabled:opacity-50"
-                          title="Delete User"
+                          className="p-1.5 text-purple-500 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 rounded transition-colors disabled:opacity-50"
+                          title="View Activity"
                         >
-                          {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          <Activity className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

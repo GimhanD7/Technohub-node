@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { initCronJobs } = require('./src/utils/cronJobs');
 
 const authRoutes = require('./src/routes/authRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
@@ -23,6 +24,8 @@ const userRoutes = require('./src/routes/userRoutes');
 const walletRoutes = require('./src/routes/walletRoutes');
 const globalUploadRoutes = require('./src/routes/globalUploadRoutes');
 const teacherMessageRoutes = require('./src/routes/teacherMessageRoutes');
+const bankRoutes = require('./src/routes/bankRoutes');
+const smsRoutes = require('./src/routes/smsRoutes');
 
 const path = require('path');
 
@@ -55,11 +58,16 @@ app.use('/api/user', userRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/upload', globalUploadRoutes);
 app.use('/api/teacher-messages', teacherMessageRoutes);
+app.use('/api/bank', bankRoutes);
+app.use('/api/sms', smsRoutes);
 
 // Test Route
 app.get('/', (req, res) => {
-  res.json({ message: 'Techno-Hub Node.js API is running' });
+  res.json({ message: 'TechnoHub API is running' });
 });
+
+// Initialize Cron Jobs
+initCronJobs();
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

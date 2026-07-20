@@ -45,7 +45,7 @@ export function CustomDialog({
   const btnColors = {
     warning: "bg-amber-500 hover:bg-amber-600 focus:ring-amber-500",
     error: "bg-red-500 hover:bg-red-600 focus:ring-red-500",
-    success: "bg-green-50 hover:bg-green-600 focus:ring-green-500",
+    success: "bg-green-500 hover:bg-green-600 focus:ring-green-500",
     info: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
   };
 

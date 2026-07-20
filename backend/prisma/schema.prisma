@@ -505,6 +505,7 @@ model users {
   teacher_earnings_history                      teacher_earnings_history[]
   teacher_messages                              teacher_messages[]
   wallet_transactions                           wallet_transactions[]
+  sms_logs                                      sms_logs[]
 }
 
 model wallet_transactions {
@@ -605,3 +606,26 @@ model deleted_users {
   deleted_at    DateTime @default(now()) @db.Timestamp(0)
   deleted_by    Int?
 }
+
+model bank_details {
+  id            Int      @id @default(autoincrement())
+  bank_name     String   @db.VarChar(255)
+  account_name  String   @db.VarChar(255)
+  account_number String  @db.VarChar(255)
+  is_hidden     Boolean  @default(false)
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+}
+
+model sms_logs {
+  id            Int      @id @default(autoincrement())
+  user_id       Int?
+  phone_number  String   @db.VarChar(50)
+  message       String   @db.Text
+  status        String   @default("sent") @db.VarChar(50)
+  error_details String?  @db.Text
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  users         users?   @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Restrict, map: "sms_logs_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+

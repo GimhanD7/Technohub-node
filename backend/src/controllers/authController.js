@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { generateNextIndexNumber } = require('../utils/helpers');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-me';
@@ -110,8 +111,11 @@ exports.register = async (req, res) => {
     if (mappedEduCategory === 'o/l') mappedEduCategory = 'o_l';
     if (mappedEduCategory === 'a/l') mappedEduCategory = 'a_l';
 
+    const newIndexNumber = await generateNextIndexNumber();
+
     const newUser = await prisma.users.create({
       data: {
+        index_number: newIndexNumber,
         full_name: actualFullName,
         phone_number: actualPhoneNumber,
         password_hash,

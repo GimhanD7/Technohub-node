@@ -8,6 +8,7 @@ import {
   ExternalLink, FileText, Info, Loader2, Lock, Plus, RefreshCw,
   Save, ShieldAlert, Trash2, Unlock, X, XCircle,
 } from "lucide-react";
+import { Upload } from "lucide-react";
 
 const initialForm = {
   title: "", author: "", subject: "", category: "E-Book",
@@ -54,6 +55,7 @@ export default function TeacherEBooksPage() {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");

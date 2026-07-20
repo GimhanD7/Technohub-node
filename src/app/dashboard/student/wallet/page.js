@@ -9,6 +9,7 @@ export default function StudentWalletPage() {
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
+  const [bankDetails, setBankDetails] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [amount, setAmount] = useState("");
@@ -50,7 +51,13 @@ export default function StudentWalletPage() {
       const historyRes = await fetch(`${API_BASE_URL}/wallet/history?user_id=${userId}`);
       const historyData = await historyRes.json();
       if (historyData.success) {
-        setTransactions(historyData.transactions);
+        setTransactions(historyData.transactions || []);
+      }
+
+      const bankRes = await fetch(`${API_BASE_URL}/bank/get_active`);
+      const bankData = await bankRes.json();
+      if (bankData.success) {
+        setBankDetails(bankData.bankDetails || []);
       }
     } catch (error) {
       toast.error("Failed to load wallet data.");
@@ -178,19 +185,27 @@ export default function StudentWalletPage() {
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
               Bank Transfer Details
             </h3>
-            <div className="space-y-3">
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/50">
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Bank Name</p>
-                <p className="text-[13px] font-bold text-slate-800 dark:text-white">Commercial Bank</p>
-              </div>
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/50">
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Account Name</p>
-                <p className="text-[13px] font-bold text-slate-800 dark:text-white">Techno Hub Education</p>
-              </div>
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/50">
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Account Number</p>
-                <p className="text-[15px] font-black text-blue-600 dark:text-blue-400 tracking-wider">1234 5678 9012</p>
-              </div>
+            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {bankDetails.length === 0 ? (
+                <p className="text-sm text-gray-500 italic">No bank details available. Please contact admin.</p>
+              ) : (
+                bankDetails.map((bank, index) => (
+                  <div key={index} className="space-y-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Bank Name</p>
+                      <p className="text-[14px] font-bold text-slate-800 dark:text-white">{bank.bank_name}</p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Account Name</p>
+                      <p className="text-[14px] font-bold text-slate-800 dark:text-white">{bank.account_name}</p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Account Number</p>
+                      <p className="text-[16px] font-black text-blue-600 dark:text-blue-400 tracking-wider">{bank.account_number}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
               <strong>Instructions:</strong> Please transfer the desired amount to the account above. Take a screenshot or photo of the payment slip and upload it in the recharge form.

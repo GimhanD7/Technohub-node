@@ -94,29 +94,6 @@ export default function TeacherManagement() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  const handleDelete = (id) => {
-    showConfirm(
-      "Delete Teacher", 
-      "Are you sure you want to delete this teacher? This action is permanent and cannot be undone.", 
-      "error", 
-      async (enteredPassword) => {
-        setActionLoading(id);
-        const data = await fetchApi("/user/delete_user", {
-          method: "POST",
-          body: JSON.stringify({ id, adminId: currentUser?.id, password: enteredPassword })
-        });
-        
-        if (data.success) {
-          setUsers(users.filter(u => u.id !== id));
-          showAlert("Success", "Teacher deleted successfully", "success");
-        } else {
-          showAlert("Deletion Failed", data.message, "error");
-        }
-        setActionLoading(null);
-      },
-      true
-    );
-  };
 
   const handleToggleStatus = (user) => {
     const newStatus = user.status === 'suspended' ? 'active' : 'suspended';
@@ -354,15 +331,6 @@ export default function TeacherManagement() {
                           title="Edit Teacher"
                         >
                           <Edit3 className="w-4 h-4" />
-                        </button>
-                        <div className="w-px h-4 bg-gray-200 mx-1"></div>
-                        <button 
-                          onClick={() => handleDelete(u.id)}
-                          disabled={actionLoading === u.id}
-                          className="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded transition-colors disabled:opacity-50"
-                          title="Delete Teacher"
-                        >
-                          {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                     </td>

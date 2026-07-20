@@ -22,6 +22,7 @@ const upload = multer({ storage: storage });
 
 // Admin Management
 router.get('/get_users', userController.getUsers);
+router.get('/get_activity', userController.getActivity);
 router.post('/add_user', userController.addUser);
 router.post('/admin_update_user', userController.updateUser);
 router.post('/delete_user', userController.deleteUser);

@@ -103,6 +103,11 @@ export default function ProfileForm({ initialUser }) {
         
         if (data.success) {
             setProfilePicture(data.imageUrl);
+            
+            // Update local storage so it persists after refresh
+            const updatedUser = { ...initialUser, profile_picture: data.imageUrl };
+            localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
+            
             toast.success("Image uploaded successfully");
         } else {
             toast.error(data.message || "Failed to upload image");

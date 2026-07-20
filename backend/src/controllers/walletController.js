@@ -116,6 +116,7 @@ exports.recharge = async (req, res) => {
         amount: parseFloat(amount),
         type: 'credit',
         status: 'pending',
+        reference_number: reference_number || null,
         description: `Bank Deposit - Ref: ${reference_number || 'N/A'}`,
         payment_slip_url: slipUrl
       }
