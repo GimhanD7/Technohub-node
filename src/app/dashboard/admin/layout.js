@@ -15,7 +15,7 @@ export default function AdminLayout({ children }) {
 
   // Dropdown states
   const [historyOpen, setHistoryOpen] = useState(isActive('/dashboard/admin/history') || isActive('/dashboard/admin/user-history') || isActive('/dashboard/admin/deleted-users'));
-  const [walletOpen, setWalletOpen] = useState(isActive('/dashboard/admin/wallet') || isActive('/dashboard/admin/wallet-credits'));
+  const [walletOpen, setWalletOpen] = useState(isActive('/dashboard/admin/wallet') || isActive('/dashboard/admin/wallet-credits') || isActive('/dashboard/admin/bank-details'));
   const [homeOpen, setHomeOpen] = useState(pathname?.startsWith('/dashboard/admin/home') || false);
 
   useEffect(() => {
@@ -228,7 +228,7 @@ export default function AdminLayout({ children }) {
             </Link>
 
             <div className="space-y-1">
-              <div className={`flex items-center justify-between pr-1 rounded-lg transition-colors ${(isActive('/dashboard/admin/wallet') || isActive('/dashboard/admin/wallet-credits')) ? 'bg-primary/5 dark:bg-primary/20 text-primary dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}>
+              <div className={`flex items-center justify-between pr-1 rounded-lg transition-colors ${(isActive('/dashboard/admin/wallet') || isActive('/dashboard/admin/wallet-credits') || isActive('/dashboard/admin/bank-details')) ? 'bg-primary/5 dark:bg-primary/20 text-primary dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}>
                 <Link 
                   href="/dashboard/admin/wallet"
                   className="flex-1 flex items-center gap-3 px-3 py-2 text-[13px] font-medium"
@@ -251,6 +251,9 @@ export default function AdminLayout({ children }) {
                   </Link>
                   <Link href="/dashboard/admin/wallet-credits" className={`block px-3 py-2 rounded-lg transition-colors text-[12px] font-medium ${isActive('/dashboard/admin/wallet-credits') ? 'text-primary dark:text-white bg-primary/5 dark:bg-primary/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
                     User Wallet Credits
+                  </Link>
+                  <Link href="/dashboard/admin/bank-details" className={`block px-3 py-2 rounded-lg transition-colors text-[12px] font-medium ${isActive('/dashboard/admin/bank-details') ? 'text-primary dark:text-white bg-primary/5 dark:bg-primary/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
+                    Bank Accounts
                   </Link>
                 </div>
               )}

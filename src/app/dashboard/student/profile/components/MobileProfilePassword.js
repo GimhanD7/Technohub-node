@@ -11,7 +11,7 @@ export default function MobileProfilePassword({
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col h-full">
       <h2 className="text-[20px] font-bold text-slate-800 dark:text-white mb-1 mt-2">Change password</h2>
-      <p className="text-[13px] text-gray-400 mb-8">Type your new password</p>
+      <p className="text-[13px] text-gray-400 mb-8">Use 8+ characters with uppercase, lowercase, number, and special character.</p>
 
       <div className="space-y-4 flex-1">
         <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl flex items-center gap-4 border border-gray-100 dark:border-slate-800">

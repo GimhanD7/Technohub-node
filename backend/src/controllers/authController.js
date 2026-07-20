@@ -2,6 +2,14 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateNextIndexNumber } = require('../utils/helpers');
+const {
+  getEmailError,
+  getOtpError,
+  getPasswordError,
+  getPhoneError,
+  normalizeEmail,
+  normalizePhoneNumber,
+} = require('../utils/validation');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-me';
@@ -9,13 +17,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-m
 exports.login = async (req, res) => {
   try {
     const { phoneNumber, password } = req.body;
+    const actualPhoneNumber = normalizePhoneNumber(phoneNumber);
 
-    if (!phoneNumber || !password) {
+    if (!actualPhoneNumber || !password) {
       return res.status(400).json({ success: false, message: "Invalid input data." });
     }
 
+    const phoneError = getPhoneError(actualPhoneNumber);
+    if (phoneError) {
+      return res.status(400).json({ success: false, message: phoneError });
+    }
+
     const user = await prisma.users.findUnique({
-      where: { phone_number: phoneNumber }
+      where: { phone_number: actualPhoneNumber }
     });
 
     if (!user) {
@@ -68,6 +82,7 @@ exports.register = async (req, res) => {
       fullName, full_name, 
       phoneNumber, phone_number, 
       password, 
+      email,
       address, 
       role = 'student', 
       educationCategory, student_category,
@@ -75,11 +90,32 @@ exports.register = async (req, res) => {
     } = req.body;
 
     const actualFullName = fullName || full_name;
-    const actualPhoneNumber = phoneNumber || phone_number;
+    const actualPhoneNumber = normalizePhoneNumber(phoneNumber || phone_number);
+    const actualEmail = normalizeEmail(email);
     const actualStudentCategory = educationCategory || student_category || 'School';
 
     if (!actualFullName || !actualPhoneNumber || !password || !address || !otp) {
       return res.status(400).json({ success: false, message: "Missing required fields." });
+    }
+
+    const phoneError = getPhoneError(actualPhoneNumber);
+    if (phoneError) {
+      return res.status(400).json({ success: false, message: phoneError });
+    }
+
+    const emailError = getEmailError(actualEmail);
+    if (emailError) {
+      return res.status(400).json({ success: false, message: emailError });
+    }
+
+    const passwordError = getPasswordError(password, { required: true });
+    if (passwordError) {
+      return res.status(400).json({ success: false, message: passwordError });
+    }
+
+    const otpError = getOtpError(otp);
+    if (otpError) {
+      return res.status(400).json({ success: false, message: otpError });
     }
 
     // 1. Verify OTP
@@ -104,6 +140,16 @@ exports.register = async (req, res) => {
       return res.status(409).json({ success: false, message: "Phone number already exists." });
     }
 
+    if (actualEmail) {
+      const existingEmail = await prisma.users.findUnique({
+        where: { email: actualEmail }
+      });
+
+      if (existingEmail) {
+        return res.status(409).json({ success: false, message: "Email is already in use." });
+      }
+    }
+
     // Hash password
     const password_hash = await bcrypt.hash(password, 10);
 
@@ -118,6 +164,7 @@ exports.register = async (req, res) => {
         index_number: newIndexNumber,
         full_name: actualFullName,
         phone_number: actualPhoneNumber,
+        email: actualEmail || null,
         password_hash,
         address,
         role,
@@ -150,25 +197,27 @@ exports.register = async (req, res) => {
 exports.sendOtp = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
-    if (!phoneNumber) return res.status(400).json({ success: false, message: "Phone number is required." });
+    const actualPhoneNumber = normalizePhoneNumber(phoneNumber);
+    const phoneError = getPhoneError(actualPhoneNumber);
+    if (phoneError) return res.status(400).json({ success: false, message: phoneError });
 
-    const existingUser = await prisma.users.findUnique({ where: { phone_number: phoneNumber } });
+    const existingUser = await prisma.users.findUnique({ where: { phone_number: actualPhoneNumber } });
     if (existingUser) return res.status(400).json({ success: false, message: "Phone number is already registered." });
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await prisma.otps.upsert({
-      where: { phone_number: phoneNumber },
+      where: { phone_number: actualPhoneNumber },
       update: { otp_code: otpCode, expires_at: expiresAt, created_at: new Date() },
-      create: { phone_number: phoneNumber, otp_code: otpCode, expires_at: expiresAt }
+      create: { phone_number: actualPhoneNumber, otp_code: otpCode, expires_at: expiresAt }
     });
 
-    console.log(`\n========================================\n[OTP DEBUG] Phone: ${phoneNumber} | Code: ${otpCode}\n========================================\n`);
+    console.log(`\n========================================\n[OTP DEBUG] Phone: ${actualPhoneNumber} | Code: ${otpCode}\n========================================\n`);
 
     // Send SMS via Text.lk API using native Node fetch
     const apiKey = "5699|p87wUERdDtxFnhjHSoIAtovVaGUPQtSfM5LzvZIDf59a80e3";
-    let formattedPhone = phoneNumber;
+    let formattedPhone = actualPhoneNumber;
     if (formattedPhone.startsWith('0')) {
       formattedPhone = '94' + formattedPhone.substring(1);
     }
@@ -218,26 +267,28 @@ exports.sendOtp = async (req, res) => {
 exports.sendResetOtp = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
-    if (!phoneNumber) return res.status(400).json({ success: false, message: "Phone number is required." });
+    const actualPhoneNumber = normalizePhoneNumber(phoneNumber);
+    const phoneError = getPhoneError(actualPhoneNumber);
+    if (phoneError) return res.status(400).json({ success: false, message: phoneError });
 
     // Must be an existing user to reset password
-    const existingUser = await prisma.users.findUnique({ where: { phone_number: phoneNumber } });
+    const existingUser = await prisma.users.findUnique({ where: { phone_number: actualPhoneNumber } });
     if (!existingUser) return res.status(404).json({ success: false, message: "No account found with this phone number." });
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await prisma.otps.upsert({
-      where: { phone_number: phoneNumber },
+      where: { phone_number: actualPhoneNumber },
       update: { otp_code: otpCode, expires_at: expiresAt, created_at: new Date() },
-      create: { phone_number: phoneNumber, otp_code: otpCode, expires_at: expiresAt }
+      create: { phone_number: actualPhoneNumber, otp_code: otpCode, expires_at: expiresAt }
     });
 
-    console.log(`\n========================================\n[RESET OTP DEBUG] Phone: ${phoneNumber} | Code: ${otpCode}\n========================================\n`);
+    console.log(`\n========================================\n[RESET OTP DEBUG] Phone: ${actualPhoneNumber} | Code: ${otpCode}\n========================================\n`);
 
     // Send SMS via Text.lk API
     const apiKey = "5699|p87wUERdDtxFnhjHSoIAtovVaGUPQtSfM5LzvZIDf59a80e3";
-    let formattedPhone = phoneNumber;
+    let formattedPhone = actualPhoneNumber;
     if (formattedPhone.startsWith('0')) {
       formattedPhone = '94' + formattedPhone.substring(1);
     }
@@ -285,11 +336,13 @@ exports.sendResetOtp = async (req, res) => {
 exports.verifyResetOtp = async (req, res) => {
   try {
     const { phoneNumber, otp } = req.body;
-    if (!phoneNumber || !otp) {
-      return res.status(400).json({ success: false, message: "Phone number and OTP are required." });
-    }
+    const actualPhoneNumber = normalizePhoneNumber(phoneNumber);
+    const phoneError = getPhoneError(actualPhoneNumber);
+    if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+    const otpError = getOtpError(otp);
+    if (otpError) return res.status(400).json({ success: false, message: otpError });
 
-    const otpRecord = await prisma.otps.findUnique({ where: { phone_number: phoneNumber } });
+    const otpRecord = await prisma.otps.findUnique({ where: { phone_number: actualPhoneNumber } });
 
     if (!otpRecord) {
       return res.status(400).json({ success: false, message: "No OTP found for this number. Please request a new code." });
@@ -313,16 +366,17 @@ exports.verifyResetOtp = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { phoneNumber, otp, newPassword } = req.body;
-    if (!phoneNumber || !otp || !newPassword) {
-      return res.status(400).json({ success: false, message: "Phone number, OTP, and new password are required." });
-    }
+    const actualPhoneNumber = normalizePhoneNumber(phoneNumber);
+    const phoneError = getPhoneError(actualPhoneNumber);
+    if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+    const otpError = getOtpError(otp);
+    if (otpError) return res.status(400).json({ success: false, message: otpError });
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
-    }
+    const passwordError = getPasswordError(newPassword, { required: true });
+    if (passwordError) return res.status(400).json({ success: false, message: passwordError });
 
     // Re-verify OTP before allowing password change
-    const otpRecord = await prisma.otps.findUnique({ where: { phone_number: phoneNumber } });
+    const otpRecord = await prisma.otps.findUnique({ where: { phone_number: actualPhoneNumber } });
 
     if (!otpRecord || otpRecord.otp_code !== otp) {
       return res.status(400).json({ success: false, message: "Invalid or expired OTP. Please restart the process." });
@@ -337,13 +391,13 @@ exports.resetPassword = async (req, res) => {
 
     // Update user password
     await prisma.users.update({
-      where: { phone_number: phoneNumber },
+      where: { phone_number: actualPhoneNumber },
       data: { password_hash }
     });
 
     // Clean up OTP record
     try {
-      await prisma.otps.delete({ where: { phone_number: phoneNumber } });
+      await prisma.otps.delete({ where: { phone_number: actualPhoneNumber } });
     } catch (e) {
       console.error("Failed to delete OTP record after password reset:", e);
     }

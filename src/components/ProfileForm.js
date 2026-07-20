@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { User, Camera, Loader2, KeyRound } from "lucide-react";
 import { fetchApi, API_BASE_URL, BASE_URL } from "@/lib/api";
 import { toast } from "react-hot-toast";
+import { getEmailError, getPasswordError, getPhoneError, normalizeEmail } from "@/lib/validation";
 
 export default function ProfileForm({ initialUser }) {
   // Form State
@@ -28,6 +29,24 @@ export default function ProfileForm({ initialUser }) {
   const handleUpdate = async (e) => {
     e.preventDefault();
 
+    const phoneError = getPhoneError(initialUser.phone_number);
+    if (phoneError) {
+      toast.error(phoneError);
+      return;
+    }
+
+    const emailError = getEmailError(email);
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      toast.error(passwordError);
+      return;
+    }
+
     if (password && password !== confirmPassword) {
       toast.error("New passwords do not match.");
       return;
@@ -43,7 +62,7 @@ export default function ProfileForm({ initialUser }) {
         address, 
         educationInfo,
         educationCategory,
-        email,
+        email: normalizeEmail(email),
         birthdate,
         subject,
         experience,
@@ -391,6 +410,7 @@ export default function ProfileForm({ initialUser }) {
             <div className="w-full md:w-1/3 mb-4 md:mb-0">
               <label className="text-[14px] font-semibold text-slate-800 dark:text-white">Change Password</label>
               <p className="text-[13px] text-gray-500 mt-1 pr-4">Leave blank to keep your current password.</p>
+              <p className="text-[12px] text-gray-400 mt-1 pr-4">Use 8+ characters with uppercase, lowercase, number, and special character.</p>
             </div>
             <div className="w-full md:w-2/3 space-y-4">
               <div className="relative">

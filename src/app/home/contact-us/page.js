@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Button from "@/components/ui/Button";
 import { fetchApi } from "@/lib/api";
+import { digitsOnly, getEmailError, getPhoneError, normalizeEmail } from "@/lib/validation";
 import {
   AlertCircle,
   ArrowRight,
@@ -99,18 +100,33 @@ export default function ContactUsPage() {
   ].filter((item) => item.value), [settings.email, settings.phone, settings.whatsapp]);
 
   const updateField = (field, value) => {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({ ...current, [field]: field === "phone" ? digitsOnly(value) : value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setIsSending(true);
     setErrorMsg("");
     setSuccessMsg("");
 
+    const emailError = getEmailError(form.email);
+    if (emailError) {
+      setErrorMsg(emailError);
+      return;
+    }
+
+    if (form.phone) {
+      const phoneError = getPhoneError(form.phone);
+      if (phoneError) {
+        setErrorMsg(phoneError);
+        return;
+      }
+    }
+
+    setIsSending(true);
+
     const response = await fetchApi("/contact/submit_message", {
       method: "POST",
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, email: normalizeEmail(form.email) }),
     });
 
     setIsSending(false);
@@ -267,6 +283,9 @@ export default function ContactUsPage() {
                 <input
                   value={form.phone}
                   onChange={(event) => updateField("phone", event.target.value)}
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="Phone number"
                   className="h-11 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm outline-none focus:border-primary dark:bg-[#0f172a] focus:bg-white dark:bg-[#1e293b]"
                 />

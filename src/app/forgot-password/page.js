@@ -7,6 +7,7 @@ import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
+import { digitsOnly, getPasswordError, getPhoneError } from "@/lib/validation";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
@@ -24,6 +25,13 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
         setErrorMsg("");
         setSuccessMsg("");
+
+        const phoneError = getPhoneError(phoneNumber);
+        if (phoneError) {
+            setErrorMsg(phoneError);
+            return;
+        }
+
         setIsLoading(true);
 
         const data = await fetchApi("/auth/send-reset-otp", {
@@ -70,6 +78,12 @@ export default function ForgotPasswordPage() {
         setErrorMsg("");
         setSuccessMsg("");
 
+        const passwordError = getPasswordError(newPassword, { required: true });
+        if (passwordError) {
+            setErrorMsg(passwordError);
+            return;
+        }
+
         if (newPassword !== confirmPassword) {
             setErrorMsg("Passwords do not match!");
             return;
@@ -104,6 +118,13 @@ export default function ForgotPasswordPage() {
     const handleResendOtp = async () => {
         setErrorMsg("");
         setSuccessMsg("");
+
+        const phoneError = getPhoneError(phoneNumber);
+        if (phoneError) {
+            setErrorMsg(phoneError);
+            return;
+        }
+
         setIsLoading(true);
         const data = await fetchApi("/auth/send-reset-otp", {
             method: "POST",
@@ -184,7 +205,9 @@ export default function ForgotPasswordPage() {
                                         <input
                                             type="tel"
                                             value={phoneNumber}
-                                            onChange={(e) => setPhoneNumber(e.target.value)}
+                                            onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
                                             className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50"
                                             placeholder="07x xxx xxxx"
                                             required
@@ -209,7 +232,9 @@ export default function ForgotPasswordPage() {
                                         <input
                                             type="text"
                                             value={otp}
-                                            onChange={(e) => setOtp(e.target.value)}
+                                            onChange={(e) => setOtp(digitsOnly(e.target.value).slice(0, 6))}
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
                                             className="w-full px-4 py-4 text-center text-2xl tracking-widest rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50"
                                             placeholder="------"
                                             maxLength={6}

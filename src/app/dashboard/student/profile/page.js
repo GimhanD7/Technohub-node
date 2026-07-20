@@ -8,6 +8,7 @@ import MobileProfileMain from "./components/MobileProfileMain";
 import MobileProfileDetails from "./components/MobileProfileDetails";
 import MobileProfilePassword from "./components/MobileProfilePassword";
 import { toast } from "react-hot-toast";
+import { getEmailError, getPasswordError, normalizeEmail } from "@/lib/validation";
 
 export default function StudentProfilePage() {
   const [user, setUser] = useState(null);
@@ -79,6 +80,7 @@ export default function StudentProfilePage() {
             await fetchApi("/user/update_profile", {
               method: "POST",
               body: JSON.stringify({
+                id: user.id,
                 phoneNumber: user.phone_number,
                 fullName: user.full_name,
                 address: user.address || "-",
@@ -94,14 +96,21 @@ export default function StudentProfilePage() {
   };
 
   const handleSaveDetails = async () => {
+    const emailError = getEmailError(email);
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
     setIsLoading(true);
     
     const response = await fetchApi("/user/update_profile", {
       method: "POST",
       body: JSON.stringify({
+        id: user.id,
         phoneNumber: user.phone_number,
         fullName,
-        email,
+        email: normalizeEmail(email),
         address: address || "-",
         birthdate,
         educationCategory,
@@ -121,6 +130,12 @@ export default function StudentProfilePage() {
   };
 
   const handleChangePassword = async () => {
+    const passwordError = getPasswordError(password, { required: true });
+    if (passwordError) {
+      toast.error(passwordError);
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -131,6 +146,7 @@ export default function StudentProfilePage() {
     const response = await fetchApi("/user/update_profile", {
       method: "POST",
       body: JSON.stringify({
+        id: user.id,
         phoneNumber: user.phone_number,
         fullName: user.full_name,
         address: user.address || "-",

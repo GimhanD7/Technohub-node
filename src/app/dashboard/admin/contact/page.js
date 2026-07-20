@@ -5,6 +5,7 @@ import { fetchApi } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
+import { digitsOnly, getEmailError, getPhoneError, normalizeEmail } from "@/lib/validation";
 import {
   AlertCircle,
   CheckCircle2,
@@ -109,17 +110,36 @@ export default function AdminContactPage() {
   }, [loadContactData]);
 
   const updateField = (field, value) => {
-    setSettings((current) => ({ ...current, [field]: value }));
+    const phoneFields = new Set(["phone", "whatsapp"]);
+    setSettings((current) => ({ ...current, [field]: phoneFields.has(field) ? digitsOnly(value) : value }));
   };
 
   const handleSaveSettings = async (event) => {
     event.preventDefault();
+
+    const emailError = getEmailError(settings.email);
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
+    for (const field of ["phone", "whatsapp"]) {
+      if (settings[field]) {
+        const phoneError = getPhoneError(settings[field]);
+        if (phoneError) {
+          toast.error(`${field === "whatsapp" ? "WhatsApp" : "Phone"}: ${phoneError}`);
+          return;
+        }
+      }
+    }
+
     setIsSaving(true);
 
     const response = await fetchApi("/contact/update_settings", {
       method: "POST",
       body: JSON.stringify({
         ...settings,
+        email: normalizeEmail(settings.email),
         userId: user?.id,
         role: user?.role,
       }),
@@ -267,11 +287,11 @@ export default function AdminContactPage() {
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Phone</label>
-              <input value={settings.phone ?? ""} onChange={(event) => updateField("phone", event.target.value)} className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+              <input type="tel" value={settings.phone ?? ""} onChange={(event) => updateField("phone", event.target.value)} inputMode="numeric" pattern="[0-9]*" className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
             </div>
             <div>
               <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">WhatsApp</label>
-              <input value={settings.whatsapp ?? ""} onChange={(event) => updateField("whatsapp", event.target.value)} className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+              <input type="tel" value={settings.whatsapp ?? ""} onChange={(event) => updateField("whatsapp", event.target.value)} inputMode="numeric" pattern="[0-9]*" className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
             </div>
           </div>
 

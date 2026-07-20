@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Wallet, Upload, Clock, CheckCircle, XCircle, AlertCircle, Eye, ArrowDown } from "lucide-react";
+import { Wallet, Upload, Clock, CheckCircle, XCircle, AlertCircle, Eye, ArrowDown, Building2, UserRound, Hash } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "@/lib/api";
 
@@ -181,34 +181,61 @@ export default function StudentWalletPage() {
 
           {/* Bank Details Card */}
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h3 className="text-[15px] font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-              Bank Transfer Details
-            </h3>
-            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-blue-500" />
+                  Bank Transfer Details
+                </h3>
+                <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">Use any visible account below for wallet recharge payments.</p>
+              </div>
+              {bankDetails.length > 0 && (
+                <span className="shrink-0 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 px-2 py-1 text-[11px] font-bold">
+                  {bankDetails.length} available
+                </span>
+              )}
+            </div>
+            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
               {bankDetails.length === 0 ? (
                 <p className="text-sm text-gray-500 italic">No bank details available. Please contact admin.</p>
               ) : (
                 bankDetails.map((bank, index) => (
-                  <div key={index} className="space-y-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Bank Name</p>
-                      <p className="text-[14px] font-bold text-slate-800 dark:text-white">{bank.bank_name}</p>
+                  <div key={bank.id || index} className="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between gap-3 pb-3 border-b border-gray-200/70 dark:border-slate-700/70">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wide">Bank Account {index + 1}</p>
+                      <span className="shrink-0 w-7 h-7 rounded-full bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-700 flex items-center justify-center text-[11px] font-black text-blue-600">
+                        {index + 1}
+                      </span>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Account Name</p>
-                      <p className="text-[14px] font-bold text-slate-800 dark:text-white">{bank.account_name}</p>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">Account Number</p>
-                      <p className="text-[16px] font-black text-blue-600 dark:text-blue-400 tracking-wider">{bank.account_number}</p>
+                    <div className="mt-3 space-y-2.5">
+                      <div className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-slate-700 bg-white dark:bg-[#1e293b] p-3">
+                        <Building2 className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wide">Bank Name</p>
+                          <p className="text-[15px] font-bold text-slate-900 dark:text-white break-words leading-5">{bank.bank_name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-slate-700 bg-white dark:bg-[#1e293b] p-3">
+                        <UserRound className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wide">Account Name</p>
+                          <p className="text-[15px] font-bold text-slate-900 dark:text-white break-words leading-5">{bank.account_name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-slate-700 bg-white dark:bg-[#1e293b] p-3">
+                        <Hash className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wide">Account Number</p>
+                          <p className="text-[15px] font-bold text-blue-600 dark:text-blue-400 break-all leading-5">{bank.account_number}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))
               )}
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-4 leading-relaxed">
-              <strong>Instructions:</strong> Please transfer the desired amount to the account above. Take a screenshot or photo of the payment slip and upload it in the recharge form.
+              <strong>Instructions:</strong> Transfer the desired amount to one of the visible accounts above. Then upload a screenshot or photo of the payment slip in the recharge form.
             </p>
           </div>
         </div>

@@ -26,7 +26,35 @@ export default function RootLayout({ children }) {
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
             <SecurityProvider>
               {children}
-              <Toaster position="top-right" />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 3500,
+                  style: {
+                    borderRadius: "10px",
+                    border: "1px solid #e5e7eb",
+                    color: "#0f172a",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    maxWidth: "420px",
+                    padding: "14px 16px",
+                    boxShadow: "0 18px 45px rgba(15, 23, 42, 0.14)",
+                  },
+                  success: {
+                    iconTheme: {
+                      primary: "#16a34a",
+                      secondary: "#ffffff",
+                    },
+                  },
+                  error: {
+                    duration: 4500,
+                    iconTheme: {
+                      primary: "#dc2626",
+                      secondary: "#ffffff",
+                    },
+                  },
+                }}
+              />
             </SecurityProvider>
           </ThemeProvider>
         </GlobalSettingsProvider>

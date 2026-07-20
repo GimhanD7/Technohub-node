@@ -1,20 +1,36 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const {
+  getEmailError,
+  getPhoneError,
+  normalizeEmail,
+  normalizePhoneNumber,
+} = require('../utils/validation');
 
 // --- CONTACT MESSAGES ---
 exports.submitMessage = async (req, res) => {
   try {
     const { fullName, email, phone, learnerType, subject, message } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizePhoneNumber(phone);
     
     if (!fullName || !subject || !message) {
       return res.status(400).json({ success: false, message: "Name, subject, and message are required." });
     }
 
+    const emailError = getEmailError(normalizedEmail);
+    if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+    if (normalizedPhone) {
+      const phoneError = getPhoneError(normalizedPhone);
+      if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+    }
+
     await prisma.contact_messages.create({
       data: {
         full_name: fullName,
-        email: email || null,
-        phone: phone || null,
+        email: normalizedEmail || null,
+        phone: normalizedPhone || null,
         learner_type: learnerType || null,
         subject,
         message,
@@ -150,8 +166,25 @@ exports.updateSettings = async (req, res) => {
       return res.status(400).json({ success: false, message: "Badge and title are required." });
     }
 
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizePhoneNumber(phone);
+    const normalizedWhatsapp = normalizePhoneNumber(whatsapp);
+
+    const emailError = getEmailError(normalizedEmail);
+    if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+    if (normalizedPhone) {
+      const phoneError = getPhoneError(normalizedPhone);
+      if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+    }
+
+    if (normalizedWhatsapp) {
+      const whatsappError = getPhoneError(normalizedWhatsapp);
+      if (whatsappError) return res.status(400).json({ success: false, message: whatsappError });
+    }
+
     const updateData = {
-      hero_badge: heroBadge, title, subtitle, phone, whatsapp, email, address, office_hours: officeHours,
+      hero_badge: heroBadge, title, subtitle, phone: normalizedPhone, whatsapp: normalizedWhatsapp, email: normalizedEmail, address, office_hours: officeHours,
       map_url: mapUrl, facebook_url: facebookUrl, instagram_url: instagramUrl, linkedin_url: linkedinUrl, 
       youtube_url: youtubeUrl, primary_cta_label: primaryCtaLabel, primary_cta_url: primaryCtaUrl,
       updated_by: userId ? parseInt(userId) : null

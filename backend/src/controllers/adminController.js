@@ -2,6 +2,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const fs = require('fs');
 const path = require('path');
+const {
+  getEmailError,
+  getPhoneError,
+  normalizeEmail,
+  normalizePhoneNumber,
+} = require('../utils/validation');
 
 // --- SECURITY SETTINGS ---
 exports.getSecuritySettings = async (req, res) => {
@@ -61,6 +67,22 @@ exports.updateSystemSettings = async (req, res) => {
     let updateData = {};
     for (let field of allowedFields) {
       if (data[field] !== undefined) updateData[field] = data[field];
+    }
+
+    if (updateData.contact_email !== undefined) {
+      const normalizedEmail = normalizeEmail(updateData.contact_email);
+      const emailError = getEmailError(normalizedEmail);
+      if (emailError) return res.status(400).json({ success: false, message: emailError });
+      updateData.contact_email = normalizedEmail;
+    }
+
+    if (updateData.contact_phone !== undefined) {
+      const normalizedPhone = normalizePhoneNumber(updateData.contact_phone);
+      if (normalizedPhone) {
+        const phoneError = getPhoneError(normalizedPhone);
+        if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+      }
+      updateData.contact_phone = normalizedPhone;
     }
     
     if (Object.keys(updateData).length === 0) {

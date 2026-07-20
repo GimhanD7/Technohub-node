@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Settings, Save, Loader2, Globe, Palette, Phone, Mail, MapPin, Link2, Share2, MessageCircle, AtSign } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "@/lib/api";
+import { digitsOnly, getEmailError, getPhoneError, normalizeEmail } from "@/lib/validation";
 
 export default function SystemSettingsPage() {
   const [settings, setSettings] = useState({
@@ -48,17 +49,32 @@ export default function SystemSettingsPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setSettings(prev => ({ ...prev, [name]: value }));
+    setSettings(prev => ({ ...prev, [name]: name === "contact_phone" ? digitsOnly(value) : value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const emailError = getEmailError(settings.contact_email);
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
+    if (settings.contact_phone) {
+      const phoneError = getPhoneError(settings.contact_phone);
+      if (phoneError) {
+        toast.error(phoneError);
+        return;
+      }
+    }
+
     try {
       setIsSaving(true);
       const res = await fetch(`${API_BASE_URL}/admin/system_settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
+        body: JSON.stringify({ ...settings, contact_email: normalizeEmail(settings.contact_email) })
       });
       const data = await res.json();
       if (data.success) {
@@ -199,7 +215,9 @@ export default function SystemSettingsPage() {
                 name="contact_phone"
                 value={settings.contact_phone} 
                 onChange={handleChange}
-                placeholder="+1 234 567 890"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="94771234567"
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg text-[13px] focus:outline-none focus:border-primary dark:text-white"
               />
             </div>

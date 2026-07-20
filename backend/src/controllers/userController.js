@@ -5,6 +5,13 @@ const fs = require('fs');
 const path = require('path');
 const { logActivity } = require('../utils/logger');
 const { generateNextIndexNumber } = require('../utils/helpers');
+const {
+  getEmailError,
+  getPasswordError,
+  getPhoneError,
+  normalizeEmail,
+  normalizePhoneNumber,
+} = require('../utils/validation');
 
 // --- ADMIN CRUD ---
 exports.getUsers = async (req, res) => {
@@ -142,13 +149,27 @@ exports.getUserProfile = async (req, res) => {
 
 exports.addUser = async (req, res) => {
   try {
-    const { fullName, phoneNumber, email, role, password, subject, experience, certifications, profilePicture, educationCategory, indexNumber } = req.body;
+    const { fullName, phoneNumber, email, role, password, subject, experience, certifications, profilePicture, educationCategory, indexNumber, birthdate } = req.body;
     
     // Map camelCase to snake_case for existing fields in case some other form uses them
-    const mappedEmail = email || req.body.email;
+    const mappedEmail = normalizeEmail(email || req.body.email);
     const mappedFullName = fullName || req.body.full_name;
-    const mappedPhone = phoneNumber || req.body.phone;
+    const mappedPhone = normalizePhoneNumber(phoneNumber || req.body.phone);
     const mappedIndex = indexNumber || req.body.index_number;
+    const finalPassword = password || "Password123!";
+
+    if (!mappedFullName || !mappedPhone) {
+      return res.status(400).json({ success: false, message: "Full name and phone number are required." });
+    }
+
+    const phoneError = getPhoneError(mappedPhone);
+    if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+
+    const emailError = getEmailError(mappedEmail);
+    if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+    const passwordError = getPasswordError(finalPassword, { required: true });
+    if (passwordError) return res.status(400).json({ success: false, message: passwordError });
     
     const existing = await prisma.users.findFirst({ 
       where: { 
@@ -173,7 +194,7 @@ exports.addUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email, Phone, or Index Number already in use." });
     }
 
-    const hash = password ? await bcrypt.hash(password, 10) : await bcrypt.hash("password123", 10);
+    const hash = await bcrypt.hash(finalPassword, 10);
     const finalIndex = mappedIndex || await generateNextIndexNumber();
     
     await prisma.users.create({
@@ -185,6 +206,7 @@ exports.addUser = async (req, res) => {
         role: role || "student",
         password_hash: hash,
         address: "",
+        birthdate: birthdate ? new Date(birthdate) : null,
         education_category: role === 'student' ? (educationCategory || req.body.education_category || null) : null,
         subject: subject || null,
         experience: experience || null,
@@ -202,18 +224,30 @@ exports.addUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { id, user_id, fullName, full_name, phoneNumber, phone, role, educationCategory, education_category, status, password, admin_id, subject, experience, certifications, profilePicture } = req.body;
+    const { id, user_id, fullName, full_name, phoneNumber, phone, email, role, educationCategory, education_category, status, password, admin_id, subject, experience, certifications, profilePicture, birthdate } = req.body;
     
     const targetId = id || user_id;
     if (!targetId) return res.status(400).json({ success: false, message: "User ID required." });
 
     const mappedFullName = fullName || full_name;
-    const mappedPhone = phoneNumber || phone;
+    const mappedPhone = normalizePhoneNumber(phoneNumber || phone);
+    const mappedEmail = normalizeEmail(email);
     const mappedEdu = educationCategory || education_category;
+
+    if (!mappedFullName || !mappedPhone) {
+      return res.status(400).json({ success: false, message: "Full name and phone number are required." });
+    }
+
+    const phoneError = getPhoneError(mappedPhone);
+    if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+
+    const emailError = getEmailError(mappedEmail);
+    if (emailError) return res.status(400).json({ success: false, message: emailError });
 
     const updateData = { 
       full_name: mappedFullName, 
       phone_number: mappedPhone, 
+      email: mappedEmail || null,
       role, 
       status, 
       education_category: role === 'student' ? mappedEdu : null,
@@ -221,10 +255,13 @@ exports.updateUser = async (req, res) => {
       experience: experience || null,
       certifications: certifications || null,
     };
+    if (birthdate !== undefined) updateData.birthdate = birthdate ? new Date(birthdate) : null;
     
     if (profilePicture) updateData.profile_picture = profilePicture;
 
     if (password) {
+      const passwordError = getPasswordError(password);
+      if (passwordError) return res.status(400).json({ success: false, message: passwordError });
       updateData.password_hash = await bcrypt.hash(password, 10);
     }
 
@@ -344,7 +381,8 @@ exports.updateProfile = async (req, res) => {
     // Support both camelCase from frontend and snake_case
     const actualId = id || (req.user ? req.user.id : null);
     const actualFullName = fullName || full_name;
-    const actualPhone = phoneNumber || phone;
+    const actualPhone = normalizePhoneNumber(phoneNumber || phone);
+    const actualEmail = normalizeEmail(email);
     const actualEduCategory = educationCategory || education_category;
     const actualPassword = password || new_password;
 
@@ -359,10 +397,14 @@ exports.updateProfile = async (req, res) => {
       full_name: actualFullName, 
     };
     if (actualPhone !== undefined && actualPhone !== "") {
+      const phoneError = getPhoneError(actualPhone);
+      if (phoneError) return res.status(400).json({ success: false, message: phoneError });
       updateData.phone_number = actualPhone;
     }
     if (email !== undefined) {
-      updateData.email = email;
+      const emailError = getEmailError(actualEmail);
+      if (emailError) return res.status(400).json({ success: false, message: emailError });
+      updateData.email = actualEmail || null;
     }
     
     if (user.role === 'student' && actualEduCategory) {
@@ -382,6 +424,8 @@ exports.updateProfile = async (req, res) => {
     if (certifications !== undefined) updateData.certifications = certifications;
 
     if (actualPassword) {
+      const passwordError = getPasswordError(actualPassword);
+      if (passwordError) return res.status(400).json({ success: false, message: passwordError });
       // If current_password is required by UI, check it. But ProfileForm doesn't send current_password.
       // ProfileForm only sends 'password'
       if (current_password) {

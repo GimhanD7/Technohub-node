@@ -7,6 +7,7 @@ import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
+import { digitsOnly, getPhoneError } from "@/lib/validation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,6 +32,12 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    const phoneError = getPhoneError(phoneNumber);
+    if (phoneError) {
+      toast.error(phoneError);
+      return;
+    }
 
     if (rememberMe) {
       localStorage.setItem("techno_hub_phone", phoneNumber);
@@ -133,7 +140,9 @@ export default function LoginPage() {
                   <input 
                     type="tel" 
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
                     placeholder="07x xxx xxxx" 
                     required
@@ -232,7 +241,9 @@ export default function LoginPage() {
               <input 
                 type="tel"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 className="w-full pl-16 pr-6 py-4 rounded-full bg-white dark:bg-slate-800 border-none focus:ring-2 focus:ring-primary text-[15px] dark:text-white" 
                 placeholder="phone number" 
                 required

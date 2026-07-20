@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Search, DollarSign, Lock, KeyRound, Edit2, Check, X, PlusCircle, History, ArrowUpRight, ArrowDownRight, Clock, RefreshCw } from "lucide-react";
+import { Users, Search, DollarSign, Lock, KeyRound, Edit2, Check, X, PlusCircle, History, ArrowUpRight, ArrowDownRight, Clock, RefreshCw, Wallet, CreditCard, Building2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "@/lib/api";
+import Link from "next/link";
 
 export default function AdminWalletCreditsPage() {
   const [users, setUsers] = useState([]);
@@ -266,6 +267,21 @@ export default function AdminWalletCreditsPage() {
             </button>
           )}
         </div>
+      </div>
+
+      <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-1 grid grid-cols-1 sm:grid-cols-3 gap-1">
+        <Link href="/dashboard/admin/wallet" className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-[13px] font-bold text-slate-500 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+          <Wallet className="w-4 h-4" />
+          Wallet Approvals
+        </Link>
+        <Link href="/dashboard/admin/wallet-credits" className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-[13px] font-bold bg-primary text-white shadow-sm">
+          <CreditCard className="w-4 h-4" />
+          User Wallet Credits
+        </Link>
+        <Link href="/dashboard/admin/bank-details" className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-[13px] font-bold text-slate-500 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+          <Building2 className="w-4 h-4" />
+          Bank Accounts
+        </Link>
       </div>
 
       <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">

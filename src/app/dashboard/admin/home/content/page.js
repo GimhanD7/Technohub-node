@@ -53,12 +53,11 @@ export default function HomePageContentManager() {
 
   const loadContent = useCallback(async () => {
     setIsLoading(true);
-    const data = await fetchApi("/home/get_content?role=admin");
+    const data = await fetchApi("/home/get_content?role=admin", { showToast: false });
     setIsLoading(false);
 
     if (data.success) {
       setSettings(normalizeSettings(data.settings));
-      toast.success("Home content loaded successfully!");
     } else {
       toast.error(data.message || "Failed to load home page content.");
     }

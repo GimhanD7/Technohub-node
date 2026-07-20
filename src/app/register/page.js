@@ -2,19 +2,23 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import { Phone, KeyRound, Cpu, ArrowLeft, User, MapPin, GraduationCap, Mail } from "lucide-react";
+import { Phone, KeyRound, Cpu, ArrowLeft, User, MapPin, GraduationCap, Mail, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { digitsOnly, getEmailError, getPasswordError, getPhoneError, normalizeEmail } from "@/lib/validation";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [educationCategory, setEducationCategory] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // OTP States
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -23,11 +27,41 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const phoneError = phoneNumber ? getPhoneError(phoneNumber) : "";
+  const emailError = email ? getEmailError(email) : "";
+  const passwordError = password ? getPasswordError(password) : "";
+  const confirmPasswordError = confirmPassword && password !== confirmPassword ? "Passwords do not match." : "";
+  const passwordChecks = [
+    { label: "8 or more characters", met: password.length >= 8 },
+    { label: "Uppercase letter", met: /[A-Z]/.test(password) },
+    { label: "Lowercase letter", met: /[a-z]/.test(password) },
+    { label: "Number", met: /\d/.test(password) },
+    { label: "Special character", met: /[^A-Za-z0-9]/.test(password) },
+    { label: "No spaces", met: password.length > 0 && !/\s/.test(password) },
+  ];
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
+
+    const phoneError = getPhoneError(phoneNumber);
+    if (phoneError) {
+      setErrorMsg(phoneError);
+      return;
+    }
+
+    const emailError = getEmailError(email);
+    if (emailError) {
+      setErrorMsg(emailError);
+      return;
+    }
+
+    const passwordError = getPasswordError(password, { required: true });
+    if (passwordError) {
+      setErrorMsg(passwordError);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setErrorMsg("Passwords do not match!");
@@ -56,13 +90,14 @@ export default function RegisterPage() {
     // Step 2: Verify OTP & Register
     const data = await fetchApi("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ fullName, phoneNumber, address, educationCategory, password, otp })
+      body: JSON.stringify({ fullName, phoneNumber, email: normalizeEmail(email), address, educationCategory, password, otp })
     });
     
     if (data.success) {
       setSuccessMsg(data.message + " Redirecting to login...");
       setFullName("");
       setPhoneNumber("");
+      setEmail("");
       setAddress("");
       setEducationCategory("");
       setPassword("");
@@ -83,6 +118,13 @@ export default function RegisterPage() {
   const handleResendOtp = async () => {
     setErrorMsg("");
     setSuccessMsg("");
+
+    const phoneError = getPhoneError(phoneNumber);
+    if (phoneError) {
+      setErrorMsg(phoneError);
+      return;
+    }
+
     setIsLoading(true);
     const data = await fetchApi("/auth/send_otp", {
       method: "POST",
@@ -144,7 +186,7 @@ export default function RegisterPage() {
           <Cpu className="w-6 h-6 text-primary" />
         </Link>
         
-        <div className="w-full max-w-md my-auto">
+        <div className="w-full max-w-xl my-auto">
           <div className="mb-10 text-center lg:text-left mt-10 lg:mt-0">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               {showOtpInput ? "Verify your phone" : "Create an account"}
@@ -179,8 +221,8 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                  <div className="min-w-0">
                     <label className="block text-sm font-medium mb-2 text-foreground">Phone Number</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -189,15 +231,43 @@ export default function RegisterPage() {
                       <input 
                         type="tel" 
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
-                        placeholder="07x xxx xxxx" 
+                        onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className={`w-full pl-12 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${phoneError ? "border-red-300" : "border-black/10"}`}
+                        placeholder="0771234567"
                         required
                       />
                     </div>
+                    {phoneError ? (
+                      <p className="mt-1.5 text-xs font-medium text-red-600">{phoneError}</p>
+                    ) : (
+                      <p className="mt-1.5 text-xs text-zinc-500">Numbers only, 9 to 15 digits.</p>
+                    )}
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
+                    <label className="block text-sm font-medium mb-2 text-foreground">Email Address</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="h-5 w-5 text-zinc-400" />
+                      </div>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={`w-full pl-12 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${emailError ? "border-red-300" : "border-black/10"}`}
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                    {emailError ? (
+                      <p className="mt-1.5 text-xs font-medium text-red-600">{emailError}</p>
+                    ) : (
+                      <p className="mt-1.5 text-xs text-zinc-500">Optional, but must be a valid email.</p>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
                     <label className="block text-sm font-medium mb-2 text-foreground">Address</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -208,13 +278,13 @@ export default function RegisterPage() {
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
-                        placeholder="123 Education St" 
+                        placeholder="123 Education Street"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="md:col-span-2">
+                  <div className="sm:col-span-2 min-w-0">
                     <label className="block text-sm font-medium mb-2 text-foreground">Education Category</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -238,37 +308,68 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                  <div className="min-w-0">
                     <label className="block text-sm font-medium mb-2 text-foreground">Password</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <KeyRound className="h-5 w-5 text-zinc-400" />
                       </div>
                       <input 
-                        type="password" 
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
+                        className={`w-full pl-12 pr-12 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${passwordError ? "border-red-300" : "border-black/10"}`}
                         placeholder="••••••••" 
                         required
                       />
+                      <button
+                        type="button"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowPassword((current) => !current)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-slate-700 dark:hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
                     </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-sm font-medium mb-2 text-foreground">Confirm</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <KeyRound className="h-5 w-5 text-zinc-400" />
                       </div>
                       <input 
-                        type="password" 
+                        type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
+                        className={`w-full pl-12 pr-12 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${confirmPasswordError ? "border-red-300" : "border-black/10"}`}
                         placeholder="••••••••" 
                         required
                       />
+                      <button
+                        type="button"
+                        aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                        onClick={() => setShowConfirmPassword((current) => !current)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-slate-700 dark:hover:text-white"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                    {confirmPasswordError && (
+                      <p className="mt-1.5 text-xs font-medium text-red-600">{confirmPasswordError}</p>
+                    )}
+                  </div>
+                  <div className="sm:col-span-2 rounded-xl border border-black/10 bg-zinc-50/60 dark:bg-[#0f172a] p-3">
+                    <p className={`text-xs font-semibold ${passwordError ? "text-red-600" : "text-zinc-600 dark:text-zinc-300"}`}>
+                      {password ? (passwordError || "Password meets the required standard.") : "Use 8+ characters with uppercase, lowercase, number, and special character."}
+                    </p>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                      {passwordChecks.map((check) => (
+                        <p key={check.label} className={`text-xs ${check.met ? "text-green-600" : "text-zinc-500"}`}>
+                          {check.met ? "OK" : "Need"} - {check.label}
+                        </p>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -281,7 +382,9 @@ export default function RegisterPage() {
                     <input 
                       type="text" 
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
+                      onChange={(e) => setOtp(digitsOnly(e.target.value).slice(0, 6))}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="w-full px-4 py-4 text-center text-2xl tracking-widest rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
                       placeholder="------" 
                       maxLength={6}

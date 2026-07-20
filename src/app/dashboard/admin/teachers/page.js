@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { Users, Trash2, BookOpen, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Ban, CheckCircle2, Upload } from "lucide-react";
 import { fetchApi, API_BASE_URL, BASE_URL } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
+import { digitsOnly, getEmailError, getPasswordError, getPhoneError, normalizeEmail } from "@/lib/validation";
 
 export default function TeacherManagement() {
   const [users, setUsers] = useState([]);
@@ -57,6 +58,21 @@ export default function TeacherManagement() {
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const validateFormData = () => {
+    if (!formData.fullName.trim()) return "Full name is required.";
+
+    const phoneError = getPhoneError(formData.phoneNumber);
+    if (phoneError) return phoneError;
+
+    const emailError = getEmailError(formData.email);
+    if (emailError) return emailError;
+
+    const passwordError = getPasswordError(formData.password);
+    if (passwordError) return passwordError;
+
+    return "";
+  };
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -157,10 +173,16 @@ export default function TeacherManagement() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
+    const validationError = validateFormData();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
     setFormLoading(true);
     const data = await fetchApi("/user/add_user", {
       method: "POST",
-      body: JSON.stringify(formData)
+      body: JSON.stringify({ ...formData, email: normalizeEmail(formData.email) })
     });
     
     if (data.success) {
@@ -177,10 +199,16 @@ export default function TeacherManagement() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
+    const validationError = validateFormData();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
     setFormLoading(true);
     const data = await fetchApi("/user/admin_update_user", {
       method: "POST",
-      body: JSON.stringify({ id: editUser.id, ...formData })
+      body: JSON.stringify({ id: editUser.id, ...formData, email: normalizeEmail(formData.email) })
     });
     
     if (data.success) {
@@ -413,7 +441,7 @@ export default function TeacherManagement() {
                         </div>
                         <div>
                         <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Phone Number *</label>
-                        <input type="tel" required value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-[#0f172a]" />
+                        <input type="tel" required value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: digitsOnly(e.target.value)})} inputMode="numeric" pattern="[0-9]*" className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-[#0f172a]" />
                         </div>
                     </div>
 
@@ -448,7 +476,8 @@ export default function TeacherManagement() {
                  </div>
                  <div>
                     <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Password</label>
-                    <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={editUser ? "Leave blank to keep current" : "Default: password123"} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-[#0f172a]" />
+                    <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={editUser ? "Leave blank to keep current" : "Default: Password123!"} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-[#0f172a]" />
+                    <p className="mt-1 text-[11px] text-gray-400">Use 8+ characters with uppercase, lowercase, number, and special character.</p>
                  </div>
               </div>
 
