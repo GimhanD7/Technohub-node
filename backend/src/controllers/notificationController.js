@@ -115,3 +115,18 @@ exports.markRead = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, message: "Notification ID is required" });
+
+    await prisma.notifications.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.json({ success: true, message: "Notification deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to delete notification: " + error.message });
+  }
+};

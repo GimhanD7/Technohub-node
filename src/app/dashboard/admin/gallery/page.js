@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
+import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
@@ -106,7 +107,6 @@ export default function AdminGalleryPage() {
 
   const loadItems = useCallback(async () => {
     setIsLoading(true);
-    setErrorMsg("");
 
     const data = await fetchApi("/gallery/list?role=admin");
     setIsLoading(false);
@@ -114,7 +114,7 @@ export default function AdminGalleryPage() {
     if (data.success) {
       setItems(data.items);
     } else {
-      setErrorMsg(data.message || "Failed to load gallery items.");
+      toast.error(data.message || "Failed to load gallery items.");
     }
   }, []);
 
@@ -150,8 +150,6 @@ export default function AdminGalleryPage() {
     if (files.length === 0) return;
 
     setIsUploading(true);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const uploadData = new FormData();
     files.forEach((file) => uploadData.append("images", file));
@@ -167,12 +165,12 @@ export default function AdminGalleryPage() {
         const uploadedUrls = (data.images || []).map((image) => image.imageUrl).filter(Boolean);
         syncImages([...formImageUrls, ...uploadedUrls]);
         setSelectedImageName(files.length === 1 ? files[0].name : `${files.length} images selected`);
-        setSuccessMsg(files.length === 1 ? "Gallery image uploaded." : "Gallery images uploaded.");
+        toast.success(files.length === 1 ? "Gallery image uploaded successfully!" : "Gallery images uploaded successfully!");
       } else {
-        setErrorMsg(data.message || "Upload failed.");
+        toast.error(data.message || "Upload failed.");
       }
-    } catch {
-      setErrorMsg("Upload failed. Please check that XAMPP Apache is running.");
+    } catch (error) {
+      toast.error("Upload failed. Please check that XAMPP Apache is running.");
     } finally {
       setIsUploading(false);
       event.target.value = "";
@@ -202,8 +200,6 @@ export default function AdminGalleryPage() {
     const imageUrls = getItemImageUrls(item);
     setEditingId(item.id);
     setSelectedImageName("");
-    setErrorMsg("");
-    setSuccessMsg("");
     setForm({
       title: item.title || "",
       entryType: item.entryType || "event",
@@ -227,8 +223,6 @@ export default function AdminGalleryPage() {
 
     if (!user) return;
     setIsSaving(true);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const payload = {
       ...form,
@@ -246,19 +240,16 @@ export default function AdminGalleryPage() {
     setIsSaving(false);
 
     if (response.success) {
-      setSuccessMsg(response.message);
+      toast.success(response.message);
       resetForm();
       loadItems();
-      setTimeout(() => setSuccessMsg(""), 3000);
     } else {
-      setErrorMsg(response.message || "Failed to save gallery item.");
+      toast.error(response.message || "Failed to save gallery item.");
     }
   };
 
   const executeDeleteItem = async (itemId) => {
     setIsDeletingId(itemId);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const response = await fetchApi("/gallery/delete", {
       method: "POST",
@@ -273,11 +264,10 @@ export default function AdminGalleryPage() {
 
     if (response.success) {
       if (editingId === itemId) resetForm();
-      setSuccessMsg(response.message);
+      toast.success(response.message);
       loadItems();
-      setTimeout(() => setSuccessMsg(""), 3000);
     } else {
-      setErrorMsg(response.message || "Failed to delete gallery item.");
+      toast.error(response.message || "Failed to delete gallery item.");
     }
   };
 

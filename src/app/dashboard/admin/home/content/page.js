@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, API_BASE_URL } from "@/lib/api";
+import { toast } from "react-hot-toast";
 import {
-  AlertCircle,
-  CheckCircle2,
   Home,
   Loader2,
   Save,
+  Upload,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 
 const initialSettings = {
@@ -48,19 +50,17 @@ export default function HomePageContentManager() {
   const [settings, setSettings] = useState(() => ({ ...initialSettings }));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
 
   const loadContent = useCallback(async () => {
     setIsLoading(true);
-    setErrorMsg("");
     const data = await fetchApi("/home/get_content?role=admin");
     setIsLoading(false);
 
     if (data.success) {
       setSettings(normalizeSettings(data.settings));
+      toast.success("Home content loaded successfully!");
     } else {
-      setErrorMsg(data.message || "Failed to load home page content.");
+      toast.error(data.message || "Failed to load home page content.");
     }
   }, []);
 
@@ -76,11 +76,38 @@ export default function HomePageContentManager() {
     setSettings((current) => ({ ...current, [field]: value }));
   };
 
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        updateSettingsField('aitiLogo', data.imageUrl);
+        toast.success("Logo uploaded successfully!");
+      } else {
+        toast.error(data.message || "Failed to upload logo.");
+      }
+    } catch (error) {
+      toast.error("Logo upload error: " + error.message);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    updateSettingsField('aitiLogo', '');
+  };
+
   const saveSettings = async (event) => {
     event.preventDefault();
     setIsSaving(true);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const response = await fetchApi("/home/update_settings", {
       method: "POST",
@@ -93,10 +120,9 @@ export default function HomePageContentManager() {
 
     setIsSaving(false);
     if (response.success) {
-      setSuccessMsg(response.message);
-      setTimeout(() => setSuccessMsg(""), 3000);
+      toast.success(response.message || "Home content saved successfully!");
     } else {
-      setErrorMsg(response.message || "Failed to save home content.");
+      toast.error(response.message || "Failed to save home content.");
     }
   };
 
@@ -111,19 +137,6 @@ export default function HomePageContentManager() {
           <p className="text-xs text-gray-500 dark:text-white">Edit text and headers for the homepage.</p>
         </div>
       </div>
-
-      {errorMsg && (
-        <div className="p-4 bg-red-50 border border-red-200 dark:border-red-900/50 text-red-600 text-sm font-medium rounded-lg flex gap-2">
-          <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
-          {errorMsg}
-        </div>
-      )}
-      {successMsg && (
-        <div className="p-4 bg-green-50 border border-green-200 dark:border-green-900/50 text-green-700 text-sm font-medium rounded-lg flex gap-2">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          {successMsg}
-        </div>
-      )}
 
       <form onSubmit={saveSettings} className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -142,7 +155,6 @@ export default function HomePageContentManager() {
             ["primaryCtaUrl", "Primary Button Link"],
             ["secondaryCtaLabel", "Secondary Button Label"],
             ["secondaryCtaUrl", "Secondary Button Link"],
-            ["aitiLogo", "AITI Logo (URL or Path)"],
             ["aitiDescription", "AITI Description"],
             ["coursesHeading", "Courses Heading"],
             ["coursesSubtitle", "Courses Subtitle"],
@@ -167,6 +179,50 @@ export default function HomePageContentManager() {
           <div className="md:col-span-2">
             <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Hero Subtitle</label>
             <textarea value={settings.heroSubtitle ?? ""} onChange={(event) => updateSettingsField("heroSubtitle", event.target.value)} rows={4} className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a] resize-none" />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">AITI Logo</label>
+            <div className="space-y-3">
+              {settings.aitiLogo ? (
+                <div className="relative p-4 bg-slate-50 dark:bg-[#0f172a] rounded-lg border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={settings.aitiLogo.startsWith('http') ? settings.aitiLogo : `${API_BASE_URL}${settings.aitiLogo}`} 
+                      alt="AITI Logo Preview" 
+                      className="h-10 w-auto object-contain" 
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                    <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{settings.aitiLogo}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4 text-red-500" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    id="logo-upload"
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="logo-upload"
+                    className="flex items-center justify-center gap-2 w-full p-4 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+                    <span className="text-sm font-medium text-gray-600 dark:text-slate-300">Click to upload logo image</span>
+                  </label>
+                </div>
+              )}
+              <p className="text-[11px] text-gray-500 dark:text-slate-400">Recommended: PNG or JPG, max 2MB, square aspect ratio</p>
+            </div>
           </div>
         </div>
 

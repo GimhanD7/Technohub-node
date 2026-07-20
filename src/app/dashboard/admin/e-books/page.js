@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, fetchApi } from "@/lib/api";
+import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
@@ -91,14 +92,13 @@ export default function AdminEBooksPage() {
 
   const loadResources = useCallback(async () => {
     setIsLoading(true);
-    setErrorMsg("");
     const data = await fetchApi("/ebook/list?role=admin");
     setIsLoading(false);
 
     if (data.success) {
       setResources(data.resources);
     } else {
-      setErrorMsg(data.message || "Failed to load e-book resources.");
+      toast.error(data.message || "Failed to load e-book resources.");
     }
   }, []);
 
@@ -125,8 +125,6 @@ export default function AdminEBooksPage() {
     if (!file) return;
 
     setIsUploading(true);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const uploadData = new FormData();
     uploadData.append("resource", file);
@@ -146,12 +144,12 @@ export default function AdminEBooksPage() {
           fileType: data.fileType,
           fileSize: data.fileSize,
         }));
-        setSuccessMsg("Resource file uploaded.");
+        toast.success("Resource file uploaded successfully!");
       } else {
-        setErrorMsg(data.message || "Upload failed.");
+        toast.error(data.message || "Upload failed.");
       }
-    } catch {
-      setErrorMsg("Upload failed. Please check that XAMPP Apache is running.");
+    } catch (error) {
+      toast.error("Upload failed. Please check that XAMPP Apache is running.");
     } finally {
       setIsUploading(false);
     }
@@ -163,8 +161,6 @@ export default function AdminEBooksPage() {
     if (!file) return;
 
     setIsCoverUploading(true);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const uploadData = new FormData();
     uploadData.append("resource", file);
@@ -178,12 +174,12 @@ export default function AdminEBooksPage() {
 
       if (data.success) {
         setForm((current) => ({ ...current, coverUrl: data.fileUrl }));
-        setSuccessMsg("Cover image uploaded.");
+        toast.success("Cover image uploaded successfully!");
       } else {
-        setErrorMsg(data.message || "Upload failed.");
+        toast.error(data.message || "Upload failed.");
       }
-    } catch {
-      setErrorMsg("Upload failed.");
+    } catch (error) {
+      toast.error("Upload failed.");
     } finally {
       setIsCoverUploading(false);
     }
@@ -192,8 +188,6 @@ export default function AdminEBooksPage() {
   const beginEditResource = (resource) => {
     setEditingId(resource.id);
     setSelectedFileName(resource.fileUrl ? "Current resource selected" : "");
-    setErrorMsg("");
-    setSuccessMsg("");
     setForm({
       title: resource.title || "",
       author: resource.author || "",
@@ -216,8 +210,6 @@ export default function AdminEBooksPage() {
 
     if (!user) return;
     setIsSaving(true);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const response = await fetchApi(editingId ? "/ebook/update" : "/ebook/create", {
       method: "POST",
@@ -232,19 +224,16 @@ export default function AdminEBooksPage() {
     setIsSaving(false);
 
     if (response.success) {
-      setSuccessMsg(response.message);
+      toast.success(response.message);
       resetForm();
       loadResources();
-      setTimeout(() => setSuccessMsg(""), 3000);
     } else {
-      setErrorMsg(response.message || "Failed to add resource.");
+      toast.error(response.message || "Failed to add resource.");
     }
   };
 
   const executeDeleteResource = async (resourceId) => {
     setIsDeletingId(resourceId);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const response = await fetchApi("/ebook/delete", {
       method: "POST",
@@ -258,11 +247,10 @@ export default function AdminEBooksPage() {
 
     if (response.success) {
       if (editingId === resourceId) resetForm();
-      setSuccessMsg(response.message);
+      toast.success(response.message);
       loadResources();
-      setTimeout(() => setSuccessMsg(""), 3000);
     } else {
-      setErrorMsg(response.message || "Failed to delete resource.");
+      toast.error(response.message || "Failed to delete resource.");
     }
   };
 
@@ -285,8 +273,8 @@ export default function AdminEBooksPage() {
 
   const handleApprove = async (resourceId) => {
     const res = await fetchApi("/ebook/approve", { method: "POST", body: JSON.stringify({ id: resourceId }) });
-    if (res.success) { setSuccessMsg("Resource approved and published."); loadResources(); setTimeout(() => setSuccessMsg(""), 3000); }
-    else setErrorMsg(res.message || "Approval failed.");
+    if (res.success) { toast.success("Resource approved and published!"); loadResources(); }
+    else toast.error(res.message || "Approval failed.");
   };
 
   const handleReject = (resourceId) => {
@@ -299,10 +287,10 @@ export default function AdminEBooksPage() {
       showInput: true,
       onConfirm: async (reason) => {
         setDialogState(prev => ({ ...prev, isOpen: false }));
-        if (!reason?.trim()) { setErrorMsg("Rejection reason is required."); return; }
+        if (!reason?.trim()) { toast.error("Rejection reason is required."); return; }
         const res = await fetchApi("/ebook/reject", { method: "POST", body: JSON.stringify({ id: resourceId, reason }) });
-        if (res.success) { setSuccessMsg("Resource rejected."); loadResources(); setTimeout(() => setSuccessMsg(""), 3000); }
-        else setErrorMsg(res.message || "Rejection failed.");
+        if (res.success) { toast.success("Resource rejected successfully!"); loadResources(); }
+        else toast.error(res.message || "Rejection failed.");
       },
       onCancel: () => setDialogState(prev => ({ ...prev, isOpen: false }))
     });
@@ -310,8 +298,8 @@ export default function AdminEBooksPage() {
 
   const handleToggleEditable = async (resourceId) => {
     const res = await fetchApi("/ebook/toggle_editable", { method: "POST", body: JSON.stringify({ id: resourceId }) });
-    if (res.success) { setSuccessMsg(`Teacher edit ${res.teacherEditable ? "enabled" : "disabled"}.`); loadResources(); setTimeout(() => setSuccessMsg(""), 3000); }
-    else setErrorMsg(res.message || "Toggle failed.");
+    if (res.success) { toast.success(`Teacher edit ${res.teacherEditable ? "enabled" : "disabled"}!`); loadResources(); }
+    else toast.error(res.message || "Toggle failed.");
   };
 
   return (

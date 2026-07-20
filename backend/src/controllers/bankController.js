@@ -32,7 +32,7 @@ exports.getActiveBankDetails = async (req, res) => {
 exports.addBankDetails = async (req, res) => {
   try {
     const { bank_name, account_name, account_number, is_active } = req.body;
-    
+
     // Check if max limit reached
     const count = await prisma.bank_details.count();
     if (count >= 5) {
@@ -63,7 +63,7 @@ exports.addBankDetails = async (req, res) => {
 exports.updateBankDetails = async (req, res) => {
   try {
     const { id, bank_name, account_name, account_number, is_active } = req.body;
-    
+
     if (!id) return res.status(400).json({ success: false, message: "ID is required" });
 
     const updatedBank = await prisma.bank_details.update({

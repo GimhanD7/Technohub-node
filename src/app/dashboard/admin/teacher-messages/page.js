@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { fetchApi } from "@/lib/api";
+import { toast } from "react-hot-toast";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
   AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Clock, Filter,
@@ -42,13 +43,12 @@ export default function AdminTeacherMessagesPage() {
 
   const loadMessages = useCallback(async () => {
     setIsLoading(true);
-    setErrorMsg("");
     const data = await fetchApi("/teacher-messages/all");
     setIsLoading(false);
     if (data.success) {
       setMessages(data.messages);
     } else {
-      setErrorMsg(data.message || "Failed to load messages.");
+      toast.error(data.message || "Failed to load messages.");
     }
   }, []);
 
@@ -71,18 +71,20 @@ export default function AdminTeacherMessagesPage() {
 
   const handleSendReply = async (msgId) => {
     if (!replyText.trim()) return;
-    setIsSendingReply(true); setErrorMsg(""); setSuccessMsg("");
+    setIsSendingReply(true);
     const res = await fetchApi("/teacher-messages/reply", {
       method: "POST",
       body: JSON.stringify({ id: msgId, reply: replyText }),
     });
     setIsSendingReply(false);
     if (res.success) {
-      setSuccessMsg("Reply sent.");
-      setReplyText(""); setReplyingId(null);
+      toast.success("Reply sent successfully!");
+      setReplyText("");
+      setReplyingId(null);
       loadMessages();
-      setTimeout(() => setSuccessMsg(""), 3000);
-    } else setErrorMsg(res.message || "Failed to send reply.");
+    } else {
+      toast.error(res.message || "Failed to send reply.");
+    }
   };
 
   const handleResolve = async (msgId) => {
@@ -92,8 +94,12 @@ export default function AdminTeacherMessagesPage() {
       body: JSON.stringify({ id: msgId }),
     });
     setIsResolvingId(null);
-    if (res.success) { setSuccessMsg("Message marked as resolved."); loadMessages(); setTimeout(() => setSuccessMsg(""), 3000); }
-    else setErrorMsg(res.message || "Failed to resolve.");
+    if (res.success) {
+      toast.success("Message marked as resolved!");
+      loadMessages();
+    } else {
+      toast.error(res.message || "Failed to resolve.");
+    }
   };
 
   const confirmDelete = (msgId) => {
@@ -113,8 +119,12 @@ export default function AdminTeacherMessagesPage() {
       body: JSON.stringify({ id: msgId, role: "admin" }),
     });
     setIsDeletingId(null);
-    if (res.success) { setSuccessMsg("Message deleted."); loadMessages(); setTimeout(() => setSuccessMsg(""), 3000); }
-    else setErrorMsg(res.message || "Delete failed.");
+    if (res.success) {
+      toast.success("Message deleted successfully!");
+      loadMessages();
+    } else {
+      toast.error(res.message || "Delete failed.");
+    }
   };
 
   return (

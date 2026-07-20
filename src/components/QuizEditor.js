@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Save, ArrowLeft, AlertCircle, CheckSquare, Square, RefreshCw, Star, Image as ImageIcon, X, User, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import { fetchApi, API_BASE_URL, BASE_URL } from "@/lib/api";
 import Button from "@/components/ui/Button";
 
@@ -70,7 +71,6 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
 
   const loadQuizData = async (id, currentUser) => {
     setIsLoading(true);
-    setErrorMsg("");
     const data = await fetchApi(`/quiz/get?quizId=${id}&userId=${currentUser.id}&role=${currentUser.role}`);
     setIsLoading(false);
     
@@ -100,7 +100,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
       }));
       setQuestions(formattedQuestions);
     } else {
-      setErrorMsg(data.message || "Failed to load quiz data.");
+      toast.error(data.message || "Failed to load quiz data.");
     }
   };
 
@@ -125,7 +125,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
   const handleRemoveQuestion = (index) => {
     if (isReadOnly) return;
     if (questions.length === 1) {
-      setErrorMsg("A quiz must have at least one question.");
+      toast.error("A quiz must have at least one question.");
       return;
     }
     const updated = [...questions];
@@ -165,7 +165,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     if (isReadOnly) return;
     const updated = [...questions];
     if (updated[qIndex].options.length >= 6) {
-      setErrorMsg("A question can have a maximum of 6 answers.");
+      toast.error("A question can have a maximum of 6 answers.");
       return;
     }
     updated[qIndex].options.push({ text: "", is_correct: false });
@@ -176,7 +176,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     if (isReadOnly) return;
     const updated = [...questions];
     if (updated[qIndex].options.length <= 2) {
-      setErrorMsg("A question must have at least 2 options.");
+      toast.error("A question must have at least 2 options.");
       return;
     }
     updated[qIndex].options.splice(oIndex, 1);
@@ -187,7 +187,6 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     if (!file) return;
     
     try {
-      setErrorMsg("");
       const formData = new FormData();
       formData.append('image', file);
       
@@ -201,11 +200,12 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
         const updated = [...questions];
         updated[qIndex].imageUrl = data.imageUrl;
         setQuestions(updated);
+        toast.success("Image uploaded successfully!");
       } else {
-        setErrorMsg(data.message || "Failed to upload image.");
+        toast.error(data.message || "Failed to upload image.");
       }
     } catch (e) {
-      setErrorMsg("Image upload error: " + e.message);
+      toast.error("Image upload error: " + e.message);
     }
   };
 
@@ -219,27 +219,24 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
   const handleSave = async () => {
     if (isReadOnly) return;
     if (!user || !user.role) {
-      setErrorMsg("Unable to determine your user role. Please log in again.");
+      toast.error("Unable to determine your user role. Please log in again.");
       return;
     }
 
-    setErrorMsg("");
-    setSuccessMsg("");
-
     if (!title.trim()) {
-      setErrorMsg("Please enter a quiz title.");
+      toast.error("Please enter a quiz title.");
       return;
     }
     if (!startTime || !endTime) {
-      setErrorMsg("Please select start and end times.");
+      toast.error("Please select start and end times.");
       return;
     }
     if (new Date(startTime) <= new Date()) {
-      setErrorMsg("Start time must be in the future. You cannot create or update a quiz with a past start time.");
+      toast.error("Start time must be in the future. You cannot create or update a quiz with a past start time.");
       return;
     }
     if (new Date(endTime) <= new Date(startTime)) {
-      setErrorMsg("End time must be after start time.");
+      toast.error("End time must be after start time.");
       return;
     }
 
@@ -247,7 +244,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.text.trim()) {
-        setErrorMsg(`Question ${i + 1} text cannot be empty.`);
+        toast.error(`Question ${i + 1} text cannot be empty.`);
         return;
       }
       
@@ -255,14 +252,14 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
       for (let j = 0; j < q.options.length; j++) {
         const opt = q.options[j];
         if (!opt.text.trim()) {
-          setErrorMsg(`Question ${i + 1}, Option ${j + 1} text cannot be empty.`);
+          toast.error(`Question ${i + 1}, Option ${j + 1} text cannot be empty.`);
           return;
         }
         if (opt.is_correct) correctCount++;
       }
 
       if (correctCount === 0) {
-        setErrorMsg(`Please mark at least one correct option for Question ${i + 1}.`);
+        toast.error(`Please mark at least one correct option for Question ${i + 1}.`);
         return;
       }
     }
@@ -298,12 +295,12 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
     setIsSaving(false);
 
     if (response.success) {
-      setSuccessMsg(response.message);
+      toast.success(response.message);
       setTimeout(() => {
         router.push(user.role === "admin" ? "/dashboard/admin/quizzes" : "/dashboard/teacher/quizzes");
       }, 1500);
     } else {
-      setErrorMsg(response.message || "An error occurred while saving the quiz.");
+      toast.error(response.message || "An error occurred while saving the quiz.");
     }
   };
 

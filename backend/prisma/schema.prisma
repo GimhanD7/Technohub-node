@@ -628,4 +628,3 @@ model sms_logs {
 
   @@index([user_id], map: "user_id")
 }
-

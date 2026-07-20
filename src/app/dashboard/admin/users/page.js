@@ -125,11 +125,51 @@ export default function UserManagement() {
         
         if (data.success) {
           setUsers(users.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
+          toast.success(isSuspending ? "Account suspended!" : "Account activated!");
         } else {
-          showAlert("Status Update Failed", data.message, "error");
+          toast.error(data.message || "Status update failed.");
         }
         setActionLoading(null);
       }
+    );
+  };
+
+  const handleDeleteUser = (user) => {
+    // Only allow deletion of students
+    if (user.role !== 'student') {
+      toast.error("Only student accounts can be deleted.");
+      return;
+    }
+
+    showConfirm(
+      "Delete Student Account",
+      `Are you sure you want to permanently delete ${user.full_name}'s account? This action cannot be undone. You'll need to enter your admin password to confirm.`,
+      "warning",
+      async (password) => {
+        if (!password) {
+          toast.error("Admin password is required.");
+          return;
+        }
+
+        setActionLoading(user.id);
+        const data = await fetchApi("/user/delete_user", {
+          method: "POST",
+          body: JSON.stringify({
+            id: user.id,
+            adminId: currentUser?.id,
+            password: password
+          })
+        });
+
+        if (data.success) {
+          toast.success("Student account deleted successfully!");
+          loadUsers();
+        } else {
+          toast.error(data.message || "Failed to delete user account.");
+        }
+        setActionLoading(null);
+      },
+      true // requirePassword = true
     );
   };
 
@@ -333,6 +373,17 @@ export default function UserManagement() {
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
+
+                        {u.role === 'student' && (
+                          <button 
+                            onClick={() => handleDeleteUser(u)}
+                            disabled={actionLoading === u.id}
+                            className="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded transition-colors disabled:opacity-50"
+                            title="Delete Student Account"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                         
                         <div className="w-px h-4 bg-gray-200 mx-1"></div>
 

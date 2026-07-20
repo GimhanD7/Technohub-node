@@ -360,7 +360,7 @@ export default function Home() {
               </p>
 
               {settings.aitiDescription && (
-                <div className="p-4 my-5 rounded-xl bg-slate-50 dark:bg-slate-850/40 border border-slate-150 dark:border-slate-800 flex items-center gap-4 animate-in fade-in duration-300 max-w-2xl">
+                <div className="p-4 my-5 rounded-xl bg-slate-50 dark:bg-slate-850/40 flex items-center gap-4 animate-in fade-in duration-300 max-w-2xl">
                   {settings.aitiLogo && (
                     <img 
                       src={getFullImageUrl(settings.aitiLogo)} 

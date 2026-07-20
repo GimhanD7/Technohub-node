@@ -2,14 +2,18 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { fetchApi } from "@/lib/api";
-import { Bell, Search, Loader2, Send, Users, Globe, BookOpen, FileText, CreditCard, Info, X, Check, Target } from "lucide-react";
+import { Bell, Search, Loader2, Send, Users, Globe, BookOpen, FileText, CreditCard, Info, X, Check, Target, Trash2, RefreshCw } from "lucide-react";
+import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
+import { CustomDialog } from "@/components/ui/CustomDialog";
 
 export default function NotificationManagement() {
   const [user, setUser] = useState(null);
   const [usersList, setUsersList] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, notificationId: null });
   
   // Form State
   const [title, setTitle] = useState("");
@@ -51,6 +55,13 @@ export default function NotificationManagement() {
     }
     
     setIsLoading(false);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadData();
+    setIsRefreshing(false);
+    toast.success("Notifications refreshed!");
   };
 
   // Filter teachers list
@@ -137,6 +148,7 @@ export default function NotificationManagement() {
     setIsSubmitting(true);
 
     if (res.success) {
+      toast.success("Notification sent successfully!");
       setAlert({ type: "success", msg: "Notification sent successfully!" });
       setTitle("");
       setMessage("");
@@ -149,7 +161,9 @@ export default function NotificationManagement() {
       setStudentSearch("");
       loadData(); // Refresh list
     } else {
-      setAlert({ type: "error", msg: res.message || "Failed to send notification." });
+      const errorMsg = res.message || "Failed to send notification.";
+      toast.error(errorMsg);
+      setAlert({ type: "error", msg: errorMsg });
     }
     setIsSubmitting(false);
   };
@@ -164,6 +178,37 @@ export default function NotificationManagement() {
     }
   };
 
+  const handleDeleteNotification = async (id) => {
+    setDeleteDialog({
+      isOpen: true,
+      notificationId: id,
+      type: 'warning',
+      title: 'Delete Notification?',
+      message: 'Are you sure you want to delete this notification? This action cannot be undone.',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDeleteDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          const res = await fetchApi(`/notifications/delete/${id}`, {
+            method: "DELETE"
+          });
+
+          if (res.success) {
+            toast.success("Notification deleted successfully");
+            loadData();
+          } else {
+            toast.error(res.message || "Failed to delete notification");
+          }
+        } catch (error) {
+          toast.error("An error occurred while deleting the notification");
+        }
+      },
+      onCancel: () => {
+        setDeleteDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
       <div className="flex items-center justify-between mb-6">
@@ -176,6 +221,14 @@ export default function NotificationManagement() {
             Broadcast messages globally, target roles, or search specifically for teachers and students.
           </p>
         </div>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          title="Refresh notifications"
+        >
+          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -398,7 +451,16 @@ export default function NotificationManagement() {
                     <div className="flex-1 space-y-1">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                         <h4 className="text-[13px] font-bold text-slate-850 dark:text-white leading-snug">{notif.title}</h4>
-                        <span className="text-[10px] text-slate-400">{new Date(notif.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-slate-400">{new Date(notif.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          <button
+                            onClick={() => handleDeleteNotification(notif.id)}
+                            className="text-red-500 hover:text-red-600 transition-colors"
+                            title="Delete Notification"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-[12px] text-slate-500 dark:text-slate-350 leading-relaxed font-sans">{notif.message}</p>
                       
@@ -431,6 +493,7 @@ export default function NotificationManagement() {
           </div>
         </div>
       </div>
+      <CustomDialog {...deleteDialog} />
     </div>
   );
 }

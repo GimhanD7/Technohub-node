@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchApi } from "@/lib/api";
+import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import {
@@ -78,7 +79,6 @@ export default function AdminContactPage() {
 
   const loadContactData = useCallback(async () => {
     setIsLoading(true);
-    setErrorMsg("");
 
     const [settingsData, messagesData] = await Promise.all([
       fetchApi("/contact/get_settings"),
@@ -90,13 +90,13 @@ export default function AdminContactPage() {
     if (settingsData.success) {
       setSettings(normalizeSettings(settingsData.settings));
     } else {
-      setErrorMsg(settingsData.message || "Failed to load contact settings.");
+      toast.error(settingsData.message || "Failed to load contact settings.");
     }
 
     if (messagesData.success) {
       setMessages(messagesData.messages);
     } else {
-      setErrorMsg(messagesData.message || "Failed to load contact messages.");
+      toast.error(messagesData.message || "Failed to load contact messages.");
     }
   }, []);
 
@@ -115,8 +115,6 @@ export default function AdminContactPage() {
   const handleSaveSettings = async (event) => {
     event.preventDefault();
     setIsSaving(true);
-    setErrorMsg("");
-    setSuccessMsg("");
 
     const response = await fetchApi("/contact/update_settings", {
       method: "POST",
@@ -130,16 +128,14 @@ export default function AdminContactPage() {
     setIsSaving(false);
 
     if (response.success) {
-      setSuccessMsg(response.message);
-      setTimeout(() => setSuccessMsg(""), 3000);
+      toast.success(response.message);
     } else {
-      setErrorMsg(response.message || "Failed to update contact details.");
+      toast.error(response.message || "Failed to update contact details.");
     }
   };
 
   const updateMessageStatus = async (messageId, status) => {
     setUpdatingMessageId(messageId);
-    setErrorMsg("");
 
     const response = await fetchApi("/contact/update_message_status", {
       method: "POST",
@@ -156,14 +152,14 @@ export default function AdminContactPage() {
       setMessages((current) => current.map((message) => (
         message.id === messageId ? { ...message, status } : message
       )));
+      toast.success("Message status updated!");
     } else {
-      setErrorMsg(response.message || "Failed to update message status.");
+      toast.error(response.message || "Failed to update message status.");
     }
   };
 
   const executeDeleteMessage = async (messageId) => {
     setUpdatingMessageId(messageId);
-    setErrorMsg("");
 
     const response = await fetchApi("/contact/delete_message", {
       method: "POST",
@@ -177,8 +173,9 @@ export default function AdminContactPage() {
 
     if (response.success) {
       setMessages((current) => current.filter((message) => message.id !== messageId));
+      toast.success("Message deleted successfully!");
     } else {
-      setErrorMsg(response.message || "Failed to delete contact message.");
+      toast.error(response.message || "Failed to delete contact message.");
     }
   };
 

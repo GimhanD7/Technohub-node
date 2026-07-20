@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Database, Trash2, ExternalLink, HardDrive, FileImage, File, FileText, Search, Loader2 } from "lucide-react";
+import { Database, Trash2, ExternalLink, HardDrive, FileImage, File, FileText, Search, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL, BASE_URL } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -9,6 +9,7 @@ import { CustomDialog } from "@/components/ui/CustomDialog";
 export default function UploadsManagerPage() {
   const [data, setData] = useState({ files: [], totalSize: 0, totalFiles: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFolder, setActiveFolder] = useState("All");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -33,6 +34,13 @@ export default function UploadsManagerPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchUploads();
+    setIsRefreshing(false);
+    toast.success("Storage data refreshed!");
   };
 
   const executeDelete = async (filePath) => {
@@ -119,6 +127,14 @@ export default function UploadsManagerPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            title="Refresh storage data"
+          >
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
            <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 flex items-center gap-3 shadow-sm">
              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                <HardDrive className="w-4 h-4 text-primary" />

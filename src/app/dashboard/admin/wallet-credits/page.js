@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Search, DollarSign, Lock, KeyRound, Edit2, Check, X, PlusCircle, History, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
+import { Users, Search, DollarSign, Lock, KeyRound, Edit2, Check, X, PlusCircle, History, ArrowUpRight, ArrowDownRight, Clock, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "@/lib/api";
 
 export default function AdminWalletCreditsPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [pin, setPin] = useState("");
@@ -46,6 +47,13 @@ export default function AdminWalletCreditsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchUsers();
+    setIsRefreshing(false);
+    toast.success("User list refreshed!");
   };
 
   const filteredUsers = users.filter(user => 
@@ -239,15 +247,25 @@ export default function AdminWalletCreditsPage() {
           <p className="text-sm text-slate-500 dark:text-white mt-1">View the current wallet credit balance for all registered users.</p>
         </div>
         
-        {selectedUsers.length > 0 && (
-          <button 
-            onClick={openBulkModal}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm"
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            title="Refresh user list"
           >
-            <PlusCircle className="w-4 h-4" />
-            Add Credits to {selectedUsers.length} User(s)
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
-        )}
+          {selectedUsers.length > 0 && (
+            <button 
+              onClick={openBulkModal}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <PlusCircle className="w-4 h-4" />
+              Add Credits to {selectedUsers.length} User(s)
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
