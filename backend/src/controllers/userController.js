@@ -301,8 +301,10 @@ exports.updateProfile = async (req, res) => {
 
     const updateData = { 
       full_name: actualFullName, 
-      phone_number: actualPhone, 
     };
+    if (actualPhone !== undefined && actualPhone !== "") {
+      updateData.phone_number = actualPhone;
+    }
     if (email !== undefined) {
       updateData.email = email;
     }

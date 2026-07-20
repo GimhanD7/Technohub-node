@@ -7,31 +7,64 @@ exports.getEarnings = async (req, res) => {
     if (!teacher_id) return res.status(400).json({ success: false, message: "Teacher ID is required." });
     const tid = parseInt(teacher_id);
 
-    // --- Exam (quiz) earnings breakdown ---
-    // Get all quiz payments for quizzes created by this teacher
-    const examPayments = await prisma.quiz_payments.findMany({
-      where: { quizzes: { created_by: tid } },
-      include: { quizzes: { select: { id: true, title: true, fee: true } } }
+    // Get all earnings from teacher_earnings_history (includes both quizzes and courses)
+    const allEarningsHistory = await prisma.teacher_earnings_history.findMany({
+      where: { teacher_id: tid },
+      orderBy: { created_at: 'desc' }
     });
 
-    // Group by quiz
-    const examMap = {};
-    for (const p of examPayments) {
-      const qid = p.quiz_id;
-      if (!examMap[qid]) {
-        examMap[qid] = {
-          id: p.quizzes.id,
-          title: p.quizzes.title,
-          fee: parseFloat(p.quizzes.fee || 0),
-          unlocks: 0,
-          total_earned: 0
-        };
+    // Calculate gross and net totals
+    let total_gross_earnings = 0;
+    let total_net_earnings = 0;
+    let exam_gross_earnings = 0;
+    let exam_net_earnings = 0;
+    let course_gross_earnings = 0;
+    let course_net_earnings = 0;
+
+    for (const earning of allEarningsHistory) {
+      const amount = parseFloat(earning.amount || 0);
+      const netAmount = parseFloat(earning.net_earning || 0);
+      
+      total_gross_earnings += amount;
+      total_net_earnings += netAmount;
+
+      if (earning.description && earning.description.startsWith('Earning from quiz:')) {
+        exam_gross_earnings += amount;
+        exam_net_earnings += netAmount;
+      } else {
+        course_gross_earnings += amount;
+        course_net_earnings += netAmount;
       }
-      examMap[qid].unlocks += 1;
-      examMap[qid].total_earned += parseFloat(p.amount);
     }
-    const exam_breakdown = Object.values(examMap);
-    const exam_earnings = exam_breakdown.reduce((sum, e) => sum + e.total_earned, 0);
+
+    // --- Exam (quiz) earnings breakdown ---
+    // Get all quizzes with payment info for breakdown
+    const quizzes = await prisma.quizzes.findMany({
+      where: { created_by: tid },
+      include: {
+        quiz_payments: { select: { id: true } }
+      }
+    });
+
+    const exam_breakdown = quizzes
+      .filter(q => q.quiz_payments.length > 0)
+      .map(q => {
+        // Get net earnings for this quiz from history
+        const quizHistory = allEarningsHistory.filter(e => 
+          e.description && e.description.includes(`Earning from quiz: ${q.title}`)
+        );
+        const total_net = quizHistory.reduce((sum, h) => sum + parseFloat(h.net_earning || 0), 0);
+        const total_gross = quizHistory.reduce((sum, h) => sum + parseFloat(h.amount || 0), 0);
+        
+        return {
+          id: q.id,
+          title: q.title,
+          fee: parseFloat(q.fee || 0),
+          unlocks: q.quiz_payments.length,
+          total_gross: total_gross,
+          total_net: total_net
+        };
+      });
 
     // --- Course earnings breakdown ---
     // Get all courses created by this teacher with enrollment counts
@@ -45,32 +78,32 @@ exports.getEarnings = async (req, res) => {
 
     const course_breakdown = courses
       .filter(c => c.course_enrollments.length > 0)
-      .map(c => ({
-        id: c.id,
-        title: c.title,
-        price: 0, // Courses do not have a price field in the current schema
-        enrollments: c.course_enrollments.length,
-        total_earned: 0 // Revenue tracked via teacher_earnings_history for non-quiz items
-      }));
-
-    // Course earnings = sum of teacher_earnings_history entries NOT related to quizzes
-    const courseEarningsAgg = await prisma.teacher_earnings_history.aggregate({
-      where: {
-        teacher_id: tid,
-        NOT: { description: { startsWith: 'Earning from quiz:' } }
-      },
-      _sum: { net_earning: true }
-    });
-    const course_earnings = parseFloat(courseEarningsAgg._sum.net_earning || 0);
-
-    const total_earnings = exam_earnings + course_earnings;
+      .map(c => {
+        // Get net earnings for this course from history
+        const courseHistory = allEarningsHistory.filter(e => 
+          e.description && e.description.includes(c.title)
+        );
+        const total_net = courseHistory.reduce((sum, h) => sum + parseFloat(h.net_earning || 0), 0);
+        const total_gross = courseHistory.reduce((sum, h) => sum + parseFloat(h.amount || 0), 0);
+        
+        return {
+          id: c.id,
+          title: c.title,
+          enrollments: c.course_enrollments.length,
+          total_gross: total_gross,
+          total_net: total_net
+        };
+      });
 
     res.json({
       success: true,
       summary: {
-        total_earnings,
-        course_earnings,
-        exam_earnings
+        total_gross_earnings: parseFloat(total_gross_earnings.toFixed(2)),
+        total_net_earnings: parseFloat(total_net_earnings.toFixed(2)),
+        course_gross_earnings: parseFloat(course_gross_earnings.toFixed(2)),
+        course_net_earnings: parseFloat(course_net_earnings.toFixed(2)),
+        exam_gross_earnings: parseFloat(exam_gross_earnings.toFixed(2)),
+        exam_net_earnings: parseFloat(exam_net_earnings.toFixed(2))
       },
       course_breakdown,
       exam_breakdown

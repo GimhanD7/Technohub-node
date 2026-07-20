@@ -65,13 +65,15 @@ export default function TeacherEarningsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Gross Total Earnings */}
         <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm flex items-start justify-between relative overflow-hidden group hover:border-blue-300 transition-colors">
           <div className="relative z-10">
-            <p className="text-[12px] font-bold text-gray-400 dark:text-white uppercase tracking-wider">Total Earnings</p>
+            <p className="text-[12px] font-bold text-gray-400 dark:text-white uppercase tracking-wider">Gross Total Earnings</p>
             <h3 className="text-[28px] font-black text-slate-800 dark:text-white mt-2">
-              LKR {data?.summary?.total_earnings?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+              LKR {data?.summary?.total_gross_earnings?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
             </h3>
+            <p className="text-[11px] text-gray-400 dark:text-white mt-2">Before commission deduction</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center shrink-0 relative z-10 transition-transform group-hover:scale-110">
             <DollarSign className="w-6 h-6 text-blue-600" />
@@ -81,27 +83,20 @@ export default function TeacherEarningsPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm flex items-start justify-between group hover:border-emerald-300 transition-colors">
-          <div>
-            <p className="text-[12px] font-bold text-gray-400 dark:text-white uppercase tracking-wider">Course Revenue</p>
-            <h3 className="text-2xl font-bold text-slate-800 dark:text-white mt-2">
-              LKR {data?.summary?.course_earnings?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+        {/* Net Total Earnings */}
+        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm flex items-start justify-between relative overflow-hidden group hover:border-emerald-300 transition-colors">
+          <div className="relative z-10">
+            <p className="text-[12px] font-bold text-gray-400 dark:text-white uppercase tracking-wider">Net Total Earnings</p>
+            <h3 className="text-[28px] font-black text-emerald-600 dark:text-emerald-400 mt-2">
+              LKR {data?.summary?.total_net_earnings?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
             </h3>
+            <p className="text-[11px] text-gray-400 dark:text-white mt-2">After commission deduction</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 transition-transform group-hover:scale-110">
-            <BookOpen className="w-5 h-5 text-emerald-600" />
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center shrink-0 relative z-10 transition-transform group-hover:scale-110">
+            <TrendingUp className="w-6 h-6 text-emerald-600" />
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm flex items-start justify-between group hover:border-amber-300 transition-colors">
-          <div>
-            <p className="text-[12px] font-bold text-gray-400 dark:text-white uppercase tracking-wider">Exam Revenue</p>
-            <h3 className="text-2xl font-bold text-slate-800 dark:text-white mt-2">
-              LKR {data?.summary?.exam_earnings?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
-            </h3>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0 transition-transform group-hover:scale-110">
-            <ClipboardList className="w-5 h-5 text-amber-600" />
+          <div className="absolute -bottom-6 -right-6 text-emerald-50/50 transition-transform group-hover:scale-110">
+            <TrendingUp className="w-32 h-32" />
           </div>
         </div>
       </div>
@@ -119,9 +114,9 @@ export default function TeacherEarningsPage() {
               <thead className="bg-white dark:bg-[#1e293b] border-b border-gray-100 dark:border-slate-800/50">
                 <tr>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider">Course Name</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider text-right">Price</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider text-right">Enrollments</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-white uppercase tracking-wider text-right">Revenue</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider text-right">Gross</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-white uppercase tracking-wider text-right">Net Earning</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50">
@@ -129,10 +124,12 @@ export default function TeacherEarningsPage() {
                   data.course_breakdown.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors">
                       <td className="px-6 py-4 text-[13px] text-slate-800 dark:text-white font-bold truncate max-w-[200px]">{c.title}</td>
-                      <td className="px-6 py-4 text-[13px] text-gray-500 dark:text-white text-right">LKR {parseFloat(c.price).toFixed(2)}</td>
                       <td className="px-6 py-4 text-[13px] text-gray-500 dark:text-white text-right font-medium">{c.enrollments}</td>
+                      <td className="px-6 py-4 text-[13px] text-gray-600 dark:text-white text-right">
+                        LKR {parseFloat(c.total_gross || 0).toFixed(2)}
+                      </td>
                       <td className="px-6 py-4 text-[13px] text-emerald-600 font-bold text-right">
-                        LKR {parseFloat(c.total_earned).toFixed(2)}
+                        LKR {parseFloat(c.total_net || 0).toFixed(2)}
                       </td>
                     </tr>
                   ))
@@ -160,7 +157,8 @@ export default function TeacherEarningsPage() {
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider">Exam Name</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider text-right">Fee</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider text-right">Unlocks</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-white uppercase tracking-wider text-right">Revenue</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 dark:text-white uppercase tracking-wider text-right">Gross</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-white uppercase tracking-wider text-right">Net Earning</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50">
@@ -170,14 +168,17 @@ export default function TeacherEarningsPage() {
                       <td className="px-6 py-4 text-[13px] text-slate-800 dark:text-white font-bold truncate max-w-[200px]">{e.title}</td>
                       <td className="px-6 py-4 text-[13px] text-gray-500 dark:text-white text-right">LKR {parseFloat(e.fee).toFixed(2)}</td>
                       <td className="px-6 py-4 text-[13px] text-gray-500 dark:text-white text-right font-medium">{e.unlocks}</td>
+                      <td className="px-6 py-4 text-[13px] text-gray-600 dark:text-white text-right">
+                        LKR {parseFloat(e.total_gross || 0).toFixed(2)}
+                      </td>
                       <td className="px-6 py-4 text-[13px] text-amber-600 font-bold text-right">
-                        LKR {parseFloat(e.total_earned).toFixed(2)}
+                        LKR {parseFloat(e.total_net || 0).toFixed(2)}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-[13px] text-gray-400 dark:text-white font-medium">No exam earnings yet.</td>
+                    <td colSpan="5" className="px-6 py-12 text-center text-[13px] text-gray-400 dark:text-white font-medium">No exam earnings yet.</td>
                   </tr>
                 )}
               </tbody>
