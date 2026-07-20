@@ -45,3 +45,9 @@ next-env.d.ts
 
 # local recovery archive
 techno-hub-recovered-latest-work.tar
+
+# Private environment files
+.env
+.env.*
+!.env.example
+backend/.env
