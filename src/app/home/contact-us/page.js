@@ -165,12 +165,12 @@ export default function ContactUsPage() {
                 </div>
                 <div className="grid sm:grid-cols-3 gap-3 mt-10">
                   {supportOptions.map((option, index) => (
-                    <div key={option.title} className="rounded-lg border border-white/15 bg-white dark:bg-[#1e293b]/10 p-4 min-h-36">
-                      <div className={`h-10 w-10 rounded-md flex items-center justify-center mb-5 ${index === 1 ? "bg-secondary text-slate-950" : "bg-white dark:bg-[#1e293b]/15 text-white"}`}>
+                    <div key={option.title} className="rounded-lg border border-slate-200 dark:border-white/15 bg-white dark:bg-[#1e293b]/10 p-4 min-h-36">
+                      <div className={`h-10 w-10 rounded-md flex items-center justify-center mb-5 ${index === 1 ? "bg-secondary text-slate-950" : "bg-primary dark:bg-[#1e293b]/15 text-white"}`}>
                         <GraduationCap className="w-5 h-5" />
                       </div>
-                      <h3 className="font-bold text-sm">{option.title}</h3>
-                      <p className="text-xs leading-5 text-white/70 mt-2">{option.description}</p>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white">{option.title}</h3>
+                      <p className="text-xs leading-5 text-slate-600 dark:text-white/70 mt-2">{option.description}</p>
                     </div>
                   ))}
                 </div>

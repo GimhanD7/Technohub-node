@@ -84,6 +84,62 @@ exports.getActivity = async (req, res) => {
   }
 };
 
+exports.getUserProfile = async (req, res) => {
+  try {
+    const { id } = req.query;
+    if (!id) return res.json({ success: false, message: "User ID required" });
+
+    const userId = parseInt(id, 10);
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, index_number: true, full_name: true, email: true, phone_number: true,
+        address: true, education_info: true, education_category: true, student_category: true,
+        birthdate: true, wallet_balance: true, role: true, status: true,
+        subject: true, experience: true, certifications: true, profile_picture: true,
+        created_at: true, last_notification_read_at: true
+      }
+    });
+
+    if (!user) return res.json({ success: false, message: "User not found" });
+
+    // Aggregate counts
+    const [courseCount, quizAttemptCount, paymentAgg, onlineClassCount, walletTxCount, lastLoginLog] = await Promise.all([
+      prisma.course_enrollments.count({ where: { student_id: userId } }),
+      prisma.quiz_attempts.count({ where: { user_id: userId } }),
+      prisma.quiz_payments.aggregate({ where: { user_id: userId }, _sum: { amount: true }, _count: true }),
+      prisma.online_class_enrollments.count({ where: { student_id: userId } }),
+      prisma.wallet_transactions.count({ where: { user_id: userId } }),
+      prisma.system_logs.findFirst({
+        where: { user_id: userId, action: 'Logged In' },
+        orderBy: { created_at: 'desc' },
+        select: { created_at: true, ip_address: true }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      user: {
+        ...user,
+        wallet_balance: user.wallet_balance ? parseFloat(user.wallet_balance.toString()) : 0
+      },
+      stats: {
+        enrolled_courses: courseCount,
+        quiz_attempts: quizAttemptCount,
+        total_payments: paymentAgg._sum.amount ? parseFloat(paymentAgg._sum.amount.toString()) : 0,
+        payment_count: paymentAgg._count,
+        online_classes: onlineClassCount,
+        wallet_transactions: walletTxCount,
+        last_login: lastLoginLog?.created_at || null,
+        last_login_ip: lastLoginLog?.ip_address || null
+      }
+    });
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    res.json({ success: false, message: "Server error loading user profile" });
+  }
+};
+
 exports.addUser = async (req, res) => {
   try {
     const { fullName, phoneNumber, email, role, password, subject, experience, certifications, profilePicture, educationCategory, indexNumber } = req.body;
