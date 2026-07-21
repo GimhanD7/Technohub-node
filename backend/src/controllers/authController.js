@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateNextIndexNumber } = require('../utils/helpers');
+const { logActivity } = require('../utils/logger');
 const {
   getEmailError,
   getOtpError,
@@ -33,7 +34,7 @@ exports.login = async (req, res) => {
     });
 
     if (!user) {
-      // Log failed attempt here if logger is implemented
+      await logActivity(null, 'Failed Login', `Unknown phone: ${actualPhoneNumber}`, req);
       return res.status(401).json({ success: false, message: "Invalid phone number or password." });
     }
 
@@ -48,10 +49,11 @@ exports.login = async (req, res) => {
     // Compare with bcrypt (compatible with PHP password_hash)
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      await logActivity(user.id, 'Failed Login', 'Invalid password attempt.', req);
       return res.status(401).json({ success: false, message: "Invalid phone number or password." });
     }
 
-    // Log success here if logger is implemented
+    await logActivity(user.id, 'Logged In', 'User authenticated successfully.', req);
 
     // Create JWT token
     const token = jwt.sign(
