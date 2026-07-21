@@ -9,6 +9,7 @@ import MobileProfileDetails from "./components/MobileProfileDetails";
 import MobileProfilePassword from "./components/MobileProfilePassword";
 import { toast } from "react-hot-toast";
 import { getEmailError, getPasswordError, normalizeEmail } from "@/lib/validation";
+import { toDateInputValue } from "@/lib/date";
 
 export default function StudentProfilePage() {
   const [user, setUser] = useState(null);
@@ -25,6 +26,7 @@ export default function StudentProfilePage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const fileInputRef = useRef(null);
+  const emailValidationError = getEmailError(email);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("techno_hub_user");
@@ -34,7 +36,7 @@ export default function StudentProfilePage() {
       setFullName(parsed.full_name || "");
       setEmail(parsed.email || "");
       setAddress(parsed.address || "");
-      setBirthdate(parsed.birthdate || "");
+      setBirthdate(toDateInputValue(parsed.birthdate));
       setEducationCategory(parsed.education_category || "");
       setEducationInfo(parsed.education_info || "");
     }
@@ -120,7 +122,11 @@ export default function StudentProfilePage() {
     
     if (response.success) {
       toast.success("Profile updated successfully");
-      const updatedUser = { ...user, full_name: fullName, email, address, birthdate, education_category: educationCategory, education_info: educationInfo };
+      const updatedUser = {
+        ...user,
+        ...response.user,
+        birthdate: toDateInputValue(response.user?.birthdate ?? birthdate),
+      };
       setUser(updatedUser);
       localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
     } else {
@@ -222,6 +228,7 @@ export default function StudentProfilePage() {
             setFullName={setFullName}
             email={email}
             setEmail={setEmail}
+            emailValidationError={emailValidationError}
             address={address}
             setAddress={setAddress}
             birthdate={birthdate}

@@ -38,8 +38,9 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
       try {
         const data = await fetchApi(`/notifications/get?user_id=${user.id}`);
         if (data && data.success) {
-          setNotifications(data.notifications);
-          setUnreadCount(data.unread_count);
+          const loadedNotifications = data.notifications || [];
+          setNotifications(loadedNotifications);
+          setUnreadCount(data.unread_count ?? loadedNotifications.filter(notification => notification.is_unread).length);
         }
       } catch (err) {
         // Silently fail on network error to prevent Next.js overlay
@@ -47,9 +48,17 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
     };
     
     fetchNotifications();
-    // Poll every 60 seconds
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
+    // Refresh regularly and immediately when the user returns to this tab.
+    const interval = setInterval(fetchNotifications, 30000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchNotifications();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
 
   const handleOpenNotifications = async () => {
@@ -58,9 +67,14 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
       try {
         await fetchApi(`/notifications/mark_read`, {
           method: "POST",
-          body: JSON.stringify({ user_id: user.id })
+          body: JSON.stringify({ user_id: user.id, notification_id: "all" })
         });
         setUnreadCount(0);
+        setNotifications(prev => prev.map(notification => ({
+          ...notification,
+          is_read: 1,
+          is_unread: false
+        })));
       } catch (err) {
         // Silently fail
       }
@@ -128,8 +142,8 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
              <div className="hover:text-slate-800 transition-colors" onClick={handleOpenNotifications}>
                <Bell className="w-[18px] h-[18px]" />
                {unreadCount > 0 && (
-                 <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-green-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#0f172a] animate-pulse">
-                   {unreadCount > 9 ? '9+' : unreadCount}
+                 <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 bg-green-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#0f172a] animate-pulse">
+                   {unreadCount > 99 ? '99+' : unreadCount}
                  </span>
                )}
              </div>
@@ -150,7 +164,7 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
                         <Bell className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                       </div>
                       <p className="text-[15px] font-bold text-slate-700 dark:text-slate-300">All caught up!</p>
-                      <p className="text-[13px] mt-1 text-slate-400 dark:text-slate-500">You don't have any new notifications.</p>
+                      <p className="text-[13px] mt-1 text-slate-400 dark:text-slate-500">You don&apos;t have any new notifications.</p>
                     </div>
                   ) : (
                     notifications.map((notif) => (

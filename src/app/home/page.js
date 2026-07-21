@@ -365,10 +365,14 @@ export default function Home() {
                     <img 
                       src={getFullImageUrl(settings.aitiLogo)} 
                       alt="AITI Logo" 
-                      className="h-11 w-auto object-contain shrink-0 max-w-[120px]" 
+                      style={{
+                        width: `${settings.aitiLogoWidth ?? 120}px`,
+                        height: `${settings.aitiLogoHeight ?? 44}px`
+                      }}
+                      className="object-contain shrink-0"
                     />
                   )}
-                  <p className="text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <p className={`text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed ${settings.aitiDescriptionBold ? "font-bold" : "font-normal"}`}>
                     {settings.aitiDescription}
                   </p>
                 </div>

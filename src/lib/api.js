@@ -73,9 +73,11 @@ export async function fetchApi(endpoint, options = {}) {
     headers,
     ...fetchOptions
   } = options;
-  const method = (fetchOptions.method || "GET").toUpperCase();
-  const shouldToastSuccess = showToast === true || (showToast !== false && method !== "GET");
-  const shouldToastError = showToast !== false;
+  // Pages already own their user-facing feedback. Keeping API notifications
+  // opt-in prevents one response from being rendered once here and again by
+  // the page's toast.success/toast.error handler.
+  const shouldToastSuccess = showToast === true;
+  const shouldToastError = showToast === true;
 
   try {
     const url = `${API_BASE_URL}${endpoint}`;

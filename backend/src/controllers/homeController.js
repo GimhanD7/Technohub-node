@@ -39,7 +39,10 @@ exports.getContent = async (req, res) => {
         timetableSubtitle: settings.timetable_subtitle,
         faqHeading: settings.faq_heading,
         aitiDescription: settings.aiti_description,
-        aitiLogo: settings.aiti_logo
+        aitiLogo: settings.aiti_logo,
+        aitiLogoWidth: settings.aiti_logo_width,
+        aitiLogoHeight: settings.aiti_logo_height,
+        aitiDescriptionBold: settings.aiti_description_bold
       } : {},
       slides: slides.map(s => ({ ...s, imageUrl: s.image_url, isActive: Boolean(s.is_active), sortOrder: s.sort_order })),
       lecturers: lecturers.map(l => ({ ...l, imageUrl: l.image_url, isActive: Boolean(l.is_active), sortOrder: l.sort_order })),
@@ -64,8 +67,22 @@ exports.updateSettings = async (req, res) => {
       heroBadge, heroTitle, heroSubtitle, primaryCtaLabel, primaryCtaUrl,
       secondaryCtaLabel, secondaryCtaUrl, coursesHeading, coursesSubtitle,
       lecturersHeading, lecturersSubtitle, whyHeading, whySubtitle,
-      timetableHeading, timetableSubtitle, faqHeading, aitiDescription, aitiLogo, userId
+      timetableHeading, timetableSubtitle, faqHeading, aitiDescription, aitiLogo,
+      aitiLogoWidth, aitiLogoHeight, aitiDescriptionBold, userId
     } = req.body;
+
+    const logoWidth = Number(aitiLogoWidth ?? 120);
+    const logoHeight = Number(aitiLogoHeight ?? 44);
+
+    if (!Number.isInteger(logoWidth) || logoWidth < 20 || logoWidth > 500) {
+      return res.status(400).json({ success: false, message: "AITI logo width must be between 20 and 500 pixels." });
+    }
+    if (!Number.isInteger(logoHeight) || logoHeight < 20 || logoHeight > 300) {
+      return res.status(400).json({ success: false, message: "AITI logo height must be between 20 and 300 pixels." });
+    }
+    if (aitiDescriptionBold !== undefined && typeof aitiDescriptionBold !== 'boolean') {
+      return res.status(400).json({ success: false, message: "AITI description bold setting is invalid." });
+    }
 
     const updateData = {
       hero_badge: heroBadge,
@@ -86,6 +103,9 @@ exports.updateSettings = async (req, res) => {
       faq_heading: faqHeading,
       aiti_description: aitiDescription,
       aiti_logo: aitiLogo,
+      aiti_logo_width: logoWidth,
+      aiti_logo_height: logoHeight,
+      aiti_description_bold: aitiDescriptionBold ?? false,
       updated_by: userId ? parseInt(userId) : null
     };
 

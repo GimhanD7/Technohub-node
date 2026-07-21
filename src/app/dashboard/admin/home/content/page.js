@@ -32,6 +32,9 @@ const initialSettings = {
   faqHeading: "",
   aitiDescription: "",
   aitiLogo: "",
+  aitiLogoWidth: 120,
+  aitiLogoHeight: 44,
+  aitiDescriptionBold: false,
 };
 
 function normalizeSettings(settings) {
@@ -189,7 +192,8 @@ export default function HomePageContentManager() {
                     <img 
                       src={settings.aitiLogo.startsWith('http') ? settings.aitiLogo : `${API_BASE_URL}${settings.aitiLogo}`} 
                       alt="AITI Logo Preview" 
-                      className="h-10 w-auto object-contain" 
+                      style={{ width: `${settings.aitiLogoWidth}px`, height: `${settings.aitiLogoHeight}px` }}
+                      className="object-contain shrink-0"
                       onError={(e) => e.target.style.display = 'none'}
                     />
                     <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{settings.aitiLogo}</span>
@@ -221,6 +225,42 @@ export default function HomePageContentManager() {
                 </div>
               )}
               <p className="text-[11px] text-gray-500 dark:text-slate-400">Recommended: PNG or JPG, max 2MB, square aspect ratio</p>
+              <div className="grid sm:grid-cols-2 gap-4 rounded-lg border border-gray-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0f172a] p-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Display Width (px)</label>
+                  <input
+                    type="number"
+                    min="20"
+                    max="500"
+                    value={settings.aitiLogoWidth}
+                    onChange={(event) => updateSettingsField('aitiLogoWidth', Number(event.target.value))}
+                    className="w-full rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#1e293b]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Display Height (px)</label>
+                  <input
+                    type="number"
+                    min="20"
+                    max="300"
+                    value={settings.aitiLogoHeight}
+                    onChange={(event) => updateSettingsField('aitiLogoHeight', Number(event.target.value))}
+                    className="w-full rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#1e293b]"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0f172a] p-4 cursor-pointer">
+                <div>
+                  <span className="block text-[13px] font-semibold text-slate-700 dark:text-white">Bold AITI description</span>
+                  <span className="block mt-1 text-[11px] text-gray-500 dark:text-slate-400">Display the complete AITI description using bold text.</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.aitiDescriptionBold)}
+                  onChange={(event) => updateSettingsField('aitiDescriptionBold', event.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary shrink-0"
+                />
+              </label>
             </div>
           </div>
         </div>

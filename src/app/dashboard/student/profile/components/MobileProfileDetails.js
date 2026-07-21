@@ -11,6 +11,7 @@ export default function MobileProfileDetails({
   setFullName, 
   email, 
   setEmail, 
+  emailValidationError,
   address, 
   setAddress, 
   birthdate, 
@@ -57,11 +58,16 @@ export default function MobileProfileDetails({
           </div>
         </div>
 
-        <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl flex items-center gap-4 border border-gray-100 dark:border-slate-800">
+        <div className={`bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl flex items-start gap-4 border ${emailValidationError ? "border-red-500 dark:border-red-500" : "border-gray-100 dark:border-slate-800"}`}>
           <Mail className="w-5 h-5 text-blue-500 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-[11px] text-gray-400 mb-0.5">Email Address</p>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent text-[14px] font-bold text-slate-800 dark:text-white focus:outline-none placeholder:text-gray-300" placeholder="your@email.com" />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={Boolean(emailValidationError)} aria-describedby={emailValidationError ? "mobile-profile-email-error" : undefined} className="w-full bg-transparent text-[14px] font-bold text-slate-800 dark:text-white focus:outline-none placeholder:text-gray-300" placeholder="your@email.com" />
+            {emailValidationError && (
+              <p id="mobile-profile-email-error" role="alert" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-400">
+                {emailValidationError}
+              </p>
+            )}
           </div>
         </div>
 
