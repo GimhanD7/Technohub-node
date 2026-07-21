@@ -67,7 +67,7 @@ export function CustomDialog({
               {icons[type]}
             </div>
             <div className="pt-1 flex-1">
-              <h3 className="text-[15px] font-bold text-slate-800 tracking-tight leading-none mb-2">{title}</h3>
+              <h3 className="text-[15px] font-bold text-slate-800 dark:text-white tracking-tight leading-none mb-2">{title}</h3>
               <div className="text-[13px] text-gray-500 leading-relaxed mb-1">{message}</div>
               
               {requirePassword && (
@@ -77,7 +77,7 @@ export function CustomDialog({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={passwordPlaceholder}
-                    className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white text-slate-800"
+                    className="w-full px-3 py-2 text-[13px] border border-gray-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"
                     autoFocus
                   />
                 </div>
@@ -90,7 +90,7 @@ export function CustomDialog({
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={inputPlaceholder || "Enter reason..."}
                     rows={3}
-                    className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white text-slate-800 resize-none"
+                    className="w-full px-3 py-2 text-[13px] border border-gray-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 resize-none"
                     autoFocus
                   />
                 </div>
@@ -103,7 +103,7 @@ export function CustomDialog({
           {!isAlertOnly && (
             <button 
               onClick={onCancel}
-              className="px-4 py-2 text-[12px] font-medium text-slate-600 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-1"
+              className="px-4 py-2 text-[12px] font-medium text-slate-600 dark:text-slate-200 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-1"
             >
               {cancelText}
             </button>

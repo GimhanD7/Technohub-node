@@ -156,24 +156,30 @@ export default function CourseCategoriesPage() {
       <CustomDialog {...dialogState} />
 
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-primary/90 px-6 py-7 sm:px-8 text-white shadow-lg">
-        <div className="absolute -right-10 -top-14 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
         <div>
-          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 border border-white/15">
-            <Tags className="w-5 h-5" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">
             Course Categories
           </h1>
-          <p className="text-[13px] text-slate-200 mt-1 max-w-xl">Create a clean course structure so learners can find the right content quickly.</p>
+          <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">
+            Create a clean course structure so learners can find the right content quickly.
+          </p>
         </div>
-        <button 
-          onClick={() => { setEditCategoryId(null); setNewCategoryName(""); setShowAddModal(true); }}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-slate-900 rounded-xl shadow-sm hover:bg-slate-100 text-[13px] font-bold transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" /> Add Category
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Refresh categories"
+            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 text-slate-600 dark:text-white rounded shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800/50 text-[12px] font-medium transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            onClick={() => { setEditCategoryId(null); setNewCategoryName(""); setShowAddModal(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded shadow-sm hover:bg-primary/90 text-[12px] font-medium transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Category
+          </button>
         </div>
       </div>
 
@@ -191,12 +197,9 @@ export default function CourseCategoriesPage() {
       <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm p-5 sm:p-6 min-h-[420px]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div><h2 className="text-[16px] font-bold text-slate-900 dark:text-white">Category library</h2><p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{filteredCategories.length} of {categories.length} categories</p></div>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search categories..." className="w-full h-10 pl-9 pr-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f172a] text-[13px] outline-none focus:border-primary dark:text-white" />
-            </div>
-            <button onClick={handleRefresh} disabled={isRefreshing} title="Refresh categories" className="h-10 w-10 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary transition-colors disabled:opacity-50"><RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /></button>
+          <div className="relative flex-1 sm:w-64 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Search categories..." className="w-full h-10 pl-9 pr-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f172a] text-[13px] outline-none focus:border-primary dark:text-white" />
           </div>
         </div>
 

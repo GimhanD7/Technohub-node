@@ -190,12 +190,12 @@ export default function CoursesPage() {
 
         {/* Courses Grid */}
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-550 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
+          <div className="py-20 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
             <Loader2 className="w-8 h-8 animate-spin text-violet-500 mb-3" />
             <p className="text-sm font-semibold">Loading courses...</p>
           </div>
         ) : filteredCourses.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-150 p-6 shadow-sm">
+          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
             <Search className="w-12 h-12 mx-auto text-slate-200 mb-3" />
             <h3 className="text-base font-bold text-slate-700 dark:text-white">No Courses Found</h3>
             <p className="text-xs max-w-xs mx-auto mt-1">Try changing the filter or search term.</p>
@@ -205,23 +205,21 @@ export default function CoursesPage() {
             {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                className="group p-[2px] rounded-[20px] bg-gray-300 transition-all duration-300 ease-out hover:bg-gradient-to-r hover:from-violet-500 hover:to-blue-500 shadow-[0_2px_12px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_24px_rgba(124,58,237,0.25)] hover:-translate-y-1"
+                className="group p-[2px] rounded-[20px] bg-gray-300 dark:bg-slate-600 transition-all duration-300 ease-out hover:bg-gradient-to-r hover:from-violet-500 hover:to-blue-500 shadow-[0_2px_12px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_24px_rgba(124,58,237,0.25)] hover:-translate-y-1"
               >
                 <div className="bg-white dark:bg-[#1e293b] rounded-[18px] flex flex-col justify-between relative overflow-hidden text-left h-full">
 
                   {/* Banner */}
-                  <div className="h-44 bg-gray-100 relative overflow-hidden">
+                  <div className="h-44 bg-gray-100 dark:bg-slate-800 relative overflow-hidden flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-gray-300 dark:text-slate-600" />
                     {course.banner_url ? (
                       <img
                         src={course.banner_url}
-                        alt={course.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        alt=""
+                        onError={(event) => { event.currentTarget.style.display = "none"; }}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-white">
-                        <ImageIcon className="w-12 h-12" />
-                      </div>
-                    )}
+                    ) : null}
                     {parseFloat(course.points) > 0 && (
                       <div className="absolute top-3 right-3 bg-white dark:bg-[#1e293b]/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm flex items-center gap-1 border border-amber-200">
                         <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
@@ -240,7 +238,7 @@ export default function CoursesPage() {
                       </div>
                     )}
 
-                    <h3 className="text-[16px] font-extrabold text-slate-850 tracking-tight group-hover:text-violet-600 transition-colors line-clamp-2 leading-snug mb-2">
+                    <h3 className="text-[16px] font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-2 leading-snug mb-2">
                       {course.title}
                     </h3>
 

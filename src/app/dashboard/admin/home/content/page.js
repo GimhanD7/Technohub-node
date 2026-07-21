@@ -11,7 +11,22 @@ import {
   Upload,
   Image as ImageIcon,
   X,
+  Plus,
+  Trash2,
 } from "lucide-react";
+
+const defaultFeedbackItems = [
+  { name: "A/L ICT Student", role: "Advanced Level", quote: "The quizzes and video lessons helped me revise faster because everything was connected in one platform." },
+  { name: "University Learner", role: "Software Foundation", quote: "The practical resources and e-books made it easier to prepare for assignments and project presentations." },
+  { name: "Professional Learner", role: "Career Upskilling", quote: "The platform feels focused. I can follow lessons, check resources, and keep track of learning activities clearly." },
+];
+
+const defaultFaqItems = [
+  { question: "Can different student categories use the platform?", answer: "Yes. Techno-Hub supports school, O/L, A/L, university, vocational, and professional learners with category-focused resources." },
+  { question: "Are e-books and quizzes available online?", answer: "Yes. Students can access e-books, learning materials, quizzes, rankings, and exam practice from the platform." },
+  { question: "Can I join live or online classes?", answer: "Yes. Online classes and guided sessions can be managed through the platform alongside recorded video lessons." },
+  { question: "How do I contact the support team?", answer: "Use the Contact Us page to send a message or reach the education support team through the available contact details." },
+];
 
 const initialSettings = {
   heroBadge: "",
@@ -35,11 +50,20 @@ const initialSettings = {
   aitiLogoWidth: 120,
   aitiLogoHeight: 44,
   aitiDescriptionBold: false,
+  heroStatOneValue: "6",
+  heroStatOneLabel: "Learner categories",
+  heroStatTwoValue: "24/7",
+  heroStatTwoLabel: "Resource access",
+  heroStatThreeValue: "Live",
+  heroStatThreeLabel: "Classes and exams",
+  feedbackHeading: "Learners trust focused, practical support.",
+  feedbackItems: defaultFeedbackItems,
+  faqItems: defaultFaqItems,
 };
 
 function normalizeSettings(settings) {
   return Object.keys(initialSettings).reduce((next, key) => {
-    next[key] = settings?.[key] ?? "";
+    next[key] = settings?.[key] ?? initialSettings[key];
     return next;
   }, {});
 }
@@ -76,6 +100,21 @@ export default function HomePageContentManager() {
 
   const updateSettingsField = (field, value) => {
     setSettings((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateListItem = (field, index, itemField, value) => {
+    setSettings((current) => ({
+      ...current,
+      [field]: current[field].map((item, itemIndex) => itemIndex === index ? { ...item, [itemField]: value } : item),
+    }));
+  };
+
+  const removeListItem = (field, index) => {
+    setSettings((current) => ({ ...current, [field]: current[field].filter((_, itemIndex) => itemIndex !== index) }));
+  };
+
+  const addListItem = (field, item) => {
+    setSettings((current) => ({ ...current, [field]: [...current[field], item] }));
   };
 
   const handleLogoUpload = async (e) => {
@@ -181,6 +220,76 @@ export default function HomePageContentManager() {
           <div className="md:col-span-2">
             <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Hero Subtitle</label>
             <textarea value={settings.heroSubtitle ?? ""} onChange={(event) => updateSettingsField("heroSubtitle", event.target.value)} rows={4} className="w-full rounded-lg border border-gray-200 dark:border-slate-800 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a] resize-none" />
+          </div>
+
+          <div className="md:col-span-2 rounded-xl border border-gray-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#0f172a] p-4">
+            <div className="mb-4">
+              <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">Hero highlight boxes</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Customize the three information boxes displayed below the homepage buttons.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              {[
+                ["heroStatOneValue", "heroStatOneLabel", "Box 1"],
+                ["heroStatTwoValue", "heroStatTwoLabel", "Box 2"],
+                ["heroStatThreeValue", "heroStatThreeLabel", "Box 3"],
+              ].map(([valueField, labelField, boxLabel]) => (
+                <div key={valueField} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] p-3 space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary">{boxLabel}</p>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-1.5">Value</label>
+                    <input value={settings[valueField] ?? ""} onChange={(event) => updateSettingsField(valueField, event.target.value)} maxLength={40} className="w-full rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm font-bold outline-none focus:border-primary dark:bg-[#0f172a]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-1.5">Label</label>
+                    <input value={settings[labelField] ?? ""} onChange={(event) => updateSettingsField(labelField, event.target.value)} maxLength={120} className="w-full rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:col-span-2 rounded-xl border border-gray-200 dark:border-slate-800 p-4 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">Student feedback</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Edit the section heading and testimonial cards.</p>
+              </div>
+              <button type="button" onClick={() => addListItem("feedbackItems", { name: "", role: "", quote: "" })} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-[11px] font-semibold hover:bg-primary/90"><Plus className="w-3.5 h-3.5" /> Add feedback</button>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-1.5">Section heading</label>
+              <input value={settings.feedbackHeading ?? ""} onChange={(event) => updateSettingsField("feedbackHeading", event.target.value)} className="w-full rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#0f172a]" />
+            </div>
+            <div className="space-y-3">
+              {settings.feedbackItems.map((item, index) => (
+                <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-[#0f172a] p-3">
+                  <div className="flex justify-between items-center mb-3"><p className="text-[10px] font-bold uppercase tracking-wider text-primary">Feedback {index + 1}</p><button type="button" onClick={() => removeListItem("feedbackItems", index)} className="p-1.5 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" aria-label={`Remove feedback ${index + 1}`}><Trash2 className="w-3.5 h-3.5" /></button></div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <input value={item.name} onChange={(event) => updateListItem("feedbackItems", index, "name", event.target.value)} placeholder="Learner name" className="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#1e293b]" />
+                    <input value={item.role} onChange={(event) => updateListItem("feedbackItems", index, "role", event.target.value)} placeholder="Learner category" className="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#1e293b]" />
+                    <textarea value={item.quote} onChange={(event) => updateListItem("feedbackItems", index, "quote", event.target.value)} placeholder="Feedback message" rows={3} className="sm:col-span-2 rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#1e293b] resize-none" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:col-span-2 rounded-xl border border-gray-200 dark:border-slate-800 p-4 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div><h3 className="text-[13px] font-bold text-slate-800 dark:text-white">Frequently asked questions</h3><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Add, edit, or remove questions shown on the homepage.</p></div>
+              <button type="button" onClick={() => addListItem("faqItems", { question: "", answer: "" })} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-[11px] font-semibold hover:bg-primary/90"><Plus className="w-3.5 h-3.5" /> Add FAQ</button>
+            </div>
+            <div className="space-y-3">
+              {settings.faqItems.map((item, index) => (
+                <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-[#0f172a] p-3">
+                  <div className="flex justify-between items-center mb-3"><p className="text-[10px] font-bold uppercase tracking-wider text-primary">Question {index + 1}</p><button type="button" onClick={() => removeListItem("faqItems", index)} className="p-1.5 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" aria-label={`Remove question ${index + 1}`}><Trash2 className="w-3.5 h-3.5" /></button></div>
+                  <div className="space-y-3">
+                    <input value={item.question} onChange={(event) => updateListItem("faqItems", index, "question", event.target.value)} placeholder="Question" className="w-full rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm font-semibold outline-none focus:border-primary dark:bg-[#1e293b]" />
+                    <textarea value={item.answer} onChange={(event) => updateListItem("faqItems", index, "answer", event.target.value)} placeholder="Answer" rows={3} className="w-full rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-primary dark:bg-[#1e293b] resize-none" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="md:col-span-2">

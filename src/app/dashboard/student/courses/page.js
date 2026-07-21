@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, Loader2, BookOpen, Star, PlayCircle, Users, CheckCircle, Image as ImageIcon } from "lucide-react";
+import { Search, Loader2, BookOpen, Star, PlayCircle, Users, CheckCircle, Image as ImageIcon, Library, Gift, WalletCards } from "lucide-react";
 import { fetchApi, BASE_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -13,6 +13,8 @@ export default function StudentCourseExplorer() {
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [enrollmentFilter, setEnrollmentFilter] = useState("all");
   const [enrollingId, setEnrollingId] = useState(null);
   const [selectedCourseForEnroll, setSelectedCourseForEnroll] = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -42,16 +44,21 @@ export default function StudentCourseExplorer() {
   }, [loadCourses, router]);
 
   const filteredCourses = useMemo(() => {
-    if (searchTerm.trim() === "") {
-      return courses;
-    }
-
     const lower = searchTerm.toLowerCase();
-    return courses.filter(c => 
-      c.title.toLowerCase().includes(lower) || 
-      c.teacher_name.toLowerCase().includes(lower)
-    );
-  }, [courses, searchTerm]);
+    return courses.filter(c => {
+      const matchesSearch = c.title.toLowerCase().includes(lower) || c.teacher_name.toLowerCase().includes(lower);
+      const matchesPrice = priceFilter === "all" || (priceFilter === "free" ? Number(c.points || 0) === 0 : Number(c.points || 0) > 0);
+      const matchesEnrollment = enrollmentFilter === "all" || (enrollmentFilter === "enrolled" ? c.is_enrolled : !c.is_enrolled);
+      return matchesSearch && matchesPrice && matchesEnrollment;
+    });
+  }, [courses, searchTerm, priceFilter, enrollmentFilter]);
+
+  const courseSummary = useMemo(() => ({
+    total: courses.length,
+    enrolled: courses.filter(course => course.is_enrolled).length,
+    free: courses.filter(course => Number(course.points || 0) === 0).length,
+    premium: courses.filter(course => Number(course.points || 0) > 0).length,
+  }), [courses]);
 
   const handleEnrollClick = async (course) => {
     if (!user) return;
@@ -107,6 +114,22 @@ export default function StudentCourseExplorer() {
             className="w-full pl-9 pr-4 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-[13px] text-slate-700 dark:text-white shadow-sm transition-all"
           />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: "Available Courses", value: courseSummary.total, icon: Library, tone: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+          { label: "My Enrollments", value: courseSummary.enrolled, icon: CheckCircle, tone: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+          { label: "Free Courses", value: courseSummary.free, icon: Gift, tone: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
+          { label: "Premium Courses", value: courseSummary.premium, icon: WalletCards, tone: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
+        ].map(({ label, value, icon: Icon, tone, bg }) => <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex items-center gap-3 shadow-sm"><div className={`w-10 h-10 rounded-xl ${bg} ${tone} flex items-center justify-center`}><Icon className="w-5 h-5" /></div><div><p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div></div>)}
+      </div>
+
+      <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row gap-3">
+        <select value={priceFilter} onChange={event => setPriceFilter(event.target.value)} className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-xs font-semibold text-slate-600 dark:text-slate-200 outline-none focus:border-primary"><option value="all">All prices</option><option value="free">Free courses</option><option value="premium">Premium courses</option></select>
+        <select value={enrollmentFilter} onChange={event => setEnrollmentFilter(event.target.value)} className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-xs font-semibold text-slate-600 dark:text-slate-200 outline-none focus:border-primary"><option value="all">All courses</option><option value="enrolled">Enrolled</option><option value="available">Not enrolled</option></select>
+        {(searchTerm || priceFilter !== "all" || enrollmentFilter !== "all") && <button onClick={() => { setSearchTerm(""); setPriceFilter("all"); setEnrollmentFilter("all"); }} className="h-10 px-3 text-xs font-semibold text-slate-500 dark:text-slate-300 hover:text-red-500">Clear filters</button>}
+        <span className="sm:ml-auto self-center text-xs text-slate-500 dark:text-slate-400">Showing {filteredCourses.length} courses</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

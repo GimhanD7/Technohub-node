@@ -284,23 +284,33 @@ export default function AdminWalletPage() {
         </div>
 
         {/* Content */}
-        <div className="p-0 overflow-x-auto">
+        <div className="p-0 overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : (
-            <table className="w-full">
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-[10%]" />
+                <col className="w-[15%]" />
+                <col className="w-[11%]" />
+                <col className="w-[10%]" />
+                <col className="w-[17%]" />
+                <col className="w-[10%]" />
+                <col className="w-[8%]" />
+                <col className="w-[19%]" />
+              </colgroup>
               <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Student</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Reference</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Description/Reason</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Slip</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-white uppercase tracking-wider">Actions</th>
+                  <th className="px-3 py-4 text-left text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Date</th>
+                  <th className="px-3 py-4 text-left text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Student</th>
+                  <th className="px-3 py-4 text-left text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Amount</th>
+                  <th className="px-3 py-4 text-left text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Reference</th>
+                  <th className="px-3 py-4 text-left text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Description/Reason</th>
+                  <th className="px-3 py-4 text-left text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Status</th>
+                  <th className="px-3 py-4 text-center text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Slip</th>
+                  <th className="px-3 py-4 text-right text-[11px] font-semibold text-slate-500 dark:text-white uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800/50">
@@ -316,36 +326,36 @@ export default function AdminWalletPage() {
                 ) : (
                   transactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-4">
                         <div className="text-sm text-slate-800 dark:text-white">{new Date(tx.created_at).toLocaleDateString()}</div>
                         <div className="text-xs text-slate-500 dark:text-white">{new Date(tx.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-4 min-w-0">
                         <div className="text-sm font-medium text-slate-900 dark:text-white">{tx.user_name}</div>
                         <div className="text-xs text-slate-500 dark:text-white">{tx.phone_number}</div>
                         {tx.wallet_balance !== undefined && (
                           <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">Bal: LKR {tx.wallet_balance.toFixed(2)}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-4">
                         <div className="text-sm font-bold text-slate-800 dark:text-white">
                           LKR {parseFloat(tx.amount).toFixed(2)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-600 dark:text-white font-mono">
+                      <td className="px-3 py-4 min-w-0">
+                        <div className="text-xs text-slate-600 dark:text-white font-mono break-words">
                           {tx.reference_number || <span className="text-slate-400 italic">None</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-slate-600 dark:text-white max-w-[220px] break-words whitespace-normal">
+                      <td className="px-3 py-4">
+                        <div className="text-xs text-slate-600 dark:text-white break-words whitespace-normal">
                           {tx.description || <span className="text-slate-400 italic">No description</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-4">
                         {getStatusBadge(tx.status)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-3 py-4 text-center">
                         {tx.payment_slip_url ? (
                           <a href={`${API_BASE_URL.replace('/api', '')}${tx.payment_slip_url}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
                             <Eye className="w-4 h-4" /> View
@@ -354,19 +364,19 @@ export default function AdminWalletPage() {
                           <span className="text-sm text-slate-400">N/A</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-3 py-4 text-right">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
                           {tx.status === 'pending' ? (
                             <>
                               <button 
                                 onClick={() => openConfirmModal(tx.id, 'approve', tx.amount)}
-                                className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded text-sm font-medium transition-colors flex items-center gap-1"
+                                className="px-2 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors inline-flex items-center gap-1"
                               >
                                 <Check className="w-4 h-4" /> Approve
                               </button>
                               <button 
                                 onClick={() => openConfirmModal(tx.id, 'reject')}
-                                className="px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 rounded text-sm font-medium transition-colors flex items-center gap-1"
+                                className="px-2 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors inline-flex items-center gap-1"
                               >
                                 <X className="w-4 h-4" /> Reject
                               </button>
@@ -478,7 +488,7 @@ export default function AdminWalletPage() {
               </div>
               
               <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Security PIN</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Security PIN</label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 

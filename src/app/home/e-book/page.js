@@ -118,7 +118,7 @@ export default function EBookPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-[#f8fafc]">
+      <main className="flex-1 bg-[#f8fafc] dark:bg-slate-900 transition-colors">
         <section className="pt-28 pb-10 px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b]">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-8 items-center">
             <div>
@@ -126,7 +126,7 @@ export default function EBookPage() {
                 <Library className="w-4 h-4" />
                 Digital Learning Library
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-950 mb-5">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-5">
                 E-Book Library
               </h1>
               <p className="text-slate-600 dark:text-white text-lg max-w-2xl leading-8">
@@ -134,15 +134,15 @@ export default function EBookPage() {
               </p>
               <div className="grid grid-cols-3 gap-3 max-w-xl mt-8">
                 <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
-                  <p className="text-2xl font-bold text-slate-950">{resources.length}</p>
+                  <p className="text-2xl font-bold text-slate-950 dark:text-white">{resources.length}</p>
                   <p className="text-xs font-medium text-slate-500 dark:text-white">Resources</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
-                  <p className="text-2xl font-bold text-slate-950">{subjects.length - 1}</p>
+                  <p className="text-2xl font-bold text-slate-950 dark:text-white">{subjects.length - 1}</p>
                   <p className="text-xs font-medium text-slate-500 dark:text-white">Subjects</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
-                  <p className="text-2xl font-bold text-slate-950">{featuredCount}</p>
+                  <p className="text-2xl font-bold text-slate-950 dark:text-white">{featuredCount}</p>
                   <p className="text-xs font-medium text-slate-500 dark:text-white">Featured</p>
                 </div>
               </div>

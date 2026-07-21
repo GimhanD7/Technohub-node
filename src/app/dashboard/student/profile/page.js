@@ -77,6 +77,7 @@ export default function StudentProfilePage() {
             const updatedUser = { ...user, profile_picture: data.imageUrl };
             setUser(updatedUser);
             localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
+            window.dispatchEvent(new CustomEvent("techno-hub-user-updated"));
             
             // Still need to update via update_profile API to save it to DB permanently.
             await fetchApi("/user/update_profile", {
@@ -129,6 +130,7 @@ export default function StudentProfilePage() {
       };
       setUser(updatedUser);
       localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent("techno-hub-user-updated"));
     } else {
       toast.error(response.message || "Failed to update profile");
     }

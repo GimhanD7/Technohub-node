@@ -143,7 +143,7 @@ export default function ContactUsPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-[#f8fafc]">
+      <main className="flex-1 bg-[#f8fafc] dark:bg-slate-900 transition-colors">
         <section className="pt-28 pb-10 px-6 bg-white dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-[0.95fr_1.05fr] gap-8 items-center">
             <div>
@@ -151,7 +151,7 @@ export default function ContactUsPage() {
                 <Sparkles className="w-4 h-4" />
                 {settings.heroBadge}
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-950 mb-5">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-5">
                 {settings.title}
               </h1>
               <p className="text-slate-600 dark:text-white text-lg max-w-2xl leading-8">
@@ -233,7 +233,7 @@ export default function ContactUsPage() {
 
             <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1e293b] rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-5 md:p-6 space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950">Send a Message</h2>
+                <h2 className="text-xl font-bold text-slate-950 dark:text-white">Send a Message</h2>
                 <p className="text-sm text-slate-500 dark:text-white mt-1">Share your question and the support team will follow up.</p>
               </div>
 

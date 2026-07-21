@@ -24,7 +24,7 @@ export default function ExamHallPage() {
   const [quizzes, setQuizzes] = useState({ active: [], upcoming: [], past: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState("upcoming");
   const [selectedQuizForUnlock, setSelectedQuizForUnlock] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,7 +127,7 @@ export default function ExamHallPage() {
       <main className="flex-1 flex flex-col pt-24 pb-20 px-6 max-w-7xl mx-auto w-full">
 
         {/* Page Title & Intro */}
-        <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-12 shadow-xl mb-10 border border-slate-850 text-left">
+        <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-12 shadow-xl mb-10 border border-slate-800 dark:border-slate-700 text-left">
           <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-secondary/10 rounded-full blur-[90px] pointer-events-none"></div>
 
@@ -161,7 +161,7 @@ export default function ExamHallPage() {
         )}
 
         {errorMsg && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 dark:border-red-900/50 text-red-650 text-sm font-medium rounded-2xl flex gap-2">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm font-medium rounded-2xl flex gap-2">
             <AlertCircle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" />
             {errorMsg}
           </div>
@@ -176,7 +176,7 @@ export default function ExamHallPage() {
                 onClick={() => { setActiveTab(tab); setSearchQuery(""); }}
                 className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all capitalize cursor-pointer whitespace-nowrap ${activeTab === tab
                   ? "bg-primary text-white shadow-md font-bold"
-                  : "text-slate-500 dark:text-white hover:text-slate-850 hover:bg-slate-200/50"
+                  : "text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/60"
                   }`}
               >
                 {tab} Exams ({tab === "active" ? quizzes.active.length : tab === "upcoming" ? quizzes.upcoming.length : quizzes.past.length})
@@ -207,18 +207,18 @@ export default function ExamHallPage() {
 
         {/* Quizzes Grid */}
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-550 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
+          <div className="py-20 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
             <RefreshCw className="w-8 h-8 animate-spin text-primary mb-3" />
             <p className="text-sm font-semibold">Retrieving mock exam rosters...</p>
           </div>
         ) : getActiveTabCount() === 0 ? (
-          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-150 p-6 shadow-sm">
+          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
             <ClipboardList className="w-12 h-12 mx-auto text-slate-200 mb-3" />
             <h3 className="text-base font-bold text-slate-700 dark:text-white">No Exams Scheduled</h3>
             <p className="text-xs max-w-xs mx-auto mt-1">There are no {activeTab} mock examinations scheduled at this moment. Check back later!</p>
           </div>
         ) : getFilteredQuizzes().length === 0 ? (
-          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-150 p-6 shadow-sm">
+          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
             <Search className="w-12 h-12 mx-auto text-slate-200 mb-3" />
             <h3 className="text-base font-bold text-slate-700 dark:text-white">No Results Found</h3>
             <p className="text-xs max-w-xs mx-auto mt-1">No exams match &ldquo;{searchQuery}&rdquo;. Try a different keyword.</p>
@@ -230,7 +230,7 @@ export default function ExamHallPage() {
                 key={quiz.id}
                 className="
 group p-[2px] rounded-[20px]
-bg-gray-300
+bg-gray-300 dark:bg-slate-600
 transition-all duration-300 ease-out
 
 hover:bg-gradient-to-r hover:from-blue-500 hover:to-yellow-400
@@ -241,10 +241,10 @@ hover:-translate-y-1
 "         >
                 <div className="bg-white dark:bg-[#1e293b] rounded-[18px] flex flex-col justify-between relative overflow-hidden text-left h-full">
                   {/* Header band: title/subtitle + status pill */}
-                  <div className={`px-6 py-5 border-b border-slate-100 dark:border-slate-800/50 bg-gradient-to-r ${parseFloat(quiz.fee) > 0 ? "from-amber-50 via-amber-50/40 to-blue-50/40" : "from-emerald-50 via-emerald-50/30 to-secondary/5"}`}>
+                  <div className={`px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r ${parseFloat(quiz.fee) > 0 ? "from-amber-50 via-amber-50/40 to-blue-50/40 dark:from-amber-950/50 dark:via-slate-800 dark:to-blue-950/40" : "from-emerald-50 via-emerald-50/30 to-secondary/5 dark:from-emerald-950/60 dark:via-slate-800 dark:to-slate-700"}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="text-[16px] font-extrabold text-slate-850 tracking-tight group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                        <h3 className="text-[16px] font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-primary dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">
                           {quiz.title}
                         </h3>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -263,7 +263,7 @@ hover:-translate-y-1
                         {parseFloat(quiz.fee) > 0 ? (
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 ${quiz.isPaid
                             ? "bg-green-50 text-green-700 border-green-200 dark:border-green-900/50"
-                            : "bg-amber-50 text-amber-755 border-amber-200/80"
+                            : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800"
                             }`}>
                             {!quiz.isPaid && <Lock className="w-2.5 h-2.5 text-amber-600" />}
                             {quiz.isPaid ? "Paid" : `LKR ${parseFloat(quiz.fee).toFixed(0)}`}
@@ -333,7 +333,7 @@ hover:-translate-y-1
 
                     <div className="border-t border-slate-100 dark:border-slate-800/50 pt-4">
                       <p className="text-[10px] text-slate-400 font-medium mb-2 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-350" />
+                        <Clock className="w-3 h-3 text-slate-300 dark:text-slate-500" />
                         Exam Window
                       </p>
                       <div className="flex items-center gap-2">

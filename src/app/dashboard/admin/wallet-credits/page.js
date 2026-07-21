@@ -407,7 +407,7 @@ export default function AdminWalletCreditsPage() {
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">New Balance (LKR)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">New Balance (LKR)</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
@@ -466,7 +466,7 @@ export default function AdminWalletCreditsPage() {
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Amount to Add (LKR)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Amount to Add (LKR)</label>
                 <div className="relative">
                   <PlusCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
                   <input 

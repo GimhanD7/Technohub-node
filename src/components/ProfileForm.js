@@ -82,6 +82,7 @@ export default function ProfileForm({ initialUser }) {
         birthdate: toDateInputValue(data.user.birthdate),
       };
       localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent("techno-hub-user-updated"));
       setPassword("");
       setConfirmPassword("");
       
@@ -132,6 +133,7 @@ export default function ProfileForm({ initialUser }) {
             // Update local storage so it persists after refresh
             const updatedUser = { ...initialUser, profile_picture: data.imageUrl };
             localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
+            window.dispatchEvent(new CustomEvent("techno-hub-user-updated"));
             
             toast.success("Image uploaded successfully");
         } else {

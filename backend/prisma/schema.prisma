@@ -220,6 +220,15 @@ model home_settings {
   aiti_logo_width     Int      @default(120)
   aiti_logo_height    Int      @default(44)
   aiti_description_bold Boolean @default(false)
+  hero_stat_one_value   String   @default("6") @db.VarChar(40)
+  hero_stat_one_label   String   @default("Learner categories") @db.VarChar(120)
+  hero_stat_two_value   String   @default("24/7") @db.VarChar(40)
+  hero_stat_two_label   String   @default("Resource access") @db.VarChar(120)
+  hero_stat_three_value String   @default("Live") @db.VarChar(40)
+  hero_stat_three_label String   @default("Classes and exams") @db.VarChar(120)
+  feedback_heading      String   @default("Learners trust focused, practical support.") @db.VarChar(255)
+  feedback_items        String?  @db.LongText
+  faq_items             String?  @db.LongText
   updated_by          Int?
   updated_at          DateTime @default(now()) @db.Timestamp(0)
   users               users?   @relation(fields: [updated_by], references: [id], onUpdate: Restrict, map: "home_settings_ibfk_1")

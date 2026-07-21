@@ -126,7 +126,7 @@ function GalleryVisual({ item, className = "" }) {
         <div className={`absolute inset-0 bg-gradient-to-br ${typeStyles[item.entryType]?.card || typeStyles.event.card}`} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
-      <div className="absolute left-4 top-4 h-11 w-11 rounded-lg border border-white/20 bg-white dark:bg-[#1e293b]/15 backdrop-blur flex items-center justify-center text-white">
+      <div className="absolute left-4 top-4 h-11 w-11 rounded-lg border border-slate-200/80 dark:border-white/25 bg-white/90 dark:bg-slate-900/70 backdrop-blur flex items-center justify-center text-primary dark:text-white shadow-sm">
         <TypeIcon className="h-5 w-5" />
       </div>
       {item.isFeatured && (
@@ -154,7 +154,7 @@ function GalleryDetailsModal({ item, onClose }) {
             </span>
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-wider text-primary">{typeStyles[item.entryType]?.label || "Gallery"} / {item.category}</p>
-              <h2 className="text-lg md:text-xl font-bold text-slate-950 truncate">{item.title}</h2>
+              <h2 className="text-lg md:text-xl font-bold text-slate-950 dark:text-white truncate">{item.title}</h2>
             </div>
           </div>
           <button
@@ -200,7 +200,7 @@ function GalleryDetailsModal({ item, onClose }) {
               )}
             </div>
 
-            <h3 className="text-2xl font-bold text-slate-950 leading-tight">{item.title}</h3>
+            <h3 className="text-2xl font-bold text-slate-950 dark:text-white leading-tight">{item.title}</h3>
             <div className="mt-4 flex flex-col gap-2 text-sm font-medium text-slate-500 dark:text-white">
               <span className="inline-flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-primary" />
@@ -276,7 +276,7 @@ export default function GalleryPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-[#f8fafc]">
+      <main className="flex-1 bg-[#f8fafc] dark:bg-slate-900 transition-colors">
         <section className="pt-28 pb-8 px-6 bg-white dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800">
           <div className="max-w-7xl mx-auto">
             <div className="max-w-3xl">
@@ -284,7 +284,7 @@ export default function GalleryPage() {
                 <Sparkles className="w-4 h-4" />
                 Campus Stories and Learning Moments
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-950 mb-5">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-5">
                 Gallery
               </h1>
               <p className="text-slate-600 dark:text-white text-lg leading-8">
@@ -351,7 +351,7 @@ export default function GalleryPage() {
                             <TypeIcon className="h-3.5 w-3.5" />
                             {typeStyles[item.entryType]?.label || "Gallery"}
                           </span>
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-600 dark:text-white">
+                          <span className="rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-600 dark:text-slate-100">
                             {imageCount} Image{imageCount === 1 ? "" : "s"}
                           </span>
                         </div>

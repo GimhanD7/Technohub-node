@@ -139,7 +139,7 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
            </div>
            
            <div className="relative cursor-pointer notif-dropdown-container">
-             <div className="hover:text-slate-800 transition-colors" onClick={handleOpenNotifications}>
+             <div className="hover:text-slate-800 dark:hover:text-white transition-colors" onClick={handleOpenNotifications}>
                <Bell className="w-[18px] h-[18px]" />
                {unreadCount > 0 && (
                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 bg-green-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#0f172a] animate-pulse">
@@ -207,7 +207,7 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
 
            <div className="relative cursor-pointer profile-dropdown-container" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
              {user?.profile_picture ? (
-               <img src={user.profile_picture.startsWith('http') ? user.profile_picture : `${BASE_URL}${user.profile_picture}`} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-slate-700 shadow-sm" />
+               <img src={user.profile_picture.startsWith('http') ? user.profile_picture : `${BASE_URL}${user.profile_picture.startsWith('/') ? '' : '/'}${user.profile_picture}`} alt={`${user.full_name || 'User'} profile`} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-slate-700 shadow-sm" />
              ) : (
                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 dark:bg-primary/20 dark:text-primary-foreground shadow-sm">
                   {user?.full_name?.charAt(0).toUpperCase() || "U"}

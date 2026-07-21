@@ -2,7 +2,7 @@
 
 import { toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
-import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search } from "lucide-react";
+import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search, UserCheck, Layers3, Library } from "lucide-react";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 
@@ -22,7 +22,9 @@ export default function AdminCourseManagement() {
 
   // Filter State
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
+  const [courseStatusFilter, setCourseStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [teacherSearchQuery, setTeacherSearchQuery] = useState("");
 
   // Modals & UI States
   const [dialogState, setDialogState] = useState({ isOpen: false });
@@ -104,6 +106,9 @@ export default function AdminCourseManagement() {
 
   const handleTeacherSelect = (t) => {
     setSelectedTeacher(t);
+    setSearchQuery("");
+    setSelectedCategoryFilter("all");
+    setCourseStatusFilter("all");
     loadCourses(t.id);
   };
 
@@ -417,10 +422,21 @@ export default function AdminCourseManagement() {
   // --- Derived State ---
   const displayedCourses = courses.filter(c => {
     const matchesCategory = selectedCategoryFilter === "all" || String(c.category_id) === String(selectedCategoryFilter);
+    const matchesStatus = courseStatusFilter === "all" || (courseStatusFilter === "live" ? c.status !== "disabled" : c.status === "disabled");
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesStatus && matchesSearch;
   });
+  const displayedTeachers = teachers.filter(teacher => {
+    const query = teacherSearchQuery.toLowerCase();
+    return (teacher.full_name || "").toLowerCase().includes(query) ||
+      (teacher.email || "").toLowerCase().includes(query) ||
+      (teacher.phone_number || "").includes(teacherSearchQuery) ||
+      (teacher.subject || "").toLowerCase().includes(query);
+  });
+  const liveCourseCount = courses.filter(course => course.status !== "disabled").length;
+  const hiddenCourseCount = courses.filter(course => course.status === "disabled").length;
+  const usedCategoryCount = new Set(courses.map(course => course.category_id).filter(Boolean)).size;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 relative pb-12">
@@ -429,17 +445,36 @@ export default function AdminCourseManagement() {
       {/* Stage 1: Select Teacher */}
       {!selectedTeacher && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="mb-6">
-            <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">Course Builder</h1>
-            <p className="text-[13px] text-gray-500 dark:text-white mt-1">Select a teacher to manage their assigned courses.</p>
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">Course Builder</h1>
+              <p className="text-[13px] text-gray-500 dark:text-slate-400 mt-1">Select a teacher to manage their assigned courses.</p>
+            </div>
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input value={teacherSearchQuery} onChange={event => setTeacherSearchQuery(event.target.value)} placeholder="Search teachers..." className="w-full h-10 pl-9 pr-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-[13px] text-slate-700 dark:text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            {[
+              { label: "Available Teachers", value: teachers.length, icon: Users, tone: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-50 dark:bg-blue-500/10" },
+              { label: "Course Categories", value: categories.length, icon: Layers3, tone: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-50 dark:bg-violet-500/10" },
+              { label: "Search Results", value: displayedTeachers.length, icon: UserCheck, tone: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-50 dark:bg-emerald-500/10" },
+            ].map(({ label, value, icon: Icon, tone, iconBg }) => (
+              <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl ${iconBg} ${tone} flex items-center justify-center`}><Icon className="w-5 h-5" /></div>
+                <div><p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div>
+              </div>
+            ))}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {teachers.map(t => (
+            {displayedTeachers.map(t => (
               <div 
                 key={t.id} 
                 onClick={() => handleTeacherSelect(t)}
-                className="bg-white dark:bg-[#1e293b] p-5 rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-200 cursor-pointer transition-all flex items-center gap-4 group"
+                className="bg-white dark:bg-[#1e293b] p-5 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 cursor-pointer transition-all flex items-center gap-4 group"
               >
                 {t.profile_picture ? (
                   <img src={t.profile_picture.startsWith('http') ? t.profile_picture : `${BASE_URL}${t.profile_picture.startsWith('/') ? '' : '/'}${t.profile_picture}`} alt={t.full_name} className="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-200 dark:border-slate-700 shadow-sm" />
@@ -448,13 +483,15 @@ export default function AdminCourseManagement() {
                     {t.full_name.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="text-[14px] font-bold text-slate-800 dark:text-white">{t.full_name}</h3>
-                  <p className="text-[12px] text-gray-500 dark:text-white mt-0.5">{t.email || t.phone_number}</p>
+                  <p className="text-[12px] text-gray-500 dark:text-slate-400 mt-0.5 truncate">{t.email || t.phone_number}</p>
+                  {t.subject && <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">{t.subject}</span>}
                 </div>
+                <ChevronLeft className="w-4 h-4 text-slate-300 group-hover:text-primary rotate-180 transition-colors" />
               </div>
             ))}
-            {teachers.length === 0 && <p className="text-gray-500 dark:text-white col-span-3">No active teachers found.</p>}
+            {displayedTeachers.length === 0 && <div className="text-slate-500 dark:text-slate-400 col-span-3 py-12 text-center bg-white dark:bg-[#1e293b] border border-dashed border-slate-300 dark:border-slate-700 rounded-xl"><Users className="w-8 h-8 mx-auto mb-2 text-slate-300" /><p className="font-semibold">No teachers found</p><p className="text-xs mt-1">Try another name, subject, email, or phone number.</p></div>}
           </div>
         </div>
       )}
@@ -468,7 +505,7 @@ export default function AdminCourseManagement() {
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">{selectedTeacher.full_name}'s Courses</h1>
+                <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">{selectedTeacher.full_name}&apos;s Courses</h1>
                 <p className="text-[13px] text-gray-500 dark:text-white mt-1">Create or toggle visibility of courses.</p>
               </div>
             </div>
@@ -493,10 +530,27 @@ export default function AdminCourseManagement() {
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
+              <select value={courseStatusFilter} onChange={event => setCourseStatusFilter(event.target.value)} className="w-full sm:w-auto px-3 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded text-[12px] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm">
+                <option value="all">All Statuses</option><option value="live">Live</option><option value="hidden">Hidden</option>
+              </select>
               <button onClick={() => openCourseModal()} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 text-[12px] font-medium transition-colors">
                 <Plus className="w-4 h-4" /> Create Course
               </button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: "Total Courses", value: courses.length, icon: Library, tone: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-50 dark:bg-blue-500/10" },
+              { label: "Live Courses", value: liveCourseCount, icon: Eye, tone: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-50 dark:bg-emerald-500/10" },
+              { label: "Hidden Courses", value: hiddenCourseCount, icon: EyeOff, tone: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-50 dark:bg-amber-500/10" },
+              { label: "Categories Used", value: usedCategoryCount, icon: Layers3, tone: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-50 dark:bg-violet-500/10" },
+            ].map(({ label, value, icon: Icon, tone, iconBg }) => (
+              <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl ${iconBg} ${tone} flex items-center justify-center shrink-0`}><Icon className="w-5 h-5" /></div>
+                <div><p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div>
+              </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -536,7 +590,10 @@ export default function AdminCourseManagement() {
                       <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase font-bold rounded">Live</span>
                     }
                   </div>
-                  <p className="text-[12px] text-gray-500 dark:text-white line-clamp-2 mb-3 flex-1">{c.description || "No description"}</p>
+                  <p className="text-[12px] text-gray-500 dark:text-slate-400 line-clamp-2 mb-3 flex-1">{c.description || "No description"}</p>
+                  <button onClick={() => handleCourseSelect(c)} className="w-full mb-3 h-9 rounded-lg bg-primary/10 dark:bg-primary/15 text-primary dark:text-blue-300 hover:bg-primary hover:text-white flex items-center justify-center gap-2 text-[11px] font-bold transition-colors">
+                    <Layout className="w-3.5 h-3.5" /> Build Course Content
+                  </button>
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-800/50 mt-auto">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-medium text-slate-600 dark:text-white bg-slate-100 px-2 py-1 rounded">{c.duration || "N/A"}</span>
@@ -579,7 +636,7 @@ export default function AdminCourseManagement() {
           </div>
 
           <div className="space-y-4">
-            {modules.length === 0 && <p className="text-center text-gray-500 dark:text-white py-12 bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 border-dashed">No modules created yet. Click "Add Sub-Category" to start building your course.</p>}
+            {modules.length === 0 && <p className="text-center text-gray-500 dark:text-white py-12 bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 border-dashed">No modules created yet. Click &quot;Add Sub-Category&quot; to start building your course.</p>}
             
             {modules.map((mod, index) => (
               <div key={mod.id} className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">

@@ -510,7 +510,7 @@ export default function StudentQuizPage() {
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">{quiz.title}</h1>
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-white">{quiz.title}</h1>
             <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-md text-[10px] font-semibold text-primary uppercase tracking-wider">
                  🛡️ Instructor View Mode
@@ -634,7 +634,7 @@ export default function StudentQuizPage() {
                               <td className="py-3 text-center font-bold text-slate-800 dark:text-slate-100">
                                 {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : `#${r.rank}`}
                               </td>
-                              <td className="py-3 font-medium text-slate-900">{r.fullName}</td>
+                              <td className="py-3 font-medium text-slate-900 dark:text-white">{r.fullName}</td>
                               <td className="py-3 text-[10px] text-gray-400 font-mono">{r.indexNumber || "-"}</td>
                               <td className="py-3 text-center font-bold text-primary">{r.score} / {maxMarks}</td>
                               <td className="py-3 text-center text-slate-500 dark:text-slate-400">{r.timeTaken}s</td>
@@ -682,7 +682,7 @@ export default function StudentQuizPage() {
                               </span>
                             </td>
                             <td className="px-6 py-4">
-                              <p className="font-bold text-slate-950">{sub.fullName}</p>
+                              <p className="font-bold text-slate-950 dark:text-white">{sub.fullName}</p>
                               <p className="text-[10px] text-slate-400 uppercase font-semibold">{sub.role}</p>
                             </td>
                             <td className="px-6 py-4 font-mono text-gray-500">{sub.indexNumber || "-"}</td>
