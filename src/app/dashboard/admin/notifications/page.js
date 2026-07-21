@@ -14,6 +14,8 @@ export default function NotificationManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, notificationId: null });
+  const [selectedNotificationIds, setSelectedNotificationIds] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
   // Form State
   const [title, setTitle] = useState("");
@@ -51,7 +53,9 @@ export default function NotificationManagement() {
     // Fetch notifications
     const notifsRes = await fetchApi("/admin/get_notifications");
     if (notifsRes.success) {
-      setNotifications(notifsRes.notifications || []);
+      const loadedNotifications = notifsRes.notifications || [];
+      setNotifications(loadedNotifications);
+      setSelectedNotificationIds(prev => prev.filter(id => loadedNotifications.some(notification => notification.id === id)));
     }
     
     setIsLoading(false);
@@ -206,6 +210,56 @@ export default function NotificationManagement() {
       onCancel: () => {
         setDeleteDialog(prev => ({ ...prev, isOpen: false }));
       }
+    });
+  };
+
+  const allNotificationsSelected = notifications.length > 0 && selectedNotificationIds.length === notifications.length;
+
+  const toggleNotificationSelection = (id) => {
+    setSelectedNotificationIds(prev => (
+      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
+    ));
+  };
+
+  const toggleSelectAllNotifications = () => {
+    setSelectedNotificationIds(allNotificationsSelected ? [] : notifications.map(notification => notification.id));
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedNotificationIds.length === 0) return;
+
+    const selectedCount = selectedNotificationIds.length;
+    setDeleteDialog({
+      isOpen: true,
+      type: 'warning',
+      title: `Delete ${selectedCount} Notifications?`,
+      message: 'The selected notifications will be permanently deleted. This action cannot be undone.',
+      confirmText: 'Delete selected',
+      isAlertOnly: false,
+      onConfirm: async () => {
+        setDeleteDialog(prev => ({ ...prev, isOpen: false }));
+        setIsBulkDeleting(true);
+
+        try {
+          const res = await fetchApi('/notifications/bulk-delete', {
+            method: 'DELETE',
+            body: JSON.stringify({ ids: selectedNotificationIds })
+          });
+
+          if (res.success) {
+            toast.success(res.message || `${selectedCount} notifications deleted successfully.`);
+            setSelectedNotificationIds([]);
+            await loadData();
+          } else {
+            toast.error(res.message || 'Failed to delete selected notifications.');
+          }
+        } catch (error) {
+          toast.error('An error occurred while deleting the selected notifications.');
+        } finally {
+          setIsBulkDeleting(false);
+        }
+      },
+      onCancel: () => setDeleteDialog(prev => ({ ...prev, isOpen: false }))
     });
   };
 
@@ -428,9 +482,33 @@ export default function NotificationManagement() {
         {/* Notification History */}
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[14px] font-bold text-slate-800 dark:text-white font-sans uppercase tracking-wider">Notification History</h3>
-              <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-semibold">Last 50 Sent</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <h3 className="text-[14px] font-bold text-slate-800 dark:text-white font-sans uppercase tracking-wider">Notification History</h3>
+                <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-semibold">Last 50 Sent</span>
+              </div>
+              {notifications.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex items-center gap-2 text-[12px] font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allNotificationsSelected}
+                      onChange={toggleSelectAllNotifications}
+                      className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                    />
+                    Select all
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={selectedNotificationIds.length === 0 || isBulkDeleting}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-red-600 text-white text-[12px] font-semibold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Delete selected ({selectedNotificationIds.length})
+                  </button>
+                </div>
+              )}
             </div>
 
             {isLoading ? (
@@ -444,7 +522,14 @@ export default function NotificationManagement() {
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-slate-800/80">
                 {notifications.map((notif) => (
-                  <div key={notif.id} className="py-4 first:pt-0 last:pb-0 flex items-start gap-4">
+                  <div key={notif.id} className={`py-4 first:pt-0 last:pb-0 flex items-start gap-3 ${selectedNotificationIds.includes(notif.id) ? "bg-red-50/60 dark:bg-red-950/10" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedNotificationIds.includes(notif.id)}
+                      onChange={() => toggleNotificationSelection(notif.id)}
+                      aria-label={`Select notification: ${notif.title}`}
+                      className="mt-3 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary shrink-0"
+                    />
                     <div className="p-2.5 bg-gray-50 dark:bg-slate-800/60 rounded-lg shrink-0">
                       {getNotifIcon(notif.type)}
                     </div>

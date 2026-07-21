@@ -4,7 +4,8 @@ import { toast } from "react-hot-toast";
 import { useEffect, useState, useMemo } from "react";
 import { 
   DollarSign, Search, Loader2, RefreshCw, Settings2, History, X, 
-  CheckCircle2, Download, TrendingUp, Calendar, AlertCircle, ArrowDownRight, CreditCard
+  CheckCircle2, Download, TrendingUp, Calendar, AlertCircle, ArrowDownRight, CreditCard,
+  Users, Percent, BadgeDollarSign, MoreVertical, ArrowUpDown
 } from "lucide-react";
 import { fetchApi, BASE_URL } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -18,6 +19,9 @@ export default function TeacherEarnings() {
   const [activeTab, setActiveTab] = useState("commissions"); // commissions, monthly, trends
   
   const [searchQuery, setSearchQuery] = useState("");
+  const [commissionFilter, setCommissionFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState({ key: "full_name", direction: "asc" });
+  const [openActionMenu, setOpenActionMenu] = useState(null);
   const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
   
   // Modals
@@ -103,12 +107,31 @@ export default function TeacherEarnings() {
 
   const filteredTeachers = useMemo(() => {
     if (!Array.isArray(teachers)) return [];
-    return teachers.filter(t => {
+    const filtered = teachers.filter(t => {
       if (!t) return false;
-      return (t.full_name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch = (t.full_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
              (t.subject || "").toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch && (commissionFilter === "all" || t.commission_type === commissionFilter);
     });
-  }, [teachers, searchQuery]);
+
+    return filtered.sort((first, second) => {
+      const firstValue = sortConfig.key === "total_earnings" ? Number(first.total_earnings || 0) : String(first[sortConfig.key] || "").toLowerCase();
+      const secondValue = sortConfig.key === "total_earnings" ? Number(second.total_earnings || 0) : String(second[sortConfig.key] || "").toLowerCase();
+      const result = typeof firstValue === "number" ? firstValue - secondValue : firstValue.localeCompare(secondValue, undefined, { numeric: true });
+      return sortConfig.direction === "asc" ? result : -result;
+    });
+  }, [teachers, searchQuery, commissionFilter, sortConfig]);
+
+  const commissionSummary = useMemo(() => ({
+    teachers: teachers.length,
+    percentage: teachers.filter(teacher => teacher.commission_type === "percentage").length,
+    fixed: teachers.filter(teacher => teacher.commission_type === "fixed").length,
+    earnings: teachers.reduce((total, teacher) => total + Number(teacher.total_earnings || 0), 0),
+  }), [teachers]);
+
+  const handleSort = (key) => {
+    setSortConfig(current => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
+  };
 
   const filteredMonthly = useMemo(() => {
     if (!Array.isArray(monthlyReport)) return [];
@@ -333,19 +356,44 @@ export default function TeacherEarnings() {
         </button>
       </div>
 
+      {activeTab === "commissions" && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Teachers", value: commissionSummary.teachers, icon: Users, tone: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-50 dark:bg-blue-500/10" },
+            { label: "Percentage Plans", value: commissionSummary.percentage, icon: Percent, tone: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-50 dark:bg-violet-500/10" },
+            { label: "Fixed Plans", value: commissionSummary.fixed, icon: BadgeDollarSign, tone: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-50 dark:bg-emerald-500/10" },
+            { label: "Total Earnings", value: `LKR ${commissionSummary.earnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: TrendingUp, tone: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-50 dark:bg-amber-500/10", compact: true },
+          ].map(({ label, value, icon: Icon, tone, iconBg, compact }) => (
+            <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl ${iconBg} ${tone} flex items-center justify-center shrink-0`}><Icon className="w-5 h-5" /></div>
+              <div className="min-w-0"><p className={`${compact ? 'text-base' : 'text-xl'} font-bold text-slate-900 dark:text-white leading-none truncate`}>{value}</p><p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* SEARCH AND FILTERS */}
       {activeTab !== "trends" && (
         <div className="bg-white dark:bg-[#1e293b] p-4 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full md:max-w-xs">
+          <div className="relative w-full md:flex-1">
             <Search className="w-4 h-4 text-gray-400 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
               placeholder="Search teachers..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary dark:bg-[#0f172a] dark:text-white"
+              className="w-full pl-9 pr-3 h-10 text-[13px] border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary dark:bg-[#0f172a] dark:text-white"
             />
           </div>
+
+          {activeTab === "commissions" && (
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <select value={commissionFilter} onChange={event => setCommissionFilter(event.target.value)} className="w-full md:w-48 h-10 px-3 text-[12px] font-medium text-slate-600 dark:text-slate-200 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary">
+                <option value="all">All commission types</option><option value="percentage">Percentage plans</option><option value="fixed">Fixed plans</option>
+              </select>
+              {(searchQuery || commissionFilter !== "all") && <button onClick={() => { setSearchQuery(""); setCommissionFilter("all"); }} className="h-10 px-3 text-[12px] font-semibold text-slate-500 dark:text-slate-300 hover:text-red-500 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">Clear</button>}
+            </div>
+          )}
           
           {activeTab === "monthly" && (
             <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-end">
@@ -370,9 +418,9 @@ export default function TeacherEarnings() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-gray-500 dark:text-slate-400">
-                  <th className="py-4 px-5 font-bold">Teacher Info</th>
-                  <th className="py-4 px-5 font-bold">Commission Setup</th>
-                  <th className="py-4 px-5 font-bold">Total Earnings</th>
+                  <th className="py-4 px-5 font-bold"><button onClick={() => handleSort("full_name")} className="inline-flex items-center gap-1.5 hover:text-primary">Teacher Info <ArrowUpDown className="w-3 h-3" /></button></th>
+                  <th className="py-4 px-5 font-bold"><button onClick={() => handleSort("commission_type")} className="inline-flex items-center gap-1.5 hover:text-primary">Commission Setup <ArrowUpDown className="w-3 h-3" /></button></th>
+                  <th className="py-4 px-5 font-bold"><button onClick={() => handleSort("total_earnings")} className="inline-flex items-center gap-1.5 hover:text-primary">Total Earnings <ArrowUpDown className="w-3 h-3" /></button></th>
                   <th className="py-4 px-5 font-bold text-right">Actions</th>
                 </tr>
               </thead>
@@ -425,19 +473,15 @@ export default function TeacherEarnings() {
                         <p className="font-bold text-slate-800 dark:text-white">LKR {parseFloat(t.total_earnings).toFixed(2)}</p>
                       </td>
                       <td className="py-4 px-5">
-                        <div className="flex items-center justify-end gap-2">
-                          <button 
-                            onClick={() => openHistoryModal(t)}
-                            className="px-3 py-1.5 flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg text-[11px] font-bold transition-colors border border-blue-200 dark:border-blue-800"
-                          >
-                            <History className="w-3.5 h-3.5" /> History
-                          </button>
-                          <button 
-                            onClick={() => openConfigModal(t)}
-                            className="px-3 py-1.5 flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-[11px] font-bold transition-colors border border-gray-255 dark:border-slate-700"
-                          >
-                            <Settings2 className="w-3.5 h-3.5" /> Edit Setup
-                          </button>
+                        <div className="relative flex justify-end">
+                          <button onClick={() => setOpenActionMenu(openActionMenu === t.id ? null : t.id)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors" aria-label={`Open actions for ${t.full_name}`}><MoreVertical className="w-4 h-4" /></button>
+                          {openActionMenu === t.id && <>
+                            <button className="fixed inset-0 z-20 cursor-default" onClick={() => setOpenActionMenu(null)} aria-label="Close actions" />
+                            <div className="absolute right-0 top-11 z-30 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl">
+                              <button onClick={() => { setOpenActionMenu(null); openHistoryModal(t); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><History className="w-4 h-4 text-blue-500" />View history</button>
+                              <button onClick={() => { setOpenActionMenu(null); openConfigModal(t); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Settings2 className="w-4 h-4 text-violet-500" />Edit commission</button>
+                            </div>
+                          </>}
                         </div>
                       </td>
                     </tr>
@@ -510,8 +554,8 @@ export default function TeacherEarnings() {
                         <td className="py-4 px-5">LKR {row.gross_earnings.toFixed(2)}</td>
                         <td className="py-4 px-5 font-medium">LKR {row.net_earnings.toFixed(2)}</td>
                         <td className="py-4 px-5 text-emerald-600 dark:text-emerald-400">LKR {row.paid_amount.toFixed(2)}</td>
-                        <td className="py-4 px-5">LKR {row.month_balance.toFixed(2)}</td>
-                        <td className="py-4 px-5 font-bold text-amber-600 dark:text-amber-500">LKR {row.all_time_balance.toFixed(2)}</td>
+                        <td className="py-4 px-5"><span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold ${row.month_balance > 0 ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'}`}>LKR {row.month_balance.toFixed(2)}</span></td>
+                        <td className="py-4 px-5"><span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold ${row.all_time_balance > 0 ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'}`}>LKR {row.all_time_balance.toFixed(2)}</span></td>
                         <td className="py-4 px-5">
                           <div className="flex items-center justify-end gap-2">
                             <button
@@ -731,7 +775,7 @@ export default function TeacherEarnings() {
             <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-800/80">
               <div>
                 <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                  <History className="w-4 h-4 text-primary" /> {selectedTeacher.full_name}'s General Ledger
+                  <History className="w-4 h-4 text-primary" /> {selectedTeacher.full_name}&apos;s General Ledger
                 </h2>
                 <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">Timeline of all gross earnings and monthly payout allocations.</p>
               </div>

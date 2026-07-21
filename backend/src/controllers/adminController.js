@@ -50,7 +50,9 @@ exports.getSystemSettings = async (req, res) => {
       settings = {
         site_name: 'Techno-Hub', primary_color: '#1a3cb6', secondary_color: '#efc300',
         contact_email: '', contact_phone: '', facebook_url: '', youtube_url: '',
-        instagram_url: '', linkedin_url: '', twitter_url: '', address: ''
+        instagram_url: '', linkedin_url: '', twitter_url: '', address: '',
+        birthday_sms_enabled: true, birthday_sms_time: '08:00',
+        birthday_sms_message: 'Happy Birthday {name}! Wishing you a fantastic day from TechnoHub!'
       };
     }
     res.json({ success: true, settings });
@@ -62,7 +64,7 @@ exports.getSystemSettings = async (req, res) => {
 exports.updateSystemSettings = async (req, res) => {
   try {
     const data = req.body;
-    const allowedFields = ['site_name', 'primary_color', 'secondary_color', 'contact_email', 'contact_phone', 'address', 'facebook_url', 'youtube_url', 'instagram_url', 'linkedin_url', 'twitter_url'];
+    const allowedFields = ['site_name', 'primary_color', 'secondary_color', 'contact_email', 'contact_phone', 'address', 'facebook_url', 'youtube_url', 'instagram_url', 'linkedin_url', 'twitter_url', 'birthday_sms_enabled', 'birthday_sms_time', 'birthday_sms_message'];
     
     let updateData = {};
     for (let field of allowedFields) {
@@ -83,6 +85,24 @@ exports.updateSystemSettings = async (req, res) => {
         if (phoneError) return res.status(400).json({ success: false, message: phoneError });
       }
       updateData.contact_phone = normalizedPhone;
+    }
+
+    if (updateData.birthday_sms_enabled !== undefined && typeof updateData.birthday_sms_enabled !== 'boolean') {
+      return res.status(400).json({ success: false, message: "Birthday SMS setting must be enabled or disabled." });
+    }
+
+    if (updateData.birthday_sms_time !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(updateData.birthday_sms_time)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid birthday SMS time." });
+    }
+
+    if (updateData.birthday_sms_message !== undefined) {
+      updateData.birthday_sms_message = String(updateData.birthday_sms_message).trim();
+      if (!updateData.birthday_sms_message) {
+        return res.status(400).json({ success: false, message: "Birthday SMS message cannot be empty." });
+      }
+      if (updateData.birthday_sms_message.length > 500) {
+        return res.status(400).json({ success: false, message: "Birthday SMS message cannot exceed 500 characters." });
+      }
     }
     
     if (Object.keys(updateData).length === 0) {

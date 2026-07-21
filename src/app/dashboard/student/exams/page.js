@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ClipboardList, Clock, RefreshCw, AlertCircle, ArrowRight, UserCheck, Lock, Loader2 } from "lucide-react";
+import { ClipboardList, Clock, RefreshCw, AlertCircle, ArrowRight, UserCheck, Lock, Loader2, Search, CalendarClock, History } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -19,6 +19,7 @@ export default function StudentExamHallPage() {
   const [selectedQuizForUnlock, setSelectedQuizForUnlock] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getDurationMinutes = (startTime, endTime) => {
     if (!startTime || !endTime) return 0;
@@ -99,11 +100,8 @@ export default function StudentExamHallPage() {
     }
   };
 
-  const getActiveTabCount = () => {
-    if (activeTab === "active") return quizzes.active.length;
-    if (activeTab === "upcoming") return quizzes.upcoming.length;
-    return quizzes.past.length;
-  };
+  const currentQuizzes = activeTab === "active" ? quizzes.active : activeTab === "upcoming" ? quizzes.upcoming : quizzes.past;
+  const displayedQuizzes = currentQuizzes.filter(quiz => (quiz.title || "").toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (!user) return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>;
 
@@ -116,6 +114,14 @@ export default function StudentExamHallPage() {
       <div className="hidden md:block mb-6">
         <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">Exam Hall</h1>
         <p className="text-[13px] text-gray-500 dark:text-white mt-1">Participate in mock exams and test your knowledge.</p>
+      </div>
+
+      <div className="hidden md:grid grid-cols-3 gap-3 mb-6">
+        {[
+          { label: "Active Exams", value: quizzes.active.length, icon: ClipboardList, tone: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+          { label: "Upcoming", value: quizzes.upcoming.length, icon: CalendarClock, tone: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
+          { label: "Past Exams", value: quizzes.past.length, icon: History, tone: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
+        ].map(({ label, value, icon: Icon, tone, bg }) => <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex items-center gap-3 shadow-sm"><div className={`w-10 h-10 rounded-xl ${bg} ${tone} flex items-center justify-center`}><Icon className="w-5 h-5" /></div><div><p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div></div>)}
       </div>
 
       {/* =========================================
@@ -146,7 +152,7 @@ export default function StudentExamHallPage() {
 
       {/* Tab Controls - Segmented Design */}
       <div className="px-4 md:px-0 mb-8 w-full flex justify-center">
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full max-w-md shadow-inner">
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:max-w-md shadow-inner">
           {["active", "upcoming", "past"].map((tab) => {
             const count = tab === "active" ? quizzes.active.length : tab === "upcoming" ? quizzes.upcoming.length : quizzes.past.length;
             const isActiveTab = activeTab === tab;
@@ -169,6 +175,13 @@ export default function StudentExamHallPage() {
         </div>
       </div>
 
+      <div className="px-4 md:px-0 mb-5">
+        <div className="relative max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder={`Search ${activeTab} exams...`} className="w-full h-10 pl-9 pr-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-[13px] text-slate-700 dark:text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+        </div>
+      </div>
+
       {/* Quizzes Grid */}
       <div className="px-4 md:px-0 flex-1 overflow-y-auto pb-20 md:pb-0">
         {isLoading ? (
@@ -176,15 +189,15 @@ export default function StudentExamHallPage() {
             <RefreshCw className="w-8 h-8 animate-spin text-primary mb-3" />
             <p className="text-sm font-semibold">Loading exams...</p>
           </div>
-        ) : getActiveTabCount() === 0 ? (
+        ) : displayedQuizzes.length === 0 ? (
           <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 shadow-sm">
             <ClipboardList className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
             <h3 className="text-[16px] font-bold text-slate-700 dark:text-white">No Exams Scheduled</h3>
-            <p className="text-[13px] max-w-xs mx-auto mt-1">There are no {activeTab} exams scheduled at this moment. Check back later!</p>
+            <p className="text-[13px] max-w-xs mx-auto mt-1">{searchQuery ? "No exams match your search." : `There are no ${activeTab} exams scheduled at this moment. Check back later!`}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-            {(activeTab === "active" ? quizzes.active : activeTab === "upcoming" ? quizzes.upcoming : quizzes.past).map((quiz) => (
+            {displayedQuizzes.map((quiz) => (
               <div
                 key={quiz.id}
                 className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden group"

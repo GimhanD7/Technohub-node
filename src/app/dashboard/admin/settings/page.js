@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Save, Loader2, Globe, Palette, Phone, Mail, MapPin, Link2, Share2, MessageCircle, AtSign } from "lucide-react";
+import { Settings, Save, Loader2, Globe, Palette, Phone, Mail, MapPin, Link2, Share2, MessageCircle, AtSign, Cake } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "@/lib/api";
 import { digitsOnly, getEmailError, getPhoneError, normalizeEmail } from "@/lib/validation";
@@ -18,17 +18,16 @@ export default function SystemSettingsPage() {
     youtube_url: "",
     instagram_url: "",
     linkedin_url: "",
-    twitter_url: ""
+    twitter_url: "",
+    birthday_sms_enabled: true,
+    birthday_sms_time: "08:00",
+    birthday_sms_message: "Happy Birthday {name}! Wishing you a fantastic day from TechnoHub!"
   });
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  async function fetchSettings() {
     try {
       setIsLoading(true);
       const res = await fetch(`${API_BASE_URL}/admin/system_settings`);
@@ -45,11 +44,18 @@ export default function SystemSettingsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setSettings(prev => ({ ...prev, [name]: name === "contact_phone" ? digitsOnly(value) : value }));
+    const { name, value, type, checked } = e.target;
+    setSettings(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : name === "contact_phone" ? digitsOnly(value) : value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -108,7 +114,7 @@ export default function SystemSettingsPage() {
           <Settings className="w-6 h-6 text-primary" /> System Settings
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Manage your platform's global configurations, theme colors, and social media links.
+          Manage your platform&apos;s global configurations, theme colors, and social media links.
         </p>
       </div>
 
@@ -187,6 +193,64 @@ export default function SystemSettingsPage() {
             <div className="flex gap-4">
               <button type="button" style={{ backgroundColor: settings.primary_color }} className="px-6 py-2 rounded-lg text-white font-medium text-[13px] shadow-sm">Primary Button</button>
               <button type="button" style={{ backgroundColor: settings.secondary_color }} className="px-6 py-2 rounded-lg text-white font-medium text-[13px] shadow-sm text-slate-900">Secondary Button</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Automated Messaging */}
+        <div className="bg-white dark:bg-[#1e293b] p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <h2 className="text-[16px] font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <Cake className="w-5 h-5 text-pink-500" /> Automated Birthday Messages
+          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 p-4">
+            <div>
+              <p className="text-[14px] font-semibold text-slate-800 dark:text-white">Send birthday wishes by SMS</p>
+              <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
+                When enabled, the system checks birthdays daily at 8:00 AM and sends an automatic wish.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                name="birthday_sms_enabled"
+                checked={Boolean(settings.birthday_sms_enabled)}
+                onChange={handleChange}
+                className="sr-only peer"
+              />
+              <span className="w-11 h-6 rounded-full bg-slate-300 dark:bg-slate-600 peer-checked:bg-green-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5" />
+              <span className="ml-3 text-[13px] font-semibold text-slate-700 dark:text-slate-200">
+                {settings.birthday_sms_enabled ? "Enabled" : "Disabled"}
+              </span>
+            </label>
+          </div>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-[180px_1fr] gap-4">
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-1.5">Daily send time</label>
+              <input
+                type="time"
+                name="birthday_sms_time"
+                value={settings.birthday_sms_time}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg text-[13px] focus:outline-none focus:border-primary dark:text-white"
+              />
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Sri Lanka time</p>
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-1.5">Birthday message</label>
+              <textarea
+                name="birthday_sms_message"
+                value={settings.birthday_sms_message}
+                onChange={handleChange}
+                maxLength={500}
+                required
+                rows={3}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg text-[13px] focus:outline-none focus:border-primary dark:text-white resize-y"
+              />
+              <div className="mt-1 flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                <span>Use <code className="font-semibold text-pink-600 dark:text-pink-400">{'{name}'}</code> to insert the user&apos;s name.</span>
+                <span>{settings.birthday_sms_message.length}/500</span>
+              </div>
             </div>
           </div>
         </div>

@@ -273,21 +273,22 @@ export default function AdminOnlineClassesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-        <div className="p-4 border-b border-gray-100 dark:border-slate-800/50 flex items-center justify-between bg-gray-50/30 dark:bg-slate-800/30 shrink-0">
+      <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40 shrink-0">
           <div className="flex items-center gap-2">
-            <Video className="w-4 h-4 text-gray-400 dark:text-white" />
-            <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">
-              Scheduled Classes ({filteredClasses.length})
-            </h3>
+            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><Video className="w-4 h-4" /></div>
+            <div>
+              <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">Class library</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{filteredClasses.length} {filteredClasses.length === 1 ? "class" : "classes"} shown</p>
+            </div>
           </div>
         </div>
 
         <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white sticky top-0 z-10">
-                <th className="py-3 px-5 font-bold">Class</th>
+          <table className="w-full text-left border-collapse min-w-[980px]">
+            <thead className="bg-slate-50/90 dark:bg-slate-900/40">
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 sticky top-0 z-10">
+                <th className="py-3.5 px-5 font-bold">Class details</th>
                 <th className="py-3 px-5 font-bold">Teacher</th>
                 <th className="py-3 px-5 font-bold">Status</th>
                 <th className="py-3 px-5 font-bold hidden md:table-cell">Platform</th>
@@ -296,14 +297,16 @@ export default function AdminOnlineClassesPage() {
                 <th className="py-3 px-5 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="text-[13px] text-slate-600 dark:text-white divide-y divide-gray-100 dark:divide-slate-800/50">
+            <tbody className="text-[13px] text-slate-600 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800/70">
               {filteredClasses.length === 0 ? (
                 <tr>
                   <td
                     colSpan="7"
-                    className="py-12 text-center text-gray-500 dark:text-white italic"
+                    className="py-20 text-center"
                   >
-                    No classes found.
+                    <div className="mx-auto mb-3 h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center"><Video className="w-5 h-5" /></div>
+                    <p className="font-semibold text-slate-700 dark:text-slate-200">No classes found</p>
+                    <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">Try changing your search or status filter.</p>
                   </td>
                 </tr>
               ) : (
@@ -312,22 +315,21 @@ export default function AdminOnlineClassesPage() {
                   return (
                     <tr
                       key={cls.id}
-                      className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors"
+                      className="group bg-white dark:bg-[#1e293b] hover:bg-primary/[0.025] dark:hover:bg-primary/5 transition-colors"
                     >
-                      <td className="py-3 px-5">
-                        <div className="font-medium text-slate-800 dark:text-white">
-                          {cls.title}
-                        </div>
-                        {cls.description && (
-                          <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1">
-                            {cls.description}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 text-primary flex items-center justify-center"><Video className="w-4 h-4" /></div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-800 dark:text-white truncate max-w-[250px]">{cls.title}</div>
+                            {cls.description && <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1 max-w-[250px]">{cls.description}</div>}
                           </div>
-                        )}
+                        </div>
                       </td>
-                      <td className="py-3 px-5 text-[12px]">
+                      <td className="py-4 px-5 text-[12px] font-medium text-slate-700 dark:text-slate-200">
                         {cls.creator_name || "—"}
                       </td>
-                      <td className="py-3 px-5">
+                      <td className="py-4 px-5">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${meta.bg} ${meta.text} ${meta.border}`}
                         >
@@ -336,7 +338,7 @@ export default function AdminOnlineClassesPage() {
                         </span>
                       </td>
                       <td className="py-3 px-5 hidden md:table-cell">
-                        <span className="text-[12px] font-medium text-blue-600 dark:text-blue-400">
+                        <span className="inline-flex px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-[11px] font-semibold text-blue-700 dark:text-blue-400">
                           {cls.platform || "Zoom"}
                         </span>
                       </td>
@@ -366,12 +368,12 @@ export default function AdminOnlineClassesPage() {
                           &bull; {cls.duration} mins
                         </div>
                       </td>
-                      <td className="py-3 px-5">
+                      <td className="py-4 px-5">
                         <span
-                          className={`text-[12px] font-bold ${
+                          className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
                             cls.fee > 0
-                              ? "text-primary"
-                              : "text-emerald-600 dark:text-emerald-400"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                           }`}
                         >
                           {cls.fee > 0 ? `LKR ${cls.fee}` : "Free"}
@@ -383,7 +385,7 @@ export default function AdminOnlineClassesPage() {
                             href={cls.meeting_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1.5 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 rounded transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center border border-slate-200 dark:border-slate-700 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 rounded-lg transition-colors"
                             title="Join Class"
                           >
                             <Video className="w-4 h-4" />
@@ -395,7 +397,7 @@ export default function AdminOnlineClassesPage() {
                           {cls._status === "upcoming" ? (
                             <Link
                               href={`/dashboard/admin/online-classes/create?id=${cls.id}&edit=1`}
-                              className="p-1.5 text-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 rounded transition-colors"
+                              className="h-8 w-8 inline-flex items-center justify-center border border-slate-200 dark:border-slate-700 text-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200 rounded-lg transition-colors"
                               title="Edit Class"
                             >
                               <Edit className="w-4 h-4" />
@@ -419,7 +421,7 @@ export default function AdminOnlineClassesPage() {
                             <button
                               onClick={() => handleDeleteClass(cls)}
                               disabled={isDeletingId === cls.id}
-                              className="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded transition-colors disabled:opacity-50"
+                              className="h-8 w-8 inline-flex items-center justify-center border border-slate-200 dark:border-slate-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 rounded-lg transition-colors disabled:opacity-50"
                               title="Delete Class"
                             >
                               {isDeletingId === cls.id ? (

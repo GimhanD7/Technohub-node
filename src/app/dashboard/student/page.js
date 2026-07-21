@@ -615,6 +615,21 @@ export default function StudentDashboard() {
         <p className="text-[13px] text-gray-500 dark:text-white max-w-xl mx-auto">Track your courses, view your grades, and stay on top of upcoming assignments with this streamlined interface.</p>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Explore Courses", helper: "Find something new", href: "/dashboard/student/courses", icon: BookOpen, tone: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+          { label: "My Courses", helper: "Continue learning", href: "/dashboard/student/my-courses", icon: GraduationCap, tone: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
+          { label: "Exam Hall", helper: "View scheduled exams", href: "/dashboard/student/exams", icon: ClipboardList, tone: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
+          { label: "Wallet", helper: "Balance and top-ups", href: "/dashboard/student/wallet", icon: Wallet, tone: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+        ].map(({ label, helper, href, icon: Icon, tone, bg }) => (
+          <Link key={label} href={href} className="group bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 shadow-sm hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 transition-all flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-lg ${bg} ${tone} flex items-center justify-center shrink-0`}><Icon className="w-4.5 h-4.5" /></div>
+            <div className="min-w-0"><p className="text-[12px] font-bold text-slate-800 dark:text-white truncate">{label}</p><p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{helper}</p></div>
+            <ChevronRight className="w-3.5 h-3.5 ml-auto text-slate-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+          </Link>
+        ))}
+      </div>
+
       {dashboardError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-600">
           {dashboardError}
@@ -790,7 +805,7 @@ export default function StudentDashboard() {
               availableQuizzes.length === 0 ? (
                 <div className="py-16 text-center text-slate-400 border border-dashed border-slate-200 rounded-3xl p-6">
                   <ClipboardList className="w-12 h-12 mx-auto text-slate-200 mb-3" />
-                  <p className="text-xs font-bold text-slate-700">No available quizzes at the moment</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200">No available quizzes at the moment</p>
                   <p className="text-[10px] text-slate-400 mt-1">Check back later for upcoming exams.</p>
                 </div>
               ) : (
@@ -818,49 +833,49 @@ export default function StudentDashboard() {
                               </span>
                             )}
                           </div>
-                          <h4 className="text-[13px] font-bold text-slate-800 leading-snug min-h-[38px] line-clamp-2 group-hover:text-blue-600 transition-colors">
+                          <h4 className="text-[13px] font-bold text-slate-800 dark:text-white leading-snug min-h-[38px] line-clamp-2 group-hover:text-blue-600 transition-colors">
                             {quiz.title}
                           </h4>
                           {quiz.startTime && (
-                            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-md bg-slate-900/5 text-[10px] font-bold text-slate-700">
+                            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-md bg-slate-900/5 dark:bg-white/10 text-[10px] font-bold text-slate-700 dark:text-slate-200">
                               {new Date(quiz.startTime).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                             </span>
                           )}
                         </div>
 
-                        <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600">
+                        <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600 dark:text-slate-300">
                           <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-50">
                             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 shrink-0 text-white flex items-center justify-center font-bold text-xs shadow-inner">
                               {quiz.creatorName ? quiz.creatorName.charAt(0).toUpperCase() : "I"}
                             </div>
                             <div>
                               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">Instructor</p>
-                              <span className="font-bold text-slate-700 truncate block max-w-[150px]">{quiz.creatorName || "Lecturer"}</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-200 truncate block max-w-[150px]">{quiz.creatorName || "Lecturer"}</span>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2.5">
                             <ClipboardList className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                            <span className="text-slate-605 font-medium">Questions: <strong className="text-slate-800 font-bold">{quiz.questionCount}</strong></span>
+                            <span className="text-slate-605 dark:text-slate-400 font-medium">Questions: <strong className="text-slate-800 dark:text-white font-bold">{quiz.questionCount}</strong></span>
                           </div>
 
                           <div className="flex items-center gap-2.5">
                             <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                            <span className="text-slate-605 font-medium">Duration: <strong className="text-slate-800 font-bold">{duration} mins</strong></span>
+                            <span className="text-slate-605 dark:text-slate-400 font-medium">Duration: <strong className="text-slate-800 dark:text-white font-bold">{duration} mins</strong></span>
                           </div>
 
                           <div className="pt-2.5 border-t border-slate-50">
                             <div className="flex items-center gap-2">
                               <div className="flex-1 text-center">
                                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Start</p>
-                                <p className="text-[12px] font-black text-slate-900 tabular-nums leading-tight mt-0.5">
+                                <p className="text-[12px] font-black text-slate-900 dark:text-white tabular-nums leading-tight mt-0.5">
                                   {new Date(quiz.startTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               </div>
                               <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
                               <div className="flex-1 text-center">
                                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">End</p>
-                                <p className="text-[12px] font-black text-slate-900 tabular-nums leading-tight mt-0.5">
+                                <p className="text-[12px] font-black text-slate-900 dark:text-white tabular-nums leading-tight mt-0.5">
                                   {new Date(quiz.endTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               </div>
@@ -898,7 +913,7 @@ export default function StudentDashboard() {
               participatedQuizzes.length === 0 ? (
                 <div className="py-16 text-center text-slate-400 border border-dashed border-slate-200 rounded-3xl p-6">
                   <Award className="w-12 h-12 mx-auto text-slate-200 mb-3" />
-                  <p className="text-xs font-bold text-slate-700">No participated quizzes yet</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200">No participated quizzes yet</p>
                   <p className="text-[10px] text-slate-400 mt-1">Quizzes you complete will appear here with your results and rankings.</p>
                 </div>
               ) : (
@@ -1163,33 +1178,33 @@ export default function StudentDashboard() {
                                         </span>
                                       )}
                                     </div>
-                                    <h4 className="text-[13px] font-bold text-slate-800 leading-snug min-h-[38px] line-clamp-2 group-hover:text-primary transition-colors">
+                                    <h4 className="text-[13px] font-bold text-slate-800 dark:text-white leading-snug min-h-[38px] line-clamp-2 group-hover:text-primary transition-colors">
                                       {cls.title}
                                     </h4>
                                   </div>
 
-                                  <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600">
+                                  <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600 dark:text-slate-300">
                                     <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-50">
                                       <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary shrink-0 text-white flex items-center justify-center font-bold text-xs shadow-inner">
                                         {cls.creator_name ? cls.creator_name.charAt(0).toUpperCase() : "I"}
                                       </div>
                                       <div>
                                         <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">Instructor</p>
-                                        <span className="font-bold text-slate-700 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
+                                        <span className="font-bold text-slate-700 dark:text-slate-200 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
                                       </div>
                                     </div>
 
                                     <div className="flex items-start gap-2.5">
                                       <Calendar className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                                       <div>
-                                        <p className="font-bold text-slate-800 leading-none mb-0.5">{date}</p>
+                                        <p className="font-bold text-slate-800 dark:text-white leading-none mb-0.5">{date}</p>
                                         <p className="text-[9px] text-slate-450 font-medium">{timeRange} ({cls.duration} mins)</p>
                                       </div>
                                     </div>
 
                                     <div className="flex items-center gap-2.5">
                                       <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                                      <span className="font-medium">Platform: <strong className="text-slate-800 font-bold">{cls.platform || "Zoom Meetings"}</strong></span>
+                                      <span className="font-medium">Platform: <strong className="text-slate-800 dark:text-white font-bold">{cls.platform || "Zoom Meetings"}</strong></span>
                                     </div>
                                   </div>
 
@@ -1242,33 +1257,33 @@ export default function StudentDashboard() {
                                         </span>
                                       )}
                                     </div>
-                                    <h4 className="text-[13px] font-bold text-slate-800 leading-snug min-h-[38px] line-clamp-2 group-hover:text-primary transition-colors">
+                                    <h4 className="text-[13px] font-bold text-slate-800 dark:text-white leading-snug min-h-[38px] line-clamp-2 group-hover:text-primary transition-colors">
                                       {cls.title}
                                     </h4>
                                   </div>
 
-                                  <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600">
+                                  <div className="p-5 space-y-3.5 flex-1 text-[11px] text-slate-600 dark:text-slate-300">
                                     <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-50">
                                       <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary shrink-0 text-white flex items-center justify-center font-bold text-xs shadow-inner">
                                         {cls.creator_name ? cls.creator_name.charAt(0).toUpperCase() : "I"}
                                       </div>
                                       <div>
                                         <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">Instructor</p>
-                                        <span className="font-bold text-slate-700 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
+                                        <span className="font-bold text-slate-700 dark:text-slate-200 truncate block max-w-[150px]">{cls.creator_name || "LMS Lecturer"}</span>
                                       </div>
                                     </div>
 
                                     <div className="flex items-start gap-2.5">
                                       <Calendar className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                                       <div>
-                                        <p className="font-bold text-slate-800 leading-none mb-0.5">{date}</p>
+                                        <p className="font-bold text-slate-800 dark:text-white leading-none mb-0.5">{date}</p>
                                         <p className="text-[9px] text-slate-450 font-medium">{timeRange} ({cls.duration} mins)</p>
                                       </div>
                                     </div>
 
                                     <div className="flex items-center gap-2.5">
                                       <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                                      <span className="font-medium">Platform: <strong className="text-slate-800 font-bold">{cls.platform || "Zoom Meetings"}</strong></span>
+                                      <span className="font-medium">Platform: <strong className="text-slate-800 dark:text-white font-bold">{cls.platform || "Zoom Meetings"}</strong></span>
                                     </div>
                                   </div>
 

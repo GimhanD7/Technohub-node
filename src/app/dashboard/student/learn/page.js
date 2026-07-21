@@ -325,7 +325,7 @@ export default function CourseViewer() {
                       >
                         <div className="h-full flex flex-col items-center justify-center text-center p-8">
                           <FileText className="w-10 h-10 text-blue-500 mb-3" />
-                          <h3 className="font-bold text-slate-800">PDF preview is unavailable in this browser</h3>
+                          <h3 className="font-bold text-slate-800 dark:text-white">PDF preview is unavailable in this browser</h3>
                           <p className="text-sm text-slate-500 mt-1">Use the Open PDF button below to view the document.</p>
                         </div>
                       </object>
@@ -338,7 +338,7 @@ export default function CourseViewer() {
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-slate-50">
                       <AlertCircle className="w-10 h-10 text-amber-500 mb-3" />
-                      <h3 className="font-bold text-slate-800">PDF file is missing</h3>
+                      <h3 className="font-bold text-slate-800 dark:text-white">PDF file is missing</h3>
                       <p className="text-sm text-slate-500 mt-1">Ask the teacher to edit this material and upload the PDF again.</p>
                     </div>
                   )

@@ -217,6 +217,18 @@ model home_settings {
   faq_heading         String?  @db.VarChar(255)
   aiti_description    String?  @db.Text
   aiti_logo           String?  @db.VarChar(500)
+  aiti_logo_width     Int      @default(120)
+  aiti_logo_height    Int      @default(44)
+  aiti_description_bold Boolean @default(false)
+  hero_stat_one_value   String   @default("6") @db.VarChar(40)
+  hero_stat_one_label   String   @default("Learner categories") @db.VarChar(120)
+  hero_stat_two_value   String   @default("24/7") @db.VarChar(40)
+  hero_stat_two_label   String   @default("Resource access") @db.VarChar(120)
+  hero_stat_three_value String   @default("Live") @db.VarChar(40)
+  hero_stat_three_label String   @default("Classes and exams") @db.VarChar(120)
+  feedback_heading      String   @default("Learners trust focused, practical support.") @db.VarChar(255)
+  feedback_items        String?  @db.LongText
+  faq_items             String?  @db.LongText
   updated_by          Int?
   updated_at          DateTime @default(now()) @db.Timestamp(0)
   users               users?   @relation(fields: [updated_by], references: [id], onUpdate: Restrict, map: "home_settings_ibfk_1")
@@ -430,19 +442,22 @@ model system_logs {
 }
 
 model system_settings {
-  id              Int      @id
-  site_name       String?  @default("Techno-Hub") @db.VarChar(255)
-  primary_color   String?  @default("#1a3cb6") @db.VarChar(50)
-  secondary_color String?  @default("#efc300") @db.VarChar(50)
-  contact_email   String?  @db.VarChar(255)
-  contact_phone   String?  @db.VarChar(50)
-  facebook_url    String?  @db.VarChar(255)
-  youtube_url     String?  @db.VarChar(255)
-  instagram_url   String?  @db.VarChar(255)
-  linkedin_url    String?  @db.VarChar(255)
-  twitter_url     String?  @db.VarChar(255)
-  address         String?  @db.Text
-  updated_at      DateTime @default(now()) @db.Timestamp(0)
+  id                   Int      @id
+  site_name            String?  @default("Techno-Hub") @db.VarChar(255)
+  primary_color        String?  @default("#1a3cb6") @db.VarChar(50)
+  secondary_color      String?  @default("#efc300") @db.VarChar(50)
+  contact_email        String?  @db.VarChar(255)
+  contact_phone        String?  @db.VarChar(50)
+  facebook_url         String?  @db.VarChar(255)
+  youtube_url          String?  @db.VarChar(255)
+  instagram_url        String?  @db.VarChar(255)
+  linkedin_url         String?  @db.VarChar(255)
+  twitter_url          String?  @db.VarChar(255)
+  address              String?  @db.Text
+  birthday_sms_enabled Boolean  @default(true)
+  birthday_sms_time    String   @default("08:00") @db.VarChar(5)
+  birthday_sms_message String   @default("Happy Birthday {name}! Wishing you a fantastic day from TechnoHub!") @db.VarChar(500)
+  updated_at           DateTime @default(now()) @db.Timestamp(0)
 }
 
 model teacher_commissions {
@@ -611,7 +626,7 @@ model bank_details {
   id            Int      @id @default(autoincrement())
   bank_name     String   @db.VarChar(255)
   account_name  String   @db.VarChar(255)
-  account_number String  @db.VarChar(255)
+  account_number String   @db.VarChar(255)
   is_hidden     Boolean  @default(false)
   created_at    DateTime @default(now()) @db.Timestamp(0)
 }

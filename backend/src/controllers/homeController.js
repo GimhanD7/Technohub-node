@@ -2,6 +2,16 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const fs = require('fs');
 
+const parseJsonList = (value, fallback = []) => {
+  if (!value) return fallback;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 // --- GET CONTENT ---
 exports.getContent = async (req, res) => {
   try {
@@ -39,7 +49,19 @@ exports.getContent = async (req, res) => {
         timetableSubtitle: settings.timetable_subtitle,
         faqHeading: settings.faq_heading,
         aitiDescription: settings.aiti_description,
-        aitiLogo: settings.aiti_logo
+        aitiLogo: settings.aiti_logo,
+        aitiLogoWidth: settings.aiti_logo_width,
+        aitiLogoHeight: settings.aiti_logo_height,
+        aitiDescriptionBold: settings.aiti_description_bold,
+        heroStatOneValue: settings.hero_stat_one_value,
+        heroStatOneLabel: settings.hero_stat_one_label,
+        heroStatTwoValue: settings.hero_stat_two_value,
+        heroStatTwoLabel: settings.hero_stat_two_label,
+        heroStatThreeValue: settings.hero_stat_three_value,
+        heroStatThreeLabel: settings.hero_stat_three_label,
+        feedbackHeading: settings.feedback_heading,
+        feedbackItems: parseJsonList(settings.feedback_items),
+        faqItems: parseJsonList(settings.faq_items)
       } : {},
       slides: slides.map(s => ({ ...s, imageUrl: s.image_url, isActive: Boolean(s.is_active), sortOrder: s.sort_order })),
       lecturers: lecturers.map(l => ({ ...l, imageUrl: l.image_url, isActive: Boolean(l.is_active), sortOrder: l.sort_order })),
@@ -64,8 +86,24 @@ exports.updateSettings = async (req, res) => {
       heroBadge, heroTitle, heroSubtitle, primaryCtaLabel, primaryCtaUrl,
       secondaryCtaLabel, secondaryCtaUrl, coursesHeading, coursesSubtitle,
       lecturersHeading, lecturersSubtitle, whyHeading, whySubtitle,
-      timetableHeading, timetableSubtitle, faqHeading, aitiDescription, aitiLogo, userId
+      timetableHeading, timetableSubtitle, faqHeading, aitiDescription, aitiLogo,
+      aitiLogoWidth, aitiLogoHeight, aitiDescriptionBold,
+      heroStatOneValue, heroStatOneLabel, heroStatTwoValue, heroStatTwoLabel,
+      heroStatThreeValue, heroStatThreeLabel, feedbackHeading, feedbackItems, faqItems, userId
     } = req.body;
+
+    const logoWidth = Number(aitiLogoWidth ?? 120);
+    const logoHeight = Number(aitiLogoHeight ?? 44);
+
+    if (!Number.isInteger(logoWidth) || logoWidth < 20 || logoWidth > 500) {
+      return res.status(400).json({ success: false, message: "AITI logo width must be between 20 and 500 pixels." });
+    }
+    if (!Number.isInteger(logoHeight) || logoHeight < 20 || logoHeight > 300) {
+      return res.status(400).json({ success: false, message: "AITI logo height must be between 20 and 300 pixels." });
+    }
+    if (aitiDescriptionBold !== undefined && typeof aitiDescriptionBold !== 'boolean') {
+      return res.status(400).json({ success: false, message: "AITI description bold setting is invalid." });
+    }
 
     const updateData = {
       hero_badge: heroBadge,
@@ -86,6 +124,18 @@ exports.updateSettings = async (req, res) => {
       faq_heading: faqHeading,
       aiti_description: aitiDescription,
       aiti_logo: aitiLogo,
+      aiti_logo_width: logoWidth,
+      aiti_logo_height: logoHeight,
+      aiti_description_bold: aitiDescriptionBold ?? false,
+      hero_stat_one_value: heroStatOneValue || "6",
+      hero_stat_one_label: heroStatOneLabel || "Learner categories",
+      hero_stat_two_value: heroStatTwoValue || "24/7",
+      hero_stat_two_label: heroStatTwoLabel || "Resource access",
+      hero_stat_three_value: heroStatThreeValue || "Live",
+      hero_stat_three_label: heroStatThreeLabel || "Classes and exams",
+      feedback_heading: feedbackHeading || "Learners trust focused, practical support.",
+      feedback_items: JSON.stringify(Array.isArray(feedbackItems) ? feedbackItems : []),
+      faq_items: JSON.stringify(Array.isArray(faqItems) ? faqItems : []),
       updated_by: userId ? parseInt(userId) : null
     };
 

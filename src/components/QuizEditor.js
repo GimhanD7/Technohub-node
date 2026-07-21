@@ -473,7 +473,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1">Quiz Fee (LKR) - Set to 0 for Free</label>
+          <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Quiz Fee (LKR) - Set to 0 for Free</label>
           <input 
             type="number" 
             value={fee} 

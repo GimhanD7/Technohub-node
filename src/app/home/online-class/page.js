@@ -12,7 +12,7 @@ export default function OnlineClassPage() {
   const [classes, setClasses] = useState({ ongoing: [], upcoming: [], past: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [activeTab, setActiveTab] = useState("ongoing");
+  const [activeTab, setActiveTab] = useState("upcoming");
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   
@@ -191,7 +191,7 @@ export default function OnlineClassPage() {
       <main className="flex-1 flex flex-col pt-24 pb-20 px-6 max-w-7xl mx-auto w-full">
 
         {/* Hero Section - Matched to Exam Hall color pattern */}
-        <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-12 shadow-xl mb-10 border border-slate-850 text-left">
+        <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-12 shadow-xl mb-10 border border-slate-800 dark:border-slate-700 text-left">
           <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-secondary/10 rounded-full blur-[90px] pointer-events-none"></div>
 
@@ -214,7 +214,7 @@ export default function OnlineClassPage() {
         </div>
 
         {errorMsg && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 dark:border-red-900/50 text-red-650 text-sm font-medium rounded-2xl flex gap-2">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm font-medium rounded-2xl flex gap-2">
             <AlertCircle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" />
             {errorMsg}
           </div>
@@ -229,7 +229,7 @@ export default function OnlineClassPage() {
                 onClick={() => { setActiveTab(tab); setSearchQuery(""); }}
                 className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all capitalize cursor-pointer whitespace-nowrap ${activeTab === tab
                   ? "bg-primary text-white shadow-md font-bold"
-                  : "text-slate-500 dark:text-white hover:text-slate-850 hover:bg-slate-200/50"
+                  : "text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/60"
                   }`}
               >
                 {tab} Classes ({tab === "ongoing" ? classes.ongoing.length : tab === "upcoming" ? classes.upcoming.length : classes.past.length})
@@ -260,24 +260,24 @@ export default function OnlineClassPage() {
 
         {/* Classes Grid - Exam Hall Card Style */}
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-550 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
+          <div className="py-20 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
             <RefreshCw className="w-8 h-8 animate-spin text-primary mb-3" />
             <p className="text-sm font-semibold">Retrieving class rosters...</p>
           </div>
         ) : getActiveTabCount() === 0 ? (
-          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-150 p-6 shadow-sm">
+          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
             <Video className="w-12 h-12 mx-auto text-slate-200 mb-3" />
             <h3 className="text-base font-bold text-slate-700 dark:text-white">No Lectures Scheduled</h3>
             <p className="text-xs max-w-xs mx-auto mt-1">There are no {activeTab} online classes scheduled at this moment. Check back later!</p>
           </div>
         ) : getFilteredClasses().length === 0 ? (
-          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-150 p-6 shadow-sm">
+          <div className="py-16 text-center text-slate-400 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
             <Search className="w-12 h-12 mx-auto text-slate-200 mb-3" />
             <h3 className="text-base font-bold text-slate-700 dark:text-white">No Results Found</h3>
             <p className="text-xs max-w-xs mx-auto mt-1">No classes match &ldquo;{searchQuery}&rdquo;. Try a different keyword.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {getFilteredClasses().map((cls) => {
               const { date, timeRange } = formatClassDateTime(cls.date_time, cls.duration);
               const category = getCategoryFromTitle(cls.title);
@@ -286,7 +286,7 @@ export default function OnlineClassPage() {
                 <div
                   key={cls.id}
                   className="
-                    group p-[2px] rounded-[20px]
+                    group p-px rounded-2xl
                     bg-gray-300
                     transition-all duration-300 ease-out
                     hover:bg-gradient-to-r hover:from-blue-500 hover:to-violet-500
@@ -295,15 +295,15 @@ export default function OnlineClassPage() {
                     hover:-translate-y-1
                   "
                 >
-                  <div className="bg-white dark:bg-[#1e293b] rounded-[18px] flex flex-col justify-between relative overflow-hidden text-left h-full">
+                  <div className="bg-white dark:bg-[#1e293b] rounded-[15px] flex flex-col justify-between relative overflow-hidden text-left h-full">
 
                     {/* Header Band */}
-                    <div className={`px-6 py-5 border-b border-slate-100 dark:border-slate-800/50 bg-gradient-to-r ${activeTab === "ongoing"
-                      ? "from-emerald-50 via-emerald-50/40 to-blue-50/40"
-                      : "from-amber-50 via-amber-50/30 to-violet-50/40"}`}>
+                    <div className={`px-5 py-4 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r ${activeTab === "ongoing"
+                      ? "from-emerald-50 via-emerald-50/40 to-blue-50/40 dark:from-emerald-950/70 dark:via-slate-800 dark:to-blue-950/50"
+                      : "from-amber-50 via-amber-50/30 to-violet-50/40 dark:from-amber-950/50 dark:via-slate-800 dark:to-violet-950/40"}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-[16px] font-extrabold text-slate-850 tracking-tight group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                          <h3 className="text-[16px] font-extrabold text-slate-900 dark:text-white tracking-tight group-hover:text-primary dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">
                             {cls.title}
                           </h3>
                           <p className="text-[11px] text-slate-500 dark:text-white mt-0.5 capitalize">
@@ -311,7 +311,7 @@ export default function OnlineClassPage() {
                           </p>
                         </div>
                         <div className="shrink-0">
-                          <span className="px-3 py-1 rounded-full text-[10px] font-bold border bg-blue-50 text-blue-700 border-blue-200 dark:border-blue-900/50">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold border bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                             {category}
                           </span>
                         </div>
@@ -319,10 +319,10 @@ export default function OnlineClassPage() {
                     </div>
 
                     {/* Body Info */}
-                    <div className="px-6 py-5 space-y-4 flex-1">
+                    <div className="px-5 py-4 flex-1">
 
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-blue-500 flex items-center justify-center shrink-0 text-white text-sm font-bold">
+                      <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-blue-500 flex items-center justify-center shrink-0 text-white text-xs font-bold">
                           {getInitials(cls.creator_name)}
                         </div>
                         <div>
@@ -331,39 +331,40 @@ export default function OnlineClassPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
                           <Calendar className="w-4 h-4 text-blue-500" />
                         </div>
                         <div>
                           <p className="text-[10px] text-slate-400 font-medium">Date & Time</p>
-                          <p className="text-[13px] font-bold text-slate-800 dark:text-white">{date}</p>
-                          <p className="text-[12px] text-slate-500 dark:text-white">{timeRange}</p>
+                          <p className="text-[12px] font-bold text-slate-800 dark:text-white">{date}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">{timeRange}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
                           <Clock className="w-4 h-4 text-amber-500" />
                         </div>
                         <div>
                           <p className="text-[10px] text-slate-400 font-medium">Duration</p>
-                          <p className="text-[13px] font-bold text-slate-800 dark:text-white">{cls.duration} minutes</p>
+                          <p className="text-[12px] font-bold text-slate-800 dark:text-white">{cls.duration} min</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center shrink-0">
                           <Video className="w-4 h-4 text-green-600" />
                         </div>
                         <div>
                           <p className="text-[10px] text-slate-400 font-medium">Platform</p>
-                          <p className="text-[13px] font-bold text-slate-800 dark:text-white">{cls.platform || "Zoom"}</p>
+                          <p className="text-[12px] font-bold text-slate-800 dark:text-white">{cls.platform || "Zoom"}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cls.fee > 0 ? 'bg-blue-50' : 'bg-emerald-50'}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${cls.fee > 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20'}`}>
                           {cls.fee > 0 ? (
                             <Wallet className="w-4 h-4 text-blue-600" />
                           ) : (
@@ -372,22 +373,23 @@ export default function OnlineClassPage() {
                         </div>
                         <div>
                           <p className="text-[10px] text-slate-400 font-medium">Fee</p>
-                          <p className="text-[13px] font-bold text-slate-800 dark:text-white">
+                          <p className="text-[12px] font-bold text-slate-800 dark:text-white">
                             {cls.fee > 0 ? `LKR ${cls.fee}` : "Free"}
                           </p>
                         </div>
                       </div>
+                      </div>
 
                       {cls.description && (
-                        <div className="pt-1">
+                        <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
                           <p className="text-[10px] text-slate-400 font-medium">Description</p>
-                          <p className="text-[13px] text-slate-600 dark:text-white line-clamp-2">{cls.description}</p>
+                          <p className="text-[12px] text-slate-600 dark:text-slate-300 line-clamp-1">{cls.description}</p>
                         </div>
                       )}
                     </div>
 
                     {/* Footer */}
-                    <div className="px-6 pb-6 mt-auto">
+                    <div className="px-5 pb-4 mt-auto">
                       {cls.fee > 0 && !cls.is_enrolled && activeTab !== "past" ? (
                         <Button 
                           onClick={() => handleEnroll(cls)}

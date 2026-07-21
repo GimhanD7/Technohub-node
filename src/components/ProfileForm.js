@@ -5,6 +5,7 @@ import { User, Camera, Loader2, KeyRound } from "lucide-react";
 import { fetchApi, API_BASE_URL, BASE_URL } from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { getEmailError, getPasswordError, getPhoneError, normalizeEmail } from "@/lib/validation";
+import { toDateInputValue } from "@/lib/date";
 
 export default function ProfileForm({ initialUser }) {
   // Form State
@@ -13,13 +14,14 @@ export default function ProfileForm({ initialUser }) {
   const [educationInfo, setEducationInfo] = useState(initialUser?.education_info || "");
   const [educationCategory, setEducationCategory] = useState(initialUser?.education_category || "");
   const [email, setEmail] = useState(initialUser?.email || "");
-  const [birthdate, setBirthdate] = useState(initialUser?.birthdate || "");
+  const [birthdate, setBirthdate] = useState(toDateInputValue(initialUser?.birthdate));
   const [subject, setSubject] = useState(initialUser?.subject || "");
   const [experience, setExperience] = useState(initialUser?.experience || "");
   const [certifications, setCertifications] = useState(initialUser?.certifications || "");
   const [profilePicture, setProfilePicture] = useState(initialUser?.profile_picture || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const emailValidationError = getEmailError(email);
   
   // UI State
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +77,12 @@ export default function ProfileForm({ initialUser }) {
     if (data.success) {
       toast.success(data.message || "Profile updated successfully");
       // Update local storage
-      localStorage.setItem("techno_hub_user", JSON.stringify(data.user));
+      const updatedUser = {
+        ...data.user,
+        birthdate: toDateInputValue(data.user.birthdate),
+      };
+      localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent("techno-hub-user-updated"));
       setPassword("");
       setConfirmPassword("");
       
@@ -126,6 +133,7 @@ export default function ProfileForm({ initialUser }) {
             // Update local storage so it persists after refresh
             const updatedUser = { ...initialUser, profile_picture: data.imageUrl };
             localStorage.setItem("techno_hub_user", JSON.stringify(updatedUser));
+            window.dispatchEvent(new CustomEvent("techno-hub-user-updated"));
             
             toast.success("Image uploaded successfully");
         } else {
@@ -249,9 +257,16 @@ export default function ProfileForm({ initialUser }) {
                 type="email" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-600 outline-none transition-all text-[15px]"
+                aria-invalid={Boolean(emailValidationError)}
+                aria-describedby={emailValidationError ? "profile-email-error" : undefined}
+                className={`w-full px-4 py-3 rounded-xl border bg-white dark:bg-[#0f172a] outline-none transition-all text-[15px] ${emailValidationError ? "border-red-500 focus:ring-2 focus:ring-red-200 dark:border-red-500 dark:focus:ring-red-900/40" : "border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-600"}`}
                 placeholder="Email"
               />
+              {emailValidationError && (
+                <p id="profile-email-error" role="alert" className="mt-2 text-[13px] font-medium text-red-600 dark:text-red-400">
+                  {emailValidationError}
+                </p>
+              )}
             </div>
           </div>
 

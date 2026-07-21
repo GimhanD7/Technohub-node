@@ -2,7 +2,7 @@
 
 import { toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
-import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search, UserCheck } from "lucide-react";
+import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search, UserCheck, Library, Layers3 } from "lucide-react";
 import { API_BASE_URL, fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import { BASE_URL } from "@/lib/api";
@@ -24,6 +24,7 @@ export default function TeacherCourseManagement() {
 
   // Filter State
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
+  const [courseStatusFilter, setCourseStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Modals & UI States
@@ -422,10 +423,14 @@ export default function TeacherCourseManagement() {
   // --- Derived State ---
   const displayedCourses = courses.filter(c => {
     const matchesCategory = selectedCategoryFilter === "all" || String(c.category_id) === String(selectedCategoryFilter);
+    const matchesStatus = courseStatusFilter === "all" || (courseStatusFilter === "live" ? c.status !== "disabled" : c.status === "disabled");
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesStatus && matchesSearch;
   });
+  const liveCourseCount = courses.filter(course => course.status !== "disabled").length;
+  const hiddenCourseCount = courses.filter(course => course.status === "disabled").length;
+  const usedCategoryCount = new Set(courses.map(course => course.category_id).filter(Boolean)).size;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 relative pb-12">
@@ -505,8 +510,8 @@ export default function TeacherCourseManagement() {
         <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">My Classes</h1>
-              <p className="text-[13px] text-gray-500 dark:text-white mt-1">Manage your active classes and educational content.</p>
+              <h1 className="text-[22px] font-semibold text-slate-800 dark:text-white tracking-tight">My Courses</h1>
+              <p className="text-[13px] text-gray-500 dark:text-slate-400 mt-1">Manage your courses, enrolled students, and learning content.</p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
               <div className="relative w-full sm:w-auto">
@@ -529,10 +534,22 @@ export default function TeacherCourseManagement() {
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
+              <select value={courseStatusFilter} onChange={event => setCourseStatusFilter(event.target.value)} className="w-full sm:w-auto px-3 py-2 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded text-[12px] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm">
+                <option value="all">All Statuses</option><option value="live">Live</option><option value="hidden">Hidden</option>
+              </select>
               <button onClick={() => openCourseModal()} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 text-[12px] font-medium transition-colors">
                 <Plus className="w-4 h-4" /> Create Course
               </button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: "Total Courses", value: courses.length, icon: Library, tone: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+              { label: "Live Courses", value: liveCourseCount, icon: Eye, tone: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+              { label: "Hidden Courses", value: hiddenCourseCount, icon: EyeOff, tone: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
+              { label: "Categories Used", value: usedCategoryCount, icon: Layers3, tone: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
+            ].map(({ label, value, icon: Icon, tone, bg }) => <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex items-center gap-3 shadow-sm"><div className={`w-10 h-10 rounded-xl ${bg} ${tone} flex items-center justify-center`}><Icon className="w-5 h-5" /></div><div><p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div></div>)}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -540,7 +557,7 @@ export default function TeacherCourseManagement() {
               <div className="col-span-3 p-12 text-center bg-white dark:bg-[#1e293b] border border-dashed border-gray-300 dark:border-slate-700 rounded-xl">
                 <BookOpen className="w-12 h-12 text-gray-300 dark:text-white mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-slate-700 dark:text-white">No Courses Found</h3>
-                <p className="text-[13px] text-gray-500 dark:text-white mt-1 mb-6">We couldn't find any courses matching your criteria.</p>
+                <p className="text-[13px] text-gray-500 dark:text-white mt-1 mb-6">We couldn&apos;t find any courses matching your criteria.</p>
                 {courses.length === 0 && (
                   <button onClick={() => openCourseModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 text-[13px] font-medium transition-colors">
                     <Plus className="w-4 h-4" /> Create Your First Course
@@ -581,7 +598,8 @@ export default function TeacherCourseManagement() {
                       <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] uppercase font-bold rounded">Live</span>
                     }
                   </div>
-                  <p className="text-[12px] text-gray-500 dark:text-white line-clamp-2 mb-3 flex-1">{c.description || "No description"}</p>
+                  <p className="text-[12px] text-gray-500 dark:text-slate-400 line-clamp-2 mb-3 flex-1">{c.description || "No description"}</p>
+                  <button onClick={() => handleCourseSelect(c)} className="w-full mb-3 h-9 rounded-lg bg-primary/10 dark:bg-primary/15 text-primary dark:text-blue-300 hover:bg-primary hover:text-white flex items-center justify-center gap-2 text-[11px] font-bold transition-colors"><Layout className="w-3.5 h-3.5" />Build Course Content</button>
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-slate-800/50 mt-auto">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-medium text-slate-600 dark:text-white bg-slate-100 px-2 py-1 rounded">{c.duration || "N/A"}</span>
@@ -628,7 +646,7 @@ export default function TeacherCourseManagement() {
           </div>
 
           <div className="space-y-4">
-            {modules.length === 0 && <p className="text-center text-gray-500 dark:text-white py-12 bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 border-dashed">No modules created yet. Click "Add Sub-Category" to start building your course.</p>}
+            {modules.length === 0 && <p className="text-center text-gray-500 dark:text-white py-12 bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 border-dashed">No modules created yet. Click &quot;Add Sub-Category&quot; to start building your course.</p>}
             
             {modules.map((mod, index) => (
               <div key={mod.id} className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">

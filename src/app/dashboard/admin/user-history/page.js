@@ -94,7 +94,7 @@ export default function UserHistorySummaryPage() {
       ) : filteredUsers.length === 0 ? (
         <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-12 text-center">
           <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-700">No Users Found</h3>
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">No Users Found</h3>
           <p className="text-[13px] text-gray-500 dark:text-white mt-1">Try adjusting your search criteria.</p>
         </div>
       ) : (
@@ -127,7 +127,7 @@ export default function UserHistorySummaryPage() {
                 <div className="pt-4 border-t border-gray-100 dark:border-slate-800/50 space-y-2 mt-auto">
                   <div className="flex items-center justify-between text-[12px]">
                     <span className="text-gray-500 dark:text-white flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> Last IP</span>
-                    <span className="font-medium text-slate-700">{user.last_ip || 'None'}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{user.last_ip || 'None'}</span>
                   </div>
                 </div>
               </div>

@@ -64,6 +64,13 @@ const fallbackSettings = {
   timetableHeading: "Plan your week with live classes and practice sessions.",
   timetableSubtitle: "Timetables help learners balance revision, live teaching, practical work, and assessments throughout the week.",
   faqHeading: "Questions students usually ask.",
+  heroStatOneValue: "6",
+  heroStatOneLabel: "Learner categories",
+  heroStatTwoValue: "24/7",
+  heroStatTwoLabel: "Resource access",
+  heroStatThreeValue: "Live",
+  heroStatThreeLabel: "Classes and exams",
+  feedbackHeading: "Learners trust focused, practical support.",
 };
 
 const courseTracks = [
@@ -338,7 +345,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-[#f8fafc]">
+      <main className="flex-1 bg-[#f8fafc] dark:bg-slate-900 transition-colors">
         <section className="pt-24 pb-14 px-6 bg-white dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800 overflow-hidden">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_1.4fr] gap-12 items-center">
             <div className="order-2 lg:order-1 flex justify-center">
@@ -352,7 +359,7 @@ export default function Home() {
                 <Sparkles className="w-4 h-4" />
                 {settings.heroBadge}
               </div>
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-950 leading-tight mb-6">
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-950 dark:text-white leading-tight mb-6">
                 {settings.heroTitle}
               </h1>
               <p className="text-slate-600 dark:text-white text-lg leading-8 max-w-2xl mb-4">
@@ -360,15 +367,19 @@ export default function Home() {
               </p>
 
               {settings.aitiDescription && (
-                <div className="p-4 my-5 rounded-xl bg-slate-50 dark:bg-slate-850/40 flex items-center gap-4 animate-in fade-in duration-300 max-w-2xl">
+                <div className="p-4 my-5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-700 flex items-center gap-4 animate-in fade-in duration-300 max-w-2xl">
                   {settings.aitiLogo && (
                     <img 
                       src={getFullImageUrl(settings.aitiLogo)} 
                       alt="AITI Logo" 
-                      className="h-11 w-auto object-contain shrink-0 max-w-[120px]" 
+                      style={{
+                        width: `${settings.aitiLogoWidth ?? 120}px`,
+                        height: `${settings.aitiLogoHeight ?? 44}px`
+                      }}
+                      className="object-contain shrink-0"
                     />
                   )}
-                  <p className="text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <p className={`text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed ${settings.aitiDescriptionBold ? "font-bold" : "font-normal"}`}>
                     {settings.aitiDescription}
                   </p>
                 </div>
@@ -391,16 +402,16 @@ export default function Home() {
 
               <div className="mt-8 grid sm:grid-cols-3 gap-3 max-w-2xl">
                 <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
-                  <p className="text-2xl font-bold text-slate-950">6</p>
-                  <p className="text-xs font-medium text-slate-500 dark:text-white">Learner categories</p>
+                  <p className="text-2xl font-bold text-slate-950 dark:text-white">{settings.heroStatOneValue}</p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-white">{settings.heroStatOneLabel}</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
-                  <p className="text-2xl font-bold text-slate-950">24/7</p>
-                  <p className="text-xs font-medium text-slate-500 dark:text-white">Resource access</p>
+                  <p className="text-2xl font-bold text-slate-950 dark:text-white">{settings.heroStatTwoValue}</p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-white">{settings.heroStatTwoLabel}</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
-                  <p className="text-2xl font-bold text-slate-950">Live</p>
-                  <p className="text-xs font-medium text-slate-500 dark:text-white">Classes and exams</p>
+                  <p className="text-2xl font-bold text-slate-950 dark:text-white">{settings.heroStatThreeValue}</p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-white">{settings.heroStatThreeLabel}</p>
                 </div>
               </div>
             </div>
@@ -412,7 +423,7 @@ export default function Home() {
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">Explore Courses</p>
-                <h2 className="text-3xl md:text-4xl font-bold text-slate-950">{settings.coursesHeading}</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-950 dark:text-white">{settings.coursesHeading}</h2>
                 {settings.coursesSubtitle && <p className="text-sm leading-6 text-slate-600 dark:text-white max-w-xl mt-3">{settings.coursesSubtitle}</p>}
               </div>
               <Link href="/home/e-book" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-slate-950">
@@ -429,7 +440,7 @@ export default function Home() {
                     <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
                       <TrackIcon className="w-5 h-5" />
                     </div>
-                    <h3 className="font-bold text-slate-950">{track.title}</h3>
+                    <h3 className="font-bold text-slate-950 dark:text-white">{track.title}</h3>
                     <p className="text-sm leading-6 text-slate-600 dark:text-white mt-3">{track.description}</p>
                   </Link>
                 );
@@ -464,7 +475,7 @@ export default function Home() {
           <div className="max-w-5xl mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-8 items-start">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">Why Techno-Hub</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-950 leading-tight">{settings.whyHeading}</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-950 dark:text-white leading-tight">{settings.whyHeading}</h2>
               <p className="text-slate-600 dark:text-white leading-7 mt-5">
                 {settings.whySubtitle}
               </p>
@@ -489,7 +500,7 @@ export default function Home() {
           <div className="max-w-5xl mx-auto grid lg:grid-cols-[0.8fr_1.2fr] gap-8 items-start">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">Timetables</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-950">{settings.timetableHeading}</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-950 dark:text-white">{settings.timetableHeading}</h2>
               <p className="text-slate-600 dark:text-white leading-7 mt-5">
                 {settings.timetableSubtitle}
               </p>
@@ -505,8 +516,8 @@ export default function Home() {
                       {slot.time}
                     </p>
                   </div>
-                  <h3 className="font-bold text-slate-950">{slot.title}</h3>
-                  <span className="inline-flex w-fit items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:text-white">
+                  <h3 className="font-bold text-slate-950 dark:text-white">{slot.title}</h3>
+                  <span className="inline-flex w-fit items-center rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-bold text-slate-600 dark:text-slate-100">
                     {slot.mode}
                   </span>
                 </div>
@@ -520,14 +531,14 @@ export default function Home() {
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-2">Student Feedback</p>
-                <h2 className="text-3xl md:text-4xl font-bold">Learners trust focused, practical support.</h2>
+                <h2 className="text-3xl md:text-4xl font-bold">{settings.feedbackHeading}</h2>
               </div>
               <MessageSquareQuote className="w-10 h-10 text-secondary" />
             </div>
 
             <div className="grid md:grid-cols-3 gap-5">
-              {feedback.map((item) => (
-                <article key={item.name} className="rounded-lg border border-slate-200 dark:border-white/15 bg-white dark:bg-[#1e293b]/10 p-5">
+              {(settings.feedbackItems || feedback).map((item, index) => (
+                <article key={`${item.name}-${index}`} className="rounded-lg border border-slate-200 dark:border-white/15 bg-white dark:bg-[#1e293b]/10 p-5">
                   <p className="text-sm leading-7 text-slate-700 dark:text-white/80">&ldquo;{item.quote}&rdquo;</p>
                   <div className="mt-5 pt-4 border-t border-slate-200 dark:border-white/10">
                     <h3 className="font-bold text-slate-900 dark:text-white">{item.name}</h3>
@@ -543,13 +554,13 @@ export default function Home() {
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-8">
               <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">FAQ</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-950">{settings.faqHeading}</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-950 dark:text-white">{settings.faqHeading}</h2>
             </div>
 
             <div className="grid gap-3">
-              {faqs.map((faq) => (
-                <details key={faq.question} className="group rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-5 open:bg-white dark:bg-[#1e293b] open:shadow-sm">
-                  <summary className="cursor-pointer list-none flex items-center justify-between gap-4 font-bold text-slate-950">
+              {(settings.faqItems || faqs).map((faq, index) => (
+                <details key={`${faq.question}-${index}`} className="group rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-5 open:bg-white dark:bg-[#1e293b] open:shadow-sm">
+                  <summary className="cursor-pointer list-none flex items-center justify-between gap-4 font-bold text-slate-950 dark:text-white">
                     {faq.question}
                     <span className="h-8 w-8 rounded-lg bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 flex items-center justify-center text-primary group-open:rotate-90 transition-transform">
                       <ArrowRight className="w-4 h-4" />
@@ -569,7 +580,7 @@ export default function Home() {
                 <CalendarDays className="w-4 h-4" />
                 Ready for the next class?
               </p>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-950">Start learning with Techno-Hub today.</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-950 dark:text-white">Start learning with Techno-Hub today.</h2>
             </div>
             <Link href="/register">
               <Button className="gap-2">

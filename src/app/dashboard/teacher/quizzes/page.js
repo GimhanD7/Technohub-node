@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Plus, Trash2, Calendar, ClipboardList, RefreshCw, Award, Users, Lock, Search, X, Zap, Clock, Archive, CheckCircle, AlertTriangle, Loader2, Filter, LayoutGrid, Edit
+  Plus, Trash2, Calendar, ClipboardList, RefreshCw, Award, Users, Lock, Search, X, Zap, Clock, Archive, CheckCircle, AlertTriangle, Loader2, Filter, LayoutGrid, Edit, MoreVertical
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -17,6 +17,7 @@ export default function TeacherQuizzesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [openActionMenu, setOpenActionMenu] = useState(null);
 
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -265,11 +266,14 @@ export default function TeacherQuizzesPage() {
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-        <div className="p-4 border-b border-gray-100 dark:border-slate-800/50 flex items-center justify-between bg-gray-50/30 dark:bg-slate-800/30 shrink-0">
+      <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40 shrink-0">
           <div className="flex items-center gap-2">
-            <ClipboardList className="w-4 h-4 text-gray-400 dark:text-white" />
-            <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">Quizzes List ({filteredQuizzes.length})</h3>
+            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><ClipboardList className="w-4 h-4" /></div>
+            <div>
+              <h3 className="text-[13px] font-bold text-slate-800 dark:text-white">Quiz library</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{filteredQuizzes.length} {filteredQuizzes.length === 1 ? "quiz" : "quizzes"} shown</p>
+            </div>
           </div>
           
           {selectedIds.length > 0 && (
@@ -288,11 +292,11 @@ export default function TeacherQuizzesPage() {
         </div>
 
         <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white sticky top-0 z-10">
+          <table className="w-full text-left border-collapse min-w-[900px]">
+            <thead className="bg-slate-50/90 dark:bg-slate-900/40">
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 sticky top-0 z-10">
 
-                <th className="py-3 px-5 font-bold">Quiz</th>
+                <th className="py-3.5 px-5 font-bold">Quiz details</th>
                 <th className="py-3 px-5 font-bold">Status</th>
                 <th className="py-3 px-5 font-bold hidden md:table-cell">Fee</th>
                 <th className="py-3 px-5 font-bold">Schedule</th>
@@ -301,10 +305,14 @@ export default function TeacherQuizzesPage() {
                 <th className="py-3 px-5 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="text-[13px] text-slate-600 dark:text-white divide-y divide-gray-100 dark:divide-slate-800/50">
+            <tbody className="text-[13px] text-slate-600 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800/70">
               {filteredQuizzes.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="py-12 text-center text-gray-500 dark:text-white italic">No quizzes found.</td>
+                  <td colSpan="8" className="py-20 text-center">
+                    <div className="mx-auto mb-3 h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center"><ClipboardList className="w-5 h-5" /></div>
+                    <p className="font-semibold text-slate-700 dark:text-slate-200">No quizzes found</p>
+                    <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">Try changing your search or status filter.</p>
+                  </td>
                 </tr>
               ) : (
                 filteredQuizzes.map(quiz => {
@@ -313,22 +321,28 @@ export default function TeacherQuizzesPage() {
                   const isSelected = selectedIds.includes(quiz.id);
 
                   return (
-                    <tr key={quiz.id} className={`hover:bg-gray-50/50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors ${isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
+                    <tr key={quiz.id} className={`group hover:bg-primary/[0.025] dark:hover:bg-primary/5 transition-colors ${isSelected ? 'bg-blue-50/70 dark:bg-blue-900/10' : 'bg-white dark:bg-[#1e293b]'}`}>
 
-                      <td className="py-3 px-5">
-                        <div className="font-medium text-slate-800 dark:text-white">{quiz.title}</div>
-                        <div className="text-[11px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">Exam #{quiz.id}</div>
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 text-primary flex items-center justify-center font-bold text-[13px]">Q</div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-800 dark:text-white truncate max-w-[260px]">{quiz.title}</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-1">QUIZ-{String(quiz.id).padStart(4, "0")}</div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="py-3 px-5">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${meta.bg} ${meta.text} ${meta.border}`}>
+                      <td className="py-4 px-5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${meta.bg} ${meta.text} ${meta.border}`}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
                           {meta.label}
                         </span>
                       </td>
-                      <td className="py-3 px-5 hidden md:table-cell">
+                      <td className="py-4 px-5 hidden md:table-cell">
                         {hasFee ? (
-                          <span className="text-[12px] font-medium text-amber-600 dark:text-amber-400">LKR {parseFloat(quiz.fee).toFixed(2)}</span>
+                          <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-[11px] font-semibold text-amber-700 dark:text-amber-400">LKR {parseFloat(quiz.fee).toFixed(2)}</span>
                         ) : (
-                          <span className="text-[12px] font-medium text-green-600 dark:text-green-400">Free</span>
+                          <span className="inline-flex px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Free</span>
                         )}
                       </td>
                       <td className="py-3 px-5">
@@ -339,7 +353,7 @@ export default function TeacherQuizzesPage() {
                         <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 ml-5">to {quiz.endTime ? new Date(quiz.endTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</div>
                       </td>
                       <td className="py-3 px-5 hidden lg:table-cell">
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 rounded text-[11px] font-medium border border-gray-200 dark:border-slate-700">
+                        <span className="inline-flex px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-[11px] font-semibold">
                           {quiz.questionCount} Qs
                         </span>
                       </td>
@@ -347,41 +361,18 @@ export default function TeacherQuizzesPage() {
                         {quiz.creatorName || "Staff"}
                       </td>
                       <td className="py-3 px-5">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Link href={`/dashboard/teacher/quiz-standings?id=${quiz.id}`} className="p-1.5 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 rounded transition-colors" title="View Standings">
-                            <Award className="w-4 h-4" />
-                          </Link>
-                          
-                          <Link href={`/dashboard/teacher/quiz-submissions?id=${quiz.id}`} className="p-1.5 text-purple-500 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 rounded transition-colors" title="View Participants">
-                            <Users className="w-4 h-4" />
-                          </Link>
-
-                          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
-
-                          {quiz._status === "past" || quiz._status === "active" ? (
-                            <button disabled className="p-1.5 text-gray-400 cursor-not-allowed" title="Past and active quizzes cannot be edited">
-                              <Lock className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <Link href={`/dashboard/teacher/quizzes/edit?id=${quiz.id}`} className="p-1.5 text-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 rounded transition-colors" title="Edit Quiz">
-                              <Edit className="w-4 h-4" />
-                            </Link>
-                          )}
-
-                          {quiz._status === "past" ? (
-                            <button disabled className="p-1.5 text-gray-400 cursor-not-allowed" title="Past quizzes cannot be deleted">
-                              <Lock className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => handleDeleteQuiz(quiz.id)} 
-                              disabled={isDeletingId === quiz.id}
-                              className="p-1.5 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded transition-colors disabled:opacity-50" 
-                              title="Delete Quiz"
-                            >
-                              {isDeletingId === quiz.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                            </button>
-                          )}
+                        <div className="relative flex justify-end">
+                          <button onClick={() => setOpenActionMenu(openActionMenu === quiz.id ? null : quiz.id)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary/40 hover:text-primary hover:bg-primary/5" aria-label={`Open actions for ${quiz.title}`}><MoreVertical className="w-4 h-4" /></button>
+                          {openActionMenu === quiz.id && <>
+                            <button className="fixed inset-0 z-20 cursor-default" onClick={() => setOpenActionMenu(null)} aria-label="Close actions" />
+                            <div className="absolute right-0 top-11 z-30 w-52 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl">
+                              <Link onClick={() => setOpenActionMenu(null)} href={`/dashboard/teacher/quiz-standings?id=${quiz.id}`} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Award className="w-4 h-4 text-blue-500" />View standings</Link>
+                              <Link onClick={() => setOpenActionMenu(null)} href={`/dashboard/teacher/quiz-submissions?id=${quiz.id}`} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Users className="w-4 h-4 text-purple-500" />View participants</Link>
+                              {quiz._status !== "past" && quiz._status !== "active" && <Link onClick={() => setOpenActionMenu(null)} href={`/dashboard/teacher/quizzes/edit?id=${quiz.id}`} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Edit className="w-4 h-4 text-amber-500" />Edit quiz</Link>}
+                              {quiz._status !== "past" && <button onClick={() => { setOpenActionMenu(null); handleDeleteQuiz(quiz.id); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 className="w-4 h-4" />Delete quiz</button>}
+                              {(quiz._status === "past" || quiz._status === "active") && <div className="px-3 py-2 text-[10px] text-slate-400 flex items-center gap-2"><Lock className="w-3.5 h-3.5" />Editing unavailable</div>}
+                            </div>
+                          </>}
                         </div>
                       </td>
                     </tr>

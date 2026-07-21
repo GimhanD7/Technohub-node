@@ -28,8 +28,18 @@ exports.getTeachers = async (req, res) => {
 // --- CATEGORIES ---
 exports.getCategories = async (req, res) => {
   try {
-    const categories = await prisma.course_categories.findMany({ orderBy: { name: 'asc' } });
-    res.json({ success: true, categories });
+    const categories = await prisma.course_categories.findMany({
+      include: { _count: { select: { courses: true } } },
+      orderBy: { name: 'asc' }
+    });
+    res.json({
+      success: true,
+      categories: categories.map(category => ({
+        ...category,
+        course_count: category._count.courses,
+        _count: undefined
+      }))
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

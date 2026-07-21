@@ -106,7 +106,7 @@ export default function Navbar() {
           </button>
           {user ? (
             <div className="flex items-center gap-4">
-              <span className="text-xs font-medium text-slate-600 hidden sm:inline">Hi, {user.full_name.split(' ')[0]}</span>
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300 hidden sm:inline">Hi, {user.full_name.split(' ')[0]}</span>
               <Link href={user.role === 'admin' ? '/dashboard/admin' : user.role === 'teacher' ? '/dashboard/teacher' : '/dashboard/student'}>
                 <Button size="sm">Dashboard</Button>
               </Link>

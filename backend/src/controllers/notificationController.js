@@ -76,11 +76,16 @@ exports.getNotifications = async (req, res) => {
 
       return {
         ...n,
-        is_read: isRead ? 1 : 0
+        is_read: isRead ? 1 : 0,
+        is_unread: !isRead
       };
     });
 
-    res.json({ success: true, notifications: formatted });
+    const unreadCount = formatted.reduce((count, notification) => (
+      count + (notification.is_unread ? 1 : 0)
+    ), 0);
+
+    res.json({ success: true, notifications: formatted, unread_count: unreadCount });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -128,5 +133,36 @@ exports.deleteNotification = async (req, res) => {
     res.json({ success: true, message: "Notification deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to delete notification: " + error.message });
+  }
+};
+
+exports.bulkDeleteNotifications = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: "Select at least one notification to delete." });
+    }
+
+    if (ids.length > 200) {
+      return res.status(400).json({ success: false, message: "A maximum of 200 notifications can be deleted at once." });
+    }
+
+    const notificationIds = [...new Set(ids.map(Number))].filter(id => Number.isInteger(id) && id > 0);
+    if (notificationIds.length === 0 || ids.some(id => !Number.isInteger(Number(id)) || Number(id) <= 0)) {
+      return res.status(400).json({ success: false, message: "One or more notification IDs are invalid." });
+    }
+
+    const result = await prisma.notifications.deleteMany({
+      where: { id: { in: notificationIds } }
+    });
+
+    res.json({
+      success: true,
+      deletedCount: result.count,
+      message: `${result.count} notification${result.count === 1 ? '' : 's'} deleted successfully.`
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to delete notifications: " + error.message });
   }
 };

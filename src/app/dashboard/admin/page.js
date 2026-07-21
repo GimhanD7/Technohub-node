@@ -1,281 +1,164 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Shield, Database, Users, Activity, TrendingUp, MoreVertical, BookOpen, GraduationCap, DollarSign, Loader2, ArrowUpRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  Activity,
+  ArrowRight,
+  Bell,
+  BookOpen,
+  CheckCircle2,
+  CircleDollarSign,
+  ClipboardList,
+  Clock3,
+  GraduationCap,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  Settings,
+  ShieldCheck,
+  TriangleAlert,
+  UserPlus,
+  Users,
+  Video,
+  Wallet,
+} from "lucide-react";
 import { fetchApi } from "@/lib/api";
 
-/* ---------- shared style tokens ---------- */
-const ACCENTS = {
-  blue: { bar: "bg-blue-500", badgeBg: "bg-blue-50 dark:bg-blue-500/10", icon: "text-blue-600 dark:text-blue-400", fill: "#3b82f6" },
-  emerald: { bar: "bg-emerald-500", badgeBg: "bg-emerald-50 dark:bg-emerald-500/10", icon: "text-emerald-600 dark:text-emerald-400", fill: "#10b981" },
-  violet: { bar: "bg-violet-500", badgeBg: "bg-violet-50 dark:bg-violet-500/10", icon: "text-violet-600 dark:text-violet-400", fill: "#8b5cf6" },
-  amber: { bar: "bg-amber-500", badgeBg: "bg-amber-50 dark:bg-amber-500/10", icon: "text-amber-600 dark:text-amber-400", fill: "#f59e0b" },
-  rose: { bar: "bg-rose-500", badgeBg: "bg-rose-50 dark:bg-rose-500/10", icon: "text-rose-600 dark:text-rose-400", fill: "#f43f5e" },
+const metricCards = [
+  { key: "total_students", label: "Students", helper: "Registered learners", icon: GraduationCap, color: "blue" },
+  { key: "active_teachers", label: "Active teachers", helper: "Available instructors", icon: Users, color: "emerald" },
+  { key: "total_courses", label: "Published courses", helper: "Currently active", icon: BookOpen, color: "violet" },
+  { key: "total_revenue", label: "Approved revenue", helper: "Lifetime wallet credits", icon: CircleDollarSign, color: "amber", currency: true },
+];
+
+const colorStyles = {
+  blue: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+  violet: "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
+  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
 };
 
-const ROLE_COLORS = {
-  admin: "bg-rose-500",
-  teacher: "bg-emerald-500",
-  student: "bg-blue-500",
-};
+const quickActions = [
+  { label: "Add a teacher", href: "/dashboard/admin/teachers", icon: UserPlus },
+  { label: "Build a course", href: "/dashboard/admin/courses", icon: BookOpen },
+  { label: "Schedule a class", href: "/dashboard/admin/online-classes/create", icon: Video },
+  { label: "Create a quiz", href: "/dashboard/admin/quizzes/create", icon: ClipboardList },
+  { label: "Send notification", href: "/dashboard/admin/notifications", icon: Send },
+  { label: "System settings", href: "/dashboard/admin/settings", icon: Settings },
+];
 
-function StatCard({ accent, label, icon: Icon, footer, children }) {
-  const c = ACCENTS[accent];
-  return (
-    <div className="group relative bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-      <div className={`absolute top-0 left-0 right-0 h-[3px] ${c.bar}`} />
-      <div className="p-5 pt-[22px]">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-[10.5px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-[0.08em]">{label}</h3>
-          <div className={`w-8 h-8 rounded-lg ${c.badgeBg} flex items-center justify-center shrink-0`}>
-            <Icon className={`w-4 h-4 ${c.icon}`} strokeWidth={2.25} />
-          </div>
-        </div>
-
-        {children}
-
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800/70 text-[11px] text-gray-400 dark:text-slate-500 flex items-center justify-between">
-          <span>{footer}</span>
-          <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />
-        </div>
-      </div>
-    </div>
-  );
+function formatRelativeTime(value) {
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
+  if (seconds < 60) return "Just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return new Date(value).toLocaleDateString();
 }
 
 export default function AdminDashboard() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem("techno_hub_user");
-    if (savedUser) setUser(JSON.parse(savedUser));
-
-    const loadStats = async () => {
-      const data = await fetchApi("/dashboard/admin_stats");
-      if (data.success) {
-        setStats(data.stats);
-      }
-      setIsLoading(false);
-    };
-
-    loadStats();
+  const loadDashboard = useCallback(async (refresh = false) => {
+    if (refresh) setIsRefreshing(true);
+    const data = await fetchApi("/dashboard/admin_stats", { showToast: false });
+    if (data.success) setStats(data.stats);
+    setIsLoading(false);
+    setIsRefreshing(false);
   }, []);
 
-  if (!user || isLoading) {
-    return (
-      <div className="h-[80vh] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-        <p className="text-[12px] font-mono text-gray-400 tracking-wide">loading_dashboard.exe</p>
-      </div>
-    );
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const savedUser = localStorage.getItem("techno_hub_user");
+      if (savedUser) setUser(JSON.parse(savedUser));
+      loadDashboard();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadDashboard]);
+
+  const attentionItems = useMemo(() => [
+    { label: "Wallet approvals", value: stats?.pending_wallet_approvals || 0, href: "/dashboard/admin/wallet", icon: Wallet, tone: "amber" },
+    { label: "Teacher messages", value: stats?.unresolved_teacher_messages || 0, href: "/dashboard/admin/teacher-messages", icon: MessageSquare, tone: "blue" },
+    { label: "Upcoming classes", value: stats?.upcoming_classes || 0, href: "/dashboard/admin/online-classes", icon: Clock3, tone: "violet" },
+    { label: "Active quizzes", value: stats?.active_quizzes || 0, href: "/dashboard/admin/quizzes", icon: ClipboardList, tone: "emerald" },
+  ], [stats]);
+
+  if (isLoading || !user) {
+    return <div className="h-[70vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  const roleSummary = stats?.role_summary || [];
-  const roleTotal = roleSummary.reduce((sum, r) => sum + (r.count || 0), 0);
-
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-
-      {/* Top Banner Area */}
-      <div className="relative text-center py-8 mb-2 rounded-2xl overflow-hidden bg-gradient-to-b from-blue-50/60 to-transparent dark:from-blue-500/[0.04] dark:to-transparent border border-blue-100/70 dark:border-slate-800">
-        {/* dot-grid texture */}
-        <div
-          className="absolute inset-0 opacity-[0.35] dark:opacity-[0.15] pointer-events-none"
-          style={{
-            backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)",
-            backgroundSize: "18px 18px",
-            color: "#93c5fd",
-            maskImage: "radial-gradient(ellipse 60% 100% at 50% 0%, black 40%, transparent 100%)",
-            WebkitMaskImage: "radial-gradient(ellipse 60% 100% at 50% 0%, black 40%, transparent 100%)",
-          }}
-        />
-        <div className="relative">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded-full text-[11px] font-medium font-mono text-gray-500 dark:text-slate-300 mb-4 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            system.status: online
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-primary/80 p-6 sm:p-8 text-white shadow-xl">
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-emerald-200 mb-4">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" /> Platform operational
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome back, {user.full_name}</h1>
+            <p className="mt-2 max-w-2xl text-[13px] sm:text-sm text-slate-300">Monitor learning operations, resolve pending work, and manage the platform from one place.</p>
           </div>
-          <h1 className="text-[24px] font-semibold text-slate-800 dark:text-white mb-2 tracking-tight">Techno-Hub Admin Dashboard</h1>
-          <p className="text-[13px] text-gray-500 dark:text-slate-400 max-w-xl mx-auto">
-            Welcome back, <span className="font-medium text-slate-700 dark:text-slate-200">{user.full_name}</span>. Here's what's happening on your platform today.
-          </p>
+          <button onClick={() => loadDashboard(true)} disabled={isRefreshing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-[12px] font-semibold hover:bg-white/15 disabled:opacity-60 transition-colors shrink-0">
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /> Refresh overview
+          </button>
         </div>
-      </div>
+      </section>
 
-      {/* Top Cards (4 cols) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        {/* Card 1: Total Students */}
-        <StatCard accent="blue" label="Total Students" icon={GraduationCap} footer="Registered on the platform">
-          <div className="flex items-end justify-between gap-1 h-12 mb-4">
-            <div className="w-full bg-blue-500/80 rounded-sm h-[40%]"></div>
-            <div className="w-full bg-blue-500/80 rounded-sm h-[50%]"></div>
-            <div className="w-full bg-blue-500/80 rounded-sm h-[60%]"></div>
-            <div className="w-full bg-blue-500/80 rounded-sm h-[80%]"></div>
-            <div className="w-full bg-blue-500 rounded-sm h-[100%]"></div>
-            <div className="w-full bg-blue-500/80 rounded-sm h-[70%]"></div>
-          </div>
-          <p className="text-[11px] text-gray-400 dark:text-slate-500 mb-1">Total</p>
-          <h2 className="text-[26px] font-bold font-mono text-slate-800 dark:text-white tracking-tight leading-none">
-            {stats?.total_students || 0}
-          </h2>
-        </StatCard>
-
-        {/* Card 2: Active Teachers */}
-        <StatCard accent="emerald" label="Active Teachers" icon={Users} footer="Managing the courses">
-          <h2 className="text-[30px] font-bold font-mono text-slate-800 dark:text-white tracking-tight leading-none mb-1">
-            {stats?.active_teachers || 0}
-          </h2>
-          <p className="text-[11px] text-gray-400 dark:text-slate-500 mb-4">Currently active</p>
-
-          <div className="w-full bg-emerald-100 dark:bg-slate-800 rounded-full h-2 mb-3 overflow-hidden">
-            <div className="bg-emerald-500 h-2 rounded-full w-full"></div>
-          </div>
-
-          <div className="flex justify-between text-[11px] text-gray-500 dark:text-slate-400">
-            <span>Assigned</span>
-            <span className="font-semibold text-slate-800 dark:text-white font-mono">to courses</span>
-          </div>
-        </StatCard>
-
-        {/* Card 3: Total Courses */}
-        <StatCard accent="violet" label="Total Courses" icon={BookOpen} footer="Available to students">
-          <div className="flex justify-center items-center h-[90px] mb-1">
-            <div
-              className="w-[88px] h-[88px] rounded-full overflow-hidden flex relative"
-              style={{ background: "conic-gradient(#8b5cf6 0% 40%, #10b981 40% 65%, #f43f5e 65% 85%, #3b82f6 85% 100%)" }}
-            >
-              <div className="absolute inset-2 bg-white dark:bg-[#1e293b] rounded-full flex items-center justify-center">
-                <span className="font-bold font-mono text-xl text-slate-800 dark:text-white">{stats?.total_courses || 0}</span>
-              </div>
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {metricCards.map(({ key, label, helper, icon: Icon, color, currency }) => (
+          <div key={key} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</p><p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{currency ? `LKR ${Number(stats?.[key] || 0).toLocaleString()}` : Number(stats?.[key] || 0).toLocaleString()}</p><p className="mt-1 text-[11px] text-slate-400">{helper}</p></div>
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${colorStyles[color]}`}><Icon className="w-5 h-5" /></div>
             </div>
           </div>
-        </StatCard>
+        ))}
+      </section>
 
-        {/* Card 4: Total Revenue */}
-        <StatCard accent="amber" label="Total Revenue" icon={DollarSign} footer="Lifetime approved top-ups">
-          <div className="h-12 mb-4 relative overflow-hidden">
-            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-              <path d="M0,80 Q25,70 50,60 T100,30 L100,100 L0,100 Z" fill="#fef3c7" opacity="0.5" />
-              <path d="M0,80 Q25,70 50,60 T100,30" fill="none" stroke="#f59e0b" strokeWidth="2.5" />
-            </svg>
+      <section className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-6">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"><div><h2 className="text-[15px] font-bold text-slate-900 dark:text-white">Needs attention</h2><p className="text-[11px] text-slate-500 mt-0.5">Current operational workload</p></div><ShieldCheck className="w-5 h-5 text-primary" /></div>
+          <div className="grid sm:grid-cols-2">
+            {attentionItems.map(({ label, value, href, icon: Icon, tone }, index) => (
+              <Link key={label} href={href} className={`group flex items-center gap-4 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${index % 2 === 0 ? "sm:border-r border-slate-100 dark:border-slate-800" : ""} ${index < 2 ? "border-b border-slate-100 dark:border-slate-800" : ""}`}>
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${colorStyles[tone]}`}><Icon className="w-5 h-5" /></div>
+                <div className="flex-1"><p className="text-[12px] text-slate-500 dark:text-slate-400">{label}</p><p className="text-xl font-bold text-slate-900 dark:text-white">{value}</p></div>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+              </Link>
+            ))}
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-slate-500 mb-1">Total Wallets</p>
-          <h2 className="text-[19px] font-bold font-mono text-slate-800 dark:text-white tracking-tight">
-            LKR {parseFloat(stats?.total_revenue || 0).toLocaleString()}
-          </h2>
-        </StatCard>
-
-      </div>
-
-      {/* Bottom Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Left Table (2/3 width) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[14px] font-bold text-slate-800 dark:text-white">Recent Registrations</h3>
-            <span className="text-[10.5px] font-mono text-gray-400 dark:text-slate-500 uppercase tracking-wide">
-              {stats?.recent_users?.length || 0} entries
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[500px]">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-400 dark:text-slate-500">
-                  <th className="pb-3 font-semibold">User</th>
-                  <th className="pb-3 font-semibold">Role</th>
-                  <th className="pb-3 font-semibold">Date</th>
-                  <th className="pb-3 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody className="text-[13px] text-slate-600 dark:text-slate-300">
-                {stats?.recent_users?.map((u, i) => (
-                  <tr key={u.id || i} className="border-b border-gray-100 dark:border-slate-800/50 hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3.5 flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${u.role === 'admin' ? 'bg-rose-100 text-rose-600' :
-                        u.role === 'teacher' ? 'bg-violet-100 text-violet-600' :
-                          'bg-blue-100 text-blue-600'
-                        }`}>
-                        {u.full_name?.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-800 dark:text-white">{u.full_name}</p>
-                        <p className="text-[11px] text-gray-400 dark:text-slate-500 font-mono">{u.index_number || u.email}</p>
-                      </div>
-                    </td>
-                    <td className="py-3.5 capitalize">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${ROLE_COLORS[u.role] || "bg-gray-400"}`}></span>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-3.5 text-[12px] font-mono text-gray-500 dark:text-slate-400">
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${u.status === 'active'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
-                        : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
-                        }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                        {u.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {(!stats?.recent_users || stats.recent_users.length === 0) && (
-                  <tr>
-                    <td colSpan="4" className="py-8 text-center text-gray-500 dark:text-slate-500">No recent users found.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
+          <Link href="/dashboard/admin/sms-logs" className={`flex items-center gap-3 px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 text-[12px] font-medium ${stats?.failed_sms_today > 0 ? "text-red-600 bg-red-50/60 dark:bg-red-950/10" : "text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/10"}`}>
+            {stats?.failed_sms_today > 0 ? <TriangleAlert className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+            {stats?.failed_sms_today > 0 ? `${stats.failed_sms_today} SMS deliveries failed today` : "No SMS delivery failures today"}
+            <ArrowRight className="w-4 h-4 ml-auto" />
+          </Link>
         </div>
 
-        {/* Right Details Panel (1/3 width) */}
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
-            <h3 className="text-[14px] font-bold text-slate-800 dark:text-white mb-6">User Roles Summary</h3>
-
-            {roleSummary.length > 0 ? (
-              <div className="space-y-4">
-                {roleSummary.map((roleStat, i) => {
-                  const pct = roleTotal > 0 ? Math.round((roleStat.count / roleTotal) * 100) : 0;
-                  const color = ROLE_COLORS[roleStat.role] || "bg-gray-400";
-                  return (
-                    <div key={i}>
-                      <div className="flex justify-between items-baseline mb-1.5">
-                        <span className="text-[12px] capitalize text-slate-600 dark:text-slate-300">{roleStat.role}</span>
-                        <span className="text-[13px] font-bold font-mono text-slate-800 dark:text-white">{roleStat.count}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className={`h-1.5 rounded-full ${color} transition-all duration-500`}
-                          style={{ width: `${pct}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="py-4 text-center text-gray-500 dark:text-slate-500 text-[13px]">No data available.</p>
-            )}
-
-            <p className="text-[10px] text-gray-400 dark:text-slate-500 text-right mt-6 font-mono">updated just now</p>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4"><div><h2 className="text-[15px] font-bold text-slate-900 dark:text-white">Quick actions</h2><p className="text-[11px] text-slate-500 mt-0.5">Common administration tasks</p></div><Bell className="w-5 h-5 text-slate-400" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            {quickActions.map(({ label, href, icon: Icon }) => <Link key={label} href={href} className="group rounded-xl border border-slate-200 dark:border-slate-700 p-3 hover:border-primary/40 hover:bg-primary/[0.035] transition-colors"><Icon className="w-4 h-4 text-primary mb-2" /><span className="text-[12px] font-semibold text-slate-700 dark:text-slate-200 group-hover:text-primary">{label}</span></Link>)}
           </div>
         </div>
+      </section>
 
-      </div>
+      <section className="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-6">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"><div><h2 className="text-[15px] font-bold text-slate-900 dark:text-white">Recent registrations</h2><p className="text-[11px] text-slate-500 mt-0.5">Latest users joining the platform</p></div><Link href="/dashboard/admin/users" className="text-[11px] font-semibold text-primary hover:underline">View users</Link></div>
+          <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-left"><thead className="bg-slate-50 dark:bg-slate-800/60 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">User</th><th className="px-5 py-3">Role</th><th className="px-5 py-3">Joined</th><th className="px-5 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{(stats?.recent_users || []).map(person => <tr key={person.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"><td className="px-5 py-3.5"><p className="text-[13px] font-semibold text-slate-800 dark:text-white">{person.full_name}</p><p className="text-[10px] text-slate-400">{person.index_number || person.email || "No identifier"}</p></td><td className="px-5 py-3.5 text-[12px] capitalize text-slate-600 dark:text-slate-300">{person.role}</td><td className="px-5 py-3.5 text-[11px] text-slate-500">{new Date(person.created_at).toLocaleDateString()}</td><td className="px-5 py-3.5"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold capitalize ${person.status === "active" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-50 text-amber-700"}`}>{person.status}</span></td></tr>)}</tbody></table></div>
+        </div>
 
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"><div><h2 className="text-[15px] font-bold text-slate-900 dark:text-white">Recent activity</h2><p className="text-[11px] text-slate-500 mt-0.5">Latest audited system actions</p></div><Activity className="w-5 h-5 text-primary" /></div>
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">{(stats?.recent_activity || []).map(item => <div key={item.id} className="px-5 py-3.5 flex gap-3"><div className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><p className="text-[12px] font-semibold text-slate-800 dark:text-white truncate">{item.action}</p><span className="text-[10px] text-slate-400 whitespace-nowrap">{formatRelativeTime(item.created_at)}</span></div><p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{item.user_name}{item.details ? ` · ${item.details}` : ""}</p></div></div>)}{(!stats?.recent_activity || stats.recent_activity.length === 0) && <p className="p-8 text-center text-[12px] text-slate-500">No recent activity available.</p>}</div>
+          <Link href="/dashboard/admin/history" className="flex items-center justify-center gap-2 px-5 py-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-primary hover:bg-primary/[0.035]">Open system history <ArrowRight className="w-3.5 h-3.5" /></Link>
+        </div>
+      </section>
     </div>
   );
 }

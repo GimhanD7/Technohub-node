@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BookOpen, Users, GraduationCap, ClipboardList, TrendingUp, DollarSign } from "lucide-react";
+import Link from "next/link";
 
 export default function TeacherDashboard() {
    const [user, setUser] = useState(null);
@@ -64,6 +65,20 @@ export default function TeacherDashboard() {
                })()}
             </h1>
             <p className="text-[13px] text-gray-500 dark:text-white max-w-xl mx-auto">Manage your classes, track student progress, and grade assignments efficiently through our new structured interface.</p>
+         </div>
+
+         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+               { label: "My Courses", helper: "Build course content", href: "/dashboard/teacher/courses", icon: BookOpen, tone: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+               { label: "Quiz Management", helper: "Create and review", href: "/dashboard/teacher/quizzes", icon: ClipboardList, tone: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
+               { label: "Online Classes", helper: "Manage live teaching", href: "/dashboard/teacher/online-classes", icon: GraduationCap, tone: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
+               { label: "Earnings", helper: "View performance", href: "/dashboard/teacher/earnings", icon: TrendingUp, tone: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+            ].map(({ label, helper, href, icon: Icon, tone, bg }) => (
+               <Link key={label} href={href} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 shadow-sm hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 transition-all flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-lg ${bg} ${tone} flex items-center justify-center shrink-0`}><Icon className="w-4 h-4" /></div>
+                  <div className="min-w-0"><p className="text-[12px] font-bold text-slate-800 dark:text-white truncate">{label}</p><p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{helper}</p></div>
+               </Link>
+            ))}
          </div>
 
          {/* Top Cards (4 cols) */}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { BookOpen, Loader2, PlayCircle, Star, Image as ImageIcon, Clock, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BookOpen, Loader2, PlayCircle, Star, Image as ImageIcon, Clock, Search, CheckCircle2, TrendingUp, Library } from "lucide-react";
 import { fetchApi, BASE_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
@@ -11,6 +11,7 @@ export default function StudentMyCourses() {
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [progressFilter, setProgressFilter] = useState("all");
 
   const loadMyCourses = useCallback(async (studentId) => {
     setIsLoading(true);
@@ -36,6 +37,17 @@ export default function StudentMyCourses() {
     return () => window.clearTimeout(loadTimer);
   }, [loadMyCourses, router]);
 
+  const filteredCourses = useMemo(() => courses.filter(course => {
+    const progress = Number(course.progress_percentage || 0);
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || course.teacher_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesProgress = progressFilter === "all" || (progressFilter === "completed" ? progress >= 100 : progress < 100);
+    return matchesSearch && matchesProgress;
+  }), [courses, searchQuery, progressFilter]);
+
+  const completedCount = courses.filter(course => Number(course.progress_percentage || 0) >= 100).length;
+  const inProgressCount = courses.length - completedCount;
+  const averageProgress = courses.length ? Math.round(courses.reduce((total, course) => total + Number(course.progress_percentage || 0), 0) / courses.length) : 0;
+
   if (isLoading && courses.length === 0) {
     return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>;
   }
@@ -47,7 +59,17 @@ export default function StudentMyCourses() {
         <p className="text-[13px] text-gray-500 dark:text-white mt-1">Pick up right where you left off.</p>
       </div>
 
-      <div className="relative">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: "Enrolled", value: courses.length, icon: Library, tone: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+          { label: "In Progress", value: inProgressCount, icon: TrendingUp, tone: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
+          { label: "Completed", value: completedCount, icon: CheckCircle2, tone: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+          { label: "Average Progress", value: `${averageProgress}%`, icon: BookOpen, tone: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
+        ].map(({ label, value, icon: Icon, tone, bg }) => <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 flex items-center gap-3 shadow-sm"><div className={`w-10 h-10 rounded-xl ${bg} ${tone} flex items-center justify-center`}><Icon className="w-5 h-5" /></div><div><p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div></div>)}
+      </div>
+
+      <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-3 flex flex-col sm:flex-row gap-3">
+       <div className="relative flex-1">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-4 w-4 text-gray-400" />
         </div>
@@ -58,6 +80,9 @@ export default function StudentMyCourses() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl leading-5 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
         />
+       </div>
+       <select value={progressFilter} onChange={event => setProgressFilter(event.target.value)} className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-xs font-semibold text-slate-600 dark:text-slate-200 outline-none focus:border-primary"><option value="all">All progress</option><option value="progress">In progress</option><option value="completed">Completed</option></select>
+       {(searchQuery || progressFilter !== "all") && <button onClick={() => { setSearchQuery(""); setProgressFilter("all"); }} className="h-10 px-3 text-xs font-semibold text-slate-500 dark:text-slate-300 hover:text-red-500">Clear filters</button>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -74,18 +99,12 @@ export default function StudentMyCourses() {
             </button>
           </div>
         ) : (
-          courses.filter(course => 
-            course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            course.teacher_name?.toLowerCase().includes(searchQuery.toLowerCase())
-          ).length === 0 ? (
+          filteredCourses.length === 0 ? (
             <div className="col-span-1 md:col-span-2 lg:col-span-3 py-12 text-center text-gray-500 dark:text-gray-400">
               No courses found matching &quot;{searchQuery}&quot;
             </div>
           ) : (
-            courses.filter(course => 
-              course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-              course.teacher_name?.toLowerCase().includes(searchQuery.toLowerCase())
-            ).map(course => {
+            filteredCourses.map(course => {
               const enrolledDate = new Date(course.enrolled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
               const progress = Number(course.progress_percentage || 0);
               const completedLessons = Number(course.completed_materials || 0);

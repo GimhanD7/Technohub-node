@@ -2,7 +2,7 @@
 
 import { toast } from "react-hot-toast";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { Users, Trash2, BookOpen, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Ban, CheckCircle2, Upload } from "lucide-react";
+import { Users, BookOpen, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Ban, CheckCircle2, Upload, MoreVertical, ArrowUpDown, UserCheck, Layers3 } from "lucide-react";
 import { fetchApi, API_BASE_URL, BASE_URL } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 import { digitsOnly, getEmailError, getPasswordError, getPhoneError, normalizeEmail } from "@/lib/validation";
@@ -14,8 +14,12 @@ export default function TeacherManagement() {
 
   // Filters & Pagination
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [subjectFilter, setSubjectFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState({ key: "full_name", direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 10;
+  const [usersPerPage, setUsersPerPage] = useState(10);
+  const [openActionMenu, setOpenActionMenu] = useState(null);
 
   // Modals & Dialogs
   const [showAddModal, setShowAddModal] = useState(false);
@@ -94,21 +98,48 @@ export default function TeacherManagement() {
     }
   }, []);
 
+  const subjects = useMemo(() => [...new Set(users.map(user => user.subject?.trim()).filter(Boolean))].sort(), [users]);
+
+  const teacherCounts = useMemo(() => ({
+    total: users.length,
+    active: users.filter(user => user.status !== "suspended").length,
+    suspended: users.filter(user => user.status === "suspended").length,
+    subjects: subjects.length,
+  }), [users, subjects]);
+
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
-      return (u.full_name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filtered = users.filter(u => {
+      const matchesSearch = (u.full_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
              (u.phone_number || "").includes(searchQuery) ||
+             (u.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
              (u.subject || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
              (u.index_number || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? u.status !== "suspended" : u.status === "suspended");
+      const matchesSubject = subjectFilter === "all" || u.subject === subjectFilter;
+      return matchesSearch && matchesStatus && matchesSubject;
     });
-  }, [users, searchQuery]);
+
+    return filtered.sort((first, second) => {
+      const firstValue = String(first[sortConfig.key] || "").toLowerCase();
+      const secondValue = String(second[sortConfig.key] || "").toLowerCase();
+      const result = firstValue.localeCompare(secondValue, undefined, { numeric: true });
+      return sortConfig.direction === "asc" ? result : -result;
+    });
+  }, [users, searchQuery, statusFilter, subjectFilter, sortConfig]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / usersPerPage));
   const currentUsers = filteredUsers.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter, subjectFilter, usersPerPage]);
+
+  const handleSort = (key) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  };
 
 
   const handleToggleStatus = (user) => {
@@ -271,18 +302,41 @@ export default function TeacherManagement() {
         </div>
       </div>
 
+      {/* Teacher Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: "Total Teachers", value: teacherCounts.total, icon: Users, tone: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-50 dark:bg-blue-500/10" },
+          { label: "Active", value: teacherCounts.active, icon: UserCheck, tone: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-50 dark:bg-emerald-500/10" },
+          { label: "Suspended", value: teacherCounts.suspended, icon: Ban, tone: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-50 dark:bg-amber-500/10" },
+          { label: "Subjects", value: teacherCounts.subjects, icon: Layers3, tone: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-50 dark:bg-violet-500/10" },
+        ].map(({ label, value, icon: Icon, tone, iconBg }) => (
+          <div key={label} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${iconBg} ${tone} flex items-center justify-center shrink-0`}><Icon className="w-5 h-5" /></div>
+            <div><p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p><p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1.5">{label}</p></div>
+          </div>
+        ))}
+      </div>
+
       {/* Filters */}
-      <div className="bg-white dark:bg-[#1e293b] p-4 rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:max-w-xs">
+      <div className="bg-white dark:bg-[#1e293b] p-4 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row gap-3 items-center">
+        <div className="relative w-full lg:flex-1">
           <Search className="w-4 h-4 text-gray-400 dark:text-white absolute left-3 top-1/2 -translate-y-1/2" />
           <input 
             type="text" 
-            placeholder="Search teachers..." 
+            placeholder="Search name, email, phone, subject or ID..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary dark:bg-[#0f172a]"
+            className="w-full pl-9 pr-3 h-10 text-[13px] text-slate-700 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-white dark:bg-[#0f172a]"
           />
         </div>
+        <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="w-full lg:w-40 h-10 px-3 text-[12px] font-medium text-slate-600 dark:text-slate-200 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary">
+          <option value="all">All statuses</option><option value="active">Active</option><option value="suspended">Suspended</option>
+        </select>
+        <select value={subjectFilter} onChange={event => setSubjectFilter(event.target.value)} className="w-full lg:w-48 h-10 px-3 text-[12px] font-medium text-slate-600 dark:text-slate-200 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary">
+          <option value="all">All subjects</option>
+          {subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}
+        </select>
+        {(searchQuery || statusFilter !== "all" || subjectFilter !== "all") && <button onClick={() => { setSearchQuery(""); setStatusFilter("all"); setSubjectFilter("all"); }} className="h-10 px-3 text-[12px] font-semibold text-slate-500 dark:text-slate-300 hover:text-red-500 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Clear filters</button>}
       </div>
 
       {/* Main Table Card */}
@@ -298,10 +352,10 @@ export default function TeacherManagement() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-500 dark:text-white sticky top-0 z-10">
-                <th className="py-3 px-5 font-bold">Teacher</th>
-                <th className="py-3 px-5 font-bold">Contact</th>
-                <th className="py-3 px-5 font-bold">Subject</th>
-                <th className="py-3 px-5 font-bold">Status</th>
+                <th className="py-3 px-5 font-bold"><button onClick={() => handleSort("full_name")} className="inline-flex items-center gap-1.5 hover:text-primary">Teacher <ArrowUpDown className="w-3 h-3" /></button></th>
+                <th className="py-3 px-5 font-bold"><button onClick={() => handleSort("phone_number")} className="inline-flex items-center gap-1.5 hover:text-primary">Contact <ArrowUpDown className="w-3 h-3" /></button></th>
+                <th className="py-3 px-5 font-bold"><button onClick={() => handleSort("subject")} className="inline-flex items-center gap-1.5 hover:text-primary">Subject <ArrowUpDown className="w-3 h-3" /></button></th>
+                <th className="py-3 px-5 font-bold"><button onClick={() => handleSort("status")} className="inline-flex items-center gap-1.5 hover:text-primary">Status <ArrowUpDown className="w-3 h-3" /></button></th>
                 <th className="py-3 px-5 font-bold text-right">Actions</th>
               </tr>
             </thead>
@@ -323,43 +377,39 @@ export default function TeacherManagement() {
                           </div>
                         )}
                         <div>
-                          <p className="font-medium text-slate-800 dark:text-white">{u.full_name}</p>
-                          <p className="text-[11px] text-gray-400 dark:text-white font-mono mt-0.5">{u.index_number || 'N/A'}</p>
+                          <p className="font-semibold text-slate-800 dark:text-white">{u.full_name}</p>
+                          <p className="text-[11px] text-gray-400 dark:text-slate-500 font-mono mt-0.5">{u.index_number || `TEACHER-${String(u.id).padStart(4, '0')}`}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-5">
-                      <p className="text-slate-800 dark:text-white">{u.phone_number}</p>
-                      {u.email && <p className="text-[11px] text-gray-400 dark:text-white mt-0.5">{u.email}</p>}
+                      <p className="font-medium text-slate-700 dark:text-slate-200">{u.phone_number || 'No phone'}</p>
+                      {u.email ? <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1 truncate max-w-[220px]">{u.email}</p> : <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">No email provided</p>}
                     </td>
                     <td className="py-3 px-5">
                       <p className="text-slate-800 dark:text-white font-medium">{u.subject || <span className="text-gray-400 font-normal italic">Not specified</span>}</p>
                     </td>
                     <td className="py-3 px-5">
                       {u.status === 'suspended' ? (
-                        <span className="px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded text-[10px] font-bold uppercase tracking-wider border border-red-200 dark:border-red-900/50">Suspended</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-200 dark:border-red-900/50"><span className="w-1.5 h-1.5 rounded-full bg-current" />Suspended</span>
                       ) : (
-                        <span className="px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded text-[10px] font-bold uppercase tracking-wider border border-green-200 dark:border-green-900/50">Active</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-200 dark:border-green-900/50"><span className="w-1.5 h-1.5 rounded-full bg-current" />Active</span>
                       )}
                     </td>
                     <td className="py-3 px-5">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button 
-                          onClick={() => handleToggleStatus(u)}
-                          disabled={actionLoading === u.id}
-                          className={`p-1.5 rounded transition-colors disabled:opacity-50 ${u.status === 'suspended' ? 'text-green-500 hover:bg-green-50 hover:text-green-600' : 'text-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600'}`}
-                          title={u.status === 'suspended' ? "Activate Account" : "Suspend Account"}
-                        >
-                          {u.status === 'suspended' ? <CheckCircle2 className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                      <div className="relative flex justify-end">
+                        <button onClick={() => setOpenActionMenu(openActionMenu === u.id ? null : u.id)} disabled={actionLoading === u.id} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50" aria-label={`Open actions for ${u.full_name}`}>
+                          {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
                         </button>
-                        <button 
-                          onClick={() => openEditModal(u)}
-                          disabled={actionLoading === u.id}
-                          className="p-1.5 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 rounded transition-colors disabled:opacity-50"
-                          title="Edit Teacher"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                        {openActionMenu === u.id && <>
+                          <button className="fixed inset-0 z-20 cursor-default" onClick={() => setOpenActionMenu(null)} aria-label="Close actions" />
+                          <div className="absolute right-0 top-11 z-30 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl">
+                            <button onClick={() => { setOpenActionMenu(null); openEditModal(u); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Edit3 className="w-4 h-4 text-blue-500" />Edit teacher</button>
+                            <button onClick={() => { setOpenActionMenu(null); handleToggleStatus(u); }} className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold ${u.status === 'suspended' ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}>
+                              {u.status === 'suspended' ? <CheckCircle2 className="w-4 h-4" /> : <Ban className="w-4 h-4" />}{u.status === 'suspended' ? 'Activate account' : 'Suspend account'}
+                            </button>
+                          </div>
+                        </>}
                       </div>
                     </td>
                   </tr>
@@ -370,10 +420,13 @@ export default function TeacherManagement() {
         </div>
 
         {/* Pagination Controls */}
-        <div className="p-4 border-t border-gray-100 dark:border-slate-800/50 bg-white dark:bg-[#1e293b] flex items-center justify-between shrink-0">
-          <p className="text-[12px] text-gray-500 dark:text-white">
-            Showing {((currentPage - 1) * usersPerPage) + 1} to {Math.min(currentPage * usersPerPage, filteredUsers.length)} of {filteredUsers.length}
-          </p>
+        <div className="p-4 border-t border-gray-100 dark:border-slate-800/50 bg-white dark:bg-[#1e293b] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-[12px] text-gray-500 dark:text-slate-400">Show <select value={usersPerPage} onChange={event => setUsersPerPage(Number(event.target.value))} className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-primary"><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={100}>100</option></select></label>
+            <p className="text-[12px] text-gray-500 dark:text-slate-400">
+              Showing {filteredUsers.length === 0 ? 0 : ((currentPage - 1) * usersPerPage) + 1} to {Math.min(currentPage * usersPerPage, filteredUsers.length)} of {filteredUsers.length}
+            </p>
+          </div>
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}

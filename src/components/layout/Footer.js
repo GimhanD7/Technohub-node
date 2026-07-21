@@ -86,11 +86,11 @@ export default function Footer() {
               © {new Date().getFullYear()} Techno-Hub Inc. All rights reserved.
             </p>
             <div className="flex items-center gap-2 text-sm text-zinc-500 bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/10">
-              <span>Developed by</span>
-              <Link href="/home" className="flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors group">
-                <Cpu className="w-4 h-4 text-primary group-hover:rotate-12 transition-transform" />
-                <span>Techno-Hub</span>
-              </Link>
+              <span>Design By</span>
+              <a href="https://www.facebook.com/share/1BToLNwWPY/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-bold text-[#061a59] dark:text-[#20c8e8] hover:text-[#0877ee] transition-colors group">
+                <img src="/vortex-digital-labs-icon.png" alt="Vortex Digital Labs" className="h-5 w-5 rounded-full object-cover" />
+                <span>Vortex Digital Labs</span>
+              </a>
             </div>
           </div>
           
