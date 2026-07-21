@@ -6,7 +6,17 @@ const logActivity = async (userId, action, details = "", req = null) => {
   let deviceInfo = 'Unknown Device';
 
   if (req) {
-    ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'UNKNOWN';
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const forwardedIp = Array.isArray(forwardedFor)
+      ? forwardedFor[0]
+      : forwardedFor?.split(',')[0]?.trim();
+
+    ipAddress = String(
+      req.headers['cf-connecting-ip'] ||
+      forwardedIp ||
+      req.socket?.remoteAddress ||
+      'UNKNOWN'
+    ).substring(0, 45);
     const userAgent = (req.headers['user-agent'] || 'Unknown Device').toLowerCase();
 
     // Basic OS Parsing
