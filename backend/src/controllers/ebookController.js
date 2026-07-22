@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const fs = require('fs');
+const { compressPdf } = require('../utils/pdfCompression');
 
 // Helper to format ebook row
 function formatEbook(ebook) {
@@ -284,12 +285,14 @@ exports.toggleEditable = async (req, res) => {
 };
 
 exports.uploadEbook = async (req, res) => {
+  let uploadedPath;
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No resource file provided.' });
     }
 
     const file = req.file;
+    uploadedPath = file.path;
     const maxSize = 25 * 1024 * 1024; // 25MB
 
     if (file.size > maxSize) {
@@ -309,15 +312,23 @@ exports.uploadEbook = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid file type.' });
     }
 
+    const compression = file.mimetype === 'application/pdf'
+      ? await compressPdf(file.path)
+      : { compressed: false, originalSize: file.size, fileSize: file.size };
+
     res.json({
       success: true,
-      message: 'Resource uploaded successfully.',
+      message: compression.compressed ? 'PDF compressed and uploaded successfully.' : 'Resource uploaded successfully.',
       fileUrl: `/uploads/ebooks/${file.filename}`,
       fileName: file.originalname,
       fileType: file.mimetype,
-      fileSize: file.size
+      fileSize: compression.fileSize,
+      originalFileSize: compression.originalSize,
+      compressed: compression.compressed
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Upload error: ' + error.message });
+    if (uploadedPath) await fs.promises.unlink(uploadedPath).catch(() => {});
+    const status = error.code === 'INVALID_PDF' ? 400 : error.code === 'GHOSTSCRIPT_NOT_FOUND' ? 503 : 500;
+    res.status(status).json({ success: false, message: 'Upload error: ' + error.message });
   }
 };
