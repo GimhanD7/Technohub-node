@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import { Phone, KeyRound, Cpu, ArrowLeft, User, MapPin, GraduationCap, Mail, Eye, EyeOff } from "lucide-react";
+import { Phone, KeyRound, ArrowLeft, User, MapPin, GraduationCap, Mail, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -140,21 +140,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen flex relative">
+    <main className="min-h-screen lg:h-screen flex relative bg-white dark:bg-[#111c30] lg:overflow-hidden">
       {/* Left side - Decorative / Branding */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 bg-foreground text-white p-12 relative overflow-hidden">
+      <div className="hidden lg:flex flex-col justify-between w-1/2 bg-slate-950 text-white p-12 relative overflow-hidden">
         {/* Background gradient effects */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
           <div className="absolute -top-1/4 -left-1/4 w-[800px] h-[800px] bg-primary/40 rounded-full blur-[100px] animate-pulse"></div>
           <div className="absolute -bottom-1/4 -right-1/4 w-[600px] h-[600px] bg-secondary/20 rounded-full blur-[100px]"></div>
         </div>
 
-        <div className="relative z-10">
-          <Link href="/home" className="flex items-center gap-2 w-max group">
-            <Cpu className="w-8 h-8 text-primary group-hover:text-secondary transition-colors" />
-            <span className="font-bold text-2xl tracking-tight">Techno-Hub</span>
-          </Link>
-        </div>
+        <div aria-hidden="true" />
         
         <div className="relative z-10 max-w-lg">
           <h1 className="text-5xl font-bold leading-tight mb-6">
@@ -166,7 +161,7 @@ export default function RegisterPage() {
           <div className="flex items-center gap-4">
             <div className="flex -space-x-4">
               {[1,2,3,4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-foreground bg-primary/50 flex items-center justify-center backdrop-blur-sm">
+                <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-950 bg-primary/50 flex items-center justify-center backdrop-blur-sm">
                   <User className="w-4 h-4 text-white" />
                 </div>
               ))}
@@ -181,17 +176,13 @@ export default function RegisterPage() {
       </div>
 
       {/* Right side - Registration Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 bg-white dark:bg-[#1e293b] relative overflow-y-auto">
-        <Link href="/home" className="lg:hidden absolute top-6 left-6 flex items-center gap-2">
-          <Cpu className="w-6 h-6 text-primary" />
-        </Link>
-        
-        <div className="w-full max-w-xl my-auto">
-          <div className="mb-10 text-center lg:text-left mt-10 lg:mt-0">
+      <div className="w-full lg:w-1/2 flex flex-col items-center p-6 sm:p-8 lg:px-10 lg:py-5 bg-white dark:bg-[#111c30] relative overflow-y-auto border-l border-transparent dark:border-slate-800">
+        <div className="w-full max-w-2xl my-auto">
+          <div className="mb-5 text-center lg:text-left mt-10 lg:mt-0">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               {showOtpInput ? "Verify your phone" : "Create an account"}
             </h2>
-            <p className="text-zinc-500">
+            <p className="text-zinc-500 dark:text-slate-400">
               {showOtpInput 
                 ? `Enter the 6-digit code sent to ${phoneNumber}` 
                 : "Join Techno-Hub and start learning today."}
@@ -201,11 +192,11 @@ export default function RegisterPage() {
           {errorMsg && <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 dark:border-red-900/50 text-red-600 text-sm font-medium">{errorMsg}</div>}
           {successMsg && <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 dark:border-green-900/50 text-green-600 text-sm font-medium">{successMsg}</div>}
 
-          <form className="space-y-5" onSubmit={handleRegister}>
+          <form className="space-y-3.5" onSubmit={handleRegister}>
             {!showOtpInput ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-foreground">Full Name</label>
+                  <label className="block text-xs font-semibold mb-1.5 text-foreground">Full Name</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <User className="h-5 w-5 text-zinc-400" />
@@ -214,16 +205,16 @@ export default function RegisterPage() {
                       type="text" 
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
+                      className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-black/10 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-950/70 dark:text-white transition-all bg-zinc-50/50"
                       placeholder="John Doe" 
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="min-w-0">
-                    <label className="block text-sm font-medium mb-2 text-foreground">Phone Number</label>
+                    <label className="block text-xs font-semibold mb-1.5 text-foreground">Phone Number</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Phone className="h-5 w-5 text-zinc-400" />
@@ -234,7 +225,7 @@ export default function RegisterPage() {
                         onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        className={`w-full pl-12 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${phoneError ? "border-red-300" : "border-black/10"}`}
+                        className={`w-full pl-12 pr-4 py-2.5 rounded-xl border dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-950/70 dark:text-white transition-all bg-zinc-50/50 ${phoneError ? "border-red-300" : "border-black/10"}`}
                         placeholder="0771234567"
                         required
                       />
@@ -247,7 +238,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="min-w-0">
-                    <label className="block text-sm font-medium mb-2 text-foreground">Email Address</label>
+                    <label className="block text-xs font-semibold mb-1.5 text-foreground">Email Address</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Mail className="h-5 w-5 text-zinc-400" />
@@ -256,7 +247,7 @@ export default function RegisterPage() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`w-full pl-12 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${emailError ? "border-red-300" : "border-black/10"}`}
+                        className={`w-full pl-12 pr-4 py-2.5 rounded-xl border dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-950/70 dark:text-white transition-all bg-zinc-50/50 ${emailError ? "border-red-300" : "border-black/10"}`}
                         placeholder="you@example.com"
                       />
                     </div>
@@ -268,7 +259,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="min-w-0">
-                    <label className="block text-sm font-medium mb-2 text-foreground">Address</label>
+                    <label className="block text-xs font-semibold mb-1.5 text-foreground">Address</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <MapPin className="h-5 w-5 text-zinc-400" />
@@ -277,15 +268,15 @@ export default function RegisterPage() {
                         type="text" 
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
+                      className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-black/10 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-950/70 dark:text-white transition-all bg-zinc-50/50"
                         placeholder="123 Education Street"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="sm:col-span-2 min-w-0">
-                    <label className="block text-sm font-medium mb-2 text-foreground">Education Category</label>
+                  <div className="min-w-0">
+                    <label className="block text-xs font-semibold mb-1.5 text-foreground">Education Category</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <GraduationCap className="h-5 w-5 text-zinc-400" />
@@ -293,7 +284,7 @@ export default function RegisterPage() {
                       <select 
                         value={educationCategory}
                         onChange={(e) => setEducationCategory(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 appearance-none" 
+                        className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-black/10 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-950/70 dark:text-white transition-all bg-zinc-50/50 appearance-none"
                         required
                       >
                         <option value="" disabled>Select Category</option>
@@ -308,9 +299,9 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="min-w-0">
-                    <label className="block text-sm font-medium mb-2 text-foreground">Password</label>
+                    <label className="block text-xs font-semibold mb-1.5 text-foreground">Password</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <KeyRound className="h-5 w-5 text-zinc-400" />
@@ -319,7 +310,7 @@ export default function RegisterPage() {
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={`w-full pl-12 pr-12 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${passwordError ? "border-red-300" : "border-black/10"}`}
+                        className={`w-full pl-12 pr-12 py-2.5 rounded-xl border dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-950/70 dark:text-white transition-all bg-zinc-50/50 ${passwordError ? "border-red-300" : "border-black/10"}`}
                         placeholder="••••••••" 
                         required
                       />
@@ -334,7 +325,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   <div className="min-w-0">
-                    <label className="block text-sm font-medium mb-2 text-foreground">Confirm</label>
+                    <label className="block text-xs font-semibold mb-1.5 text-foreground">Confirm</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <KeyRound className="h-5 w-5 text-zinc-400" />
@@ -343,7 +334,7 @@ export default function RegisterPage() {
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`w-full pl-12 pr-12 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50 ${confirmPasswordError ? "border-red-300" : "border-black/10"}`}
+                        className={`w-full pl-12 pr-12 py-2.5 rounded-xl border dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-950/70 dark:text-white transition-all bg-zinc-50/50 ${confirmPasswordError ? "border-red-300" : "border-black/10"}`}
                         placeholder="••••••••" 
                         required
                       />
@@ -360,13 +351,13 @@ export default function RegisterPage() {
                       <p className="mt-1.5 text-xs font-medium text-red-600">{confirmPasswordError}</p>
                     )}
                   </div>
-                  <div className="sm:col-span-2 rounded-xl border border-black/10 bg-zinc-50/60 dark:bg-[#0f172a] p-3">
+                  <div className="sm:col-span-2 rounded-xl border border-black/10 dark:border-slate-700 bg-zinc-50/60 dark:bg-slate-950/70 p-2.5">
                     <p className={`text-xs font-semibold ${passwordError ? "text-red-600" : "text-zinc-600 dark:text-zinc-300"}`}>
                       {password ? (passwordError || "Password meets the required standard.") : "Use 8+ characters with uppercase, lowercase, number, and special character."}
                     </p>
-                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                    <div className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-0.5">
                       {passwordChecks.map((check) => (
-                        <p key={check.label} className={`text-xs ${check.met ? "text-green-600" : "text-zinc-500"}`}>
+                        <p key={check.label} className={`text-[11px] ${check.met ? "text-green-600 dark:text-emerald-400" : "text-zinc-500 dark:text-slate-400"}`}>
                           {check.met ? "OK" : "Need"} - {check.label}
                         </p>
                       ))}
@@ -400,7 +391,7 @@ export default function RegisterPage() {
                     disabled={isLoading}
                     className="text-sm font-medium text-primary hover:text-secondary transition-colors"
                   >
-                    Didn't receive a code? Resend
+                    Didn&apos;t receive a code? Resend
                   </button>
                 </div>
                 
@@ -423,21 +414,21 @@ export default function RegisterPage() {
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full py-6 text-lg rounded-xl shadow-[0_4px_14px_0_rgba(26,60,182,0.39)]"
+              className="w-full py-5 text-base rounded-xl shadow-[0_4px_14px_0_rgba(26,60,182,0.39)]"
             >
               {isLoading ? "Processing..." : (showOtpInput ? "Verify & Register" : "Create Account")}
             </Button>
           </form>
           
           {!showOtpInput && (
-            <div className="mt-8 pt-8 border-t border-black/5 text-center">
-              <p className="text-sm text-zinc-600">
+            <div className="mt-4 pt-4 border-t border-black/5 dark:border-slate-800 text-center">
+              <p className="text-sm text-zinc-600 dark:text-slate-400">
                 Already have an account? <Link href="/login" className="font-semibold text-primary hover:text-secondary transition-colors">Sign in</Link>
               </p>
             </div>
           )}
           
-          <div className="mt-8 text-center lg:text-left pb-10 lg:pb-0">
+          <div className="mt-4 text-center lg:text-left pb-6 lg:pb-0">
             <Link href="/home" className="text-sm font-medium text-zinc-500 hover:text-foreground transition-colors inline-flex items-center gap-2 group">
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to home
             </Link>

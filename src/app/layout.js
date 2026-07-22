@@ -6,11 +6,19 @@ import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 export const metadata = {
-  title: "Techno-Hub | Premium Online Learning Platform",
+  title: "Techno-Hub | Simply Learning Digitally",
   description: "Join Techno-Hub, the ultimate online learning platform. Access video lessons, live online classes, virtual exam halls, e-books, and rank among top students.",
   keywords: ["online learning", "video lessons", "online classes", "exam hall", "e-books", "student ranker", "education platform", "Techno-Hub", "e-learning", "online courses"],
   authors: [{ name: "Techno-Hub" }],
   creator: "Techno-Hub",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {

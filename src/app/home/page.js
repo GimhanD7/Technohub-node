@@ -379,7 +379,7 @@ export default function Home() {
                       className="object-contain shrink-0"
                     />
                   )}
-                  <p className={`text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed ${settings.aitiDescriptionBold ? "font-bold" : "font-normal"}`}>
+                  <p className={`flex-1 text-justify text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed ${settings.aitiDescriptionBold ? "font-bold" : "font-normal"}`}>
                     {settings.aitiDescription}
                   </p>
                 </div>

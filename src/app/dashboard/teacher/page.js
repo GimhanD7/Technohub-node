@@ -1,227 +1,156 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BookOpen, Users, GraduationCap, ClipboardList, TrendingUp, DollarSign } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  ArrowRight,
+  BookOpen,
+  CircleDollarSign,
+  ClipboardList,
+  GraduationCap,
+  Library,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
+  TrendingUp,
+  Users,
+  Video,
+} from "lucide-react";
+import { BASE_URL, fetchApi } from "@/lib/api";
+
+const metricCards = [
+  { key: "total_students", label: "Students", helper: "Across all your classes", icon: Users, color: "blue" },
+  { key: "active_courses", label: "Active courses", helper: "Currently published", icon: BookOpen, color: "violet" },
+  { key: "total_quizzes", label: "Total quizzes", helper: "Created by you", icon: ClipboardList, color: "amber" },
+  { key: "total_earnings", label: "Total earnings", helper: "Your net earnings", icon: CircleDollarSign, color: "emerald", currency: true },
+];
+
+const colorStyles = {
+  blue: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  violet: "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
+  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+  emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+};
+
+const quickActions = [
+  { label: "Build a course", href: "/dashboard/teacher/courses", icon: BookOpen },
+  { label: "Create a quiz", href: "/dashboard/teacher/quizzes", icon: ClipboardList },
+  { label: "Schedule a class", href: "/dashboard/teacher/online-classes/create", icon: Video },
+  { label: "Add an e-book", href: "/dashboard/teacher/e-books", icon: Library },
+  { label: "View earnings", href: "/dashboard/teacher/earnings", icon: TrendingUp },
+  { label: "Message admin", href: "/dashboard/teacher/messages", icon: MessageSquare },
+];
 
 export default function TeacherDashboard() {
-   const [user, setUser] = useState(null);
-   const [stats, setStats] = useState({
-      total_students: 0,
-      active_courses: 0,
-      total_courses: 0,
-      total_quizzes: 0,
-      total_earnings: 0,
-      recent_attempts: []
-   });
-   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-   useEffect(() => {
+  const loadDashboard = useCallback(async (teacherId, refresh = false) => {
+    if (refresh) setIsRefreshing(true);
+    const data = await fetchApi(`/teacher/dashboard?teacher_id=${teacherId}`, { showToast: false });
+    if (data.success) setStats(data.stats);
+    setIsLoading(false);
+    setIsRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
       const savedUser = localStorage.getItem("techno_hub_user");
-      if (savedUser) {
-         const parsedUser = JSON.parse(savedUser);
-         setUser(parsedUser);
-         fetchDashboardStats(parsedUser.id);
-      } else {
-         setLoading(false);
+      if (!savedUser) {
+        setIsLoading(false);
+        return;
       }
-   }, []);
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+      loadDashboard(parsedUser.id);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadDashboard]);
 
-   const fetchDashboardStats = async (teacherId) => {
-      try {
-         const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-         const res = await fetch(`${API_URL}/teacher/dashboard?teacher_id=${teacherId}`);
-         const data = await res.json();
-         if (data.success) {
-            setStats(data.stats);
-         }
-      } catch (error) {
-         console.error("Error fetching stats:", error);
-      } finally {
-         setLoading(false);
-      }
-   };
+  const overviewItems = useMemo(() => [
+    { label: "All courses", value: stats?.total_courses || 0, href: "/dashboard/teacher/courses", icon: BookOpen, tone: "blue" },
+    { label: "Courses pending", value: Math.max((stats?.total_courses || 0) - (stats?.active_courses || 0), 0), href: "/dashboard/teacher/courses", icon: GraduationCap, tone: "amber" },
+    { label: "Quiz attempts", value: stats?.recent_attempts?.length || 0, href: "/dashboard/teacher/quizzes", icon: ClipboardList, tone: "violet" },
+    { label: "Active classes", value: stats?.active_classes || 0, href: "/dashboard/teacher/online-classes", icon: Video, tone: "emerald" },
+  ], [stats]);
 
-   if (!user) return null;
+  if (isLoading || !user) {
+    return <div className="h-[70vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  }
 
-   return (
-      <div className="max-w-7xl mx-auto space-y-6">
-
-         {/* Top Banner Area */}
-         <div className="text-center py-6 mb-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded-full text-[11px] font-medium text-gray-500 dark:text-white mb-5 shadow-sm">
-               <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-               </span>
-               Instructor View Active
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-primary/80 p-6 sm:p-8 text-white shadow-xl">
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-emerald-200 mb-4">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" /> Instructor workspace active
             </div>
-            <h1 className="text-[24px] md:text-[28px] font-bold text-slate-800 dark:text-white mb-2 tracking-tight">
-               {(() => {
-                  const hour = new Date().getHours();
-                  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-                  const firstName = (user?.full_name || "").split(" ")[0];
-                  return firstName ? `${greeting}, ${firstName}` : greeting;
-               })()}
-            </h1>
-            <p className="text-[13px] text-gray-500 dark:text-white max-w-xl mx-auto">Manage your classes, track student progress, and grade assignments efficiently through our new structured interface.</p>
-         </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome back, {user.full_name}</h1>
+            <p className="mt-2 max-w-2xl text-[13px] sm:text-sm text-slate-300">Manage courses, monitor student progress, and organize your teaching work from one place.</p>
+          </div>
+          <button onClick={() => loadDashboard(user.id, true)} disabled={isRefreshing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-[12px] font-semibold hover:bg-white/15 disabled:opacity-60 transition-colors shrink-0">
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /> Refresh overview
+          </button>
+        </div>
+      </section>
 
-         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-               { label: "My Courses", helper: "Build course content", href: "/dashboard/teacher/courses", icon: BookOpen, tone: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
-               { label: "Quiz Management", helper: "Create and review", href: "/dashboard/teacher/quizzes", icon: ClipboardList, tone: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
-               { label: "Online Classes", helper: "Manage live teaching", href: "/dashboard/teacher/online-classes", icon: GraduationCap, tone: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
-               { label: "Earnings", helper: "View performance", href: "/dashboard/teacher/earnings", icon: TrendingUp, tone: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
-            ].map(({ label, helper, href, icon: Icon, tone, bg }) => (
-               <Link key={label} href={href} className="bg-white dark:bg-[#1e293b] rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 shadow-sm hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 transition-all flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-lg ${bg} ${tone} flex items-center justify-center shrink-0`}><Icon className="w-4 h-4" /></div>
-                  <div className="min-w-0"><p className="text-[12px] font-bold text-slate-800 dark:text-white truncate">{label}</p><p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{helper}</p></div>
-               </Link>
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {metricCards.map(({ key, label, helper, icon: Icon, color, currency }) => (
+          <div key={key} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</p><p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{currency ? `LKR ${Number(stats?.[key] || 0).toLocaleString()}` : Number(stats?.[key] || 0).toLocaleString()}</p><p className="mt-1 text-[11px] text-slate-400">{helper}</p></div>
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${colorStyles[color]}`}><Icon className="w-5 h-5" /></div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-6">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"><div><h2 className="text-[15px] font-bold text-slate-900 dark:text-white">Teaching overview</h2><p className="text-[11px] text-slate-500 mt-0.5">Your current learning workload</p></div><GraduationCap className="w-5 h-5 text-primary" /></div>
+          <div className="grid sm:grid-cols-2">
+            {overviewItems.map(({ label, value, href, icon: Icon, tone }, index) => (
+              <Link key={label} href={href} className={`group flex items-center gap-4 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${index % 2 === 0 ? "sm:border-r border-slate-100 dark:border-slate-800" : ""} ${index < 2 ? "border-b border-slate-100 dark:border-slate-800" : ""}`}>
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${colorStyles[tone]}`}><Icon className="w-5 h-5" /></div>
+                <div className="flex-1"><p className="text-[12px] text-slate-500 dark:text-slate-400">{label}</p><p className="text-xl font-bold text-slate-900 dark:text-white">{value}</p></div>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+              </Link>
             ))}
-         </div>
+          </div>
+        </div>
 
-         {/* Top Cards (4 cols) */}
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4"><div><h2 className="text-[15px] font-bold text-slate-900 dark:text-white">Quick actions</h2><p className="text-[11px] text-slate-500 mt-0.5">Common teaching tasks</p></div><ClipboardList className="w-5 h-5 text-slate-400" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            {quickActions.map(({ label, href, icon: Icon }) => <Link key={label} href={href} className="group rounded-xl border border-slate-200 dark:border-slate-700 p-3 hover:border-primary/40 hover:bg-primary/[0.035] transition-colors"><Icon className="w-4 h-4 text-primary mb-2" /><span className="text-[12px] font-semibold text-slate-700 dark:text-slate-200 group-hover:text-primary">{label}</span></Link>)}
+          </div>
+        </div>
+      </section>
 
-            {/* Card 1 */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-               <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider">Total Students</h3>
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
-                     <Users className="w-[18px] h-[18px] text-blue-500" />
-                  </div>
-               </div>
-
-               <h2 className="text-[28px] font-semibold text-slate-800 dark:text-white tracking-tight leading-none mb-1">
-                  {loading ? "..." : stats.total_students}
-               </h2>
-               <p className="text-[11px] text-gray-400 dark:text-white mb-4">Across all classes</p>
-            </div>
-
-            {/* Card 2 */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-               <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider">Active Courses</h3>
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
-                     <BookOpen className="w-[18px] h-[18px] text-indigo-500" />
-                  </div>
-               </div>
-
-               <div className="flex items-end justify-between mb-2">
-                  <h2 className="text-[28px] font-semibold text-slate-800 dark:text-white tracking-tight leading-none">
-                     {loading ? "..." : stats.active_courses}
-                  </h2>
-               </div>
-
-               <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800/50 text-[11px] text-gray-500 dark:text-white text-center">
-                  {loading ? "..." : (stats.total_courses - stats.active_courses)} courses pending
-               </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-               <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider">Total Quizzes</h3>
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
-                     <ClipboardList className="w-[18px] h-[18px] text-amber-500" />
-                  </div>
-               </div>
-
-               <h2 className="text-[28px] font-semibold text-slate-800 dark:text-white tracking-tight leading-none mb-1">
-                  {loading ? "..." : stats.total_quizzes}
-               </h2>
-               <p className="text-[11px] text-amber-500 mb-4 font-medium">Created by you</p>
-            </div>
-
-            {/* Card 4 */}
-            <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-               <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider">Total Earnings</h3>
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                     <DollarSign className="w-[18px] h-[18px] text-emerald-500" />
-                  </div>
-               </div>
-
-               <div className="flex items-end justify-between">
-                  <div>
-                     <p className="text-[11px] text-gray-400 dark:text-white mb-1">Net Earnings</p>
-                     <h2 className="text-[20px] font-semibold text-slate-800 dark:text-white tracking-tight">
-                        {loading ? "..." : `Rs. ${Number(stats.total_earnings).toLocaleString()}`}
-                     </h2>
-                  </div>
-               </div>
-            </div>
-
-         </div>
-
-         <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
-            <div className="flex justify-between items-center mb-6">
-               <h3 className="text-[14px] font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-blue-500" />
-                  Recent Quiz Attempts
-               </h3>
-            </div>
-
-            <div className="overflow-x-auto -mx-2">
-               <table className="w-full text-left border-collapse">
-                  <thead>
-                     <tr className="border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-400 dark:text-white">
-                        <th className="pb-3 px-2 font-semibold">Student</th>
-                        <th className="pb-3 px-2 font-semibold">Quiz</th>
-                        <th className="pb-3 px-2 font-semibold">Date</th>
-                        <th className="pb-3 px-2 font-semibold">Score</th>
-                        <th className="pb-3 px-2 font-semibold">Status</th>
-                     </tr>
-                  </thead>
-                  <tbody className="text-[13px] text-slate-600 dark:text-white">
-                     {loading ? (
-                        <tr>
-                           <td colSpan="5" className="py-4 text-center text-sm text-gray-500">Loading...</td>
-                        </tr>
-                     ) : stats.recent_attempts.length === 0 ? (
-                        <tr>
-                           <td colSpan="5" className="py-4 text-center text-sm text-gray-500">No recent quiz attempts found.</td>
-                        </tr>
-                     ) : (
-                        stats.recent_attempts.map((attempt) => (
-                           <tr key={attempt.id} className="border-b border-gray-100 dark:border-slate-800/50 hover:bg-gray-50/70 dark:hover:bg-slate-800/50 transition-colors">
-                              <td className="py-3.5 px-2">
-                                 <div className="flex items-center gap-2.5">
-                                    {attempt.users?.profile_picture ? (
-                                       <img 
-                                          src={attempt.users.profile_picture.startsWith('http') 
-                                             ? attempt.users.profile_picture 
-                                             : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '')}${attempt.users.profile_picture.startsWith('/') ? '' : '/'}${attempt.users.profile_picture}`
-                                          } 
-                                          alt={attempt.users.full_name} 
-                                          className="w-7 h-7 rounded-full object-cover shadow-inner" 
-                                       />
-                                    ) : (
-                                       <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 shrink-0 text-white flex items-center justify-center font-bold text-[11px] shadow-inner">
-                                          {attempt.users?.full_name?.substring(0, 2).toUpperCase() || 'ST'}
-                                       </div>
-                                    )}
-                                    <span className="font-medium text-slate-800 dark:text-white">{attempt.users?.full_name || 'Unknown'}</span>
-                                 </div>
-                              </td>
-                              <td className="py-3.5 px-2">{attempt.quizzes?.title || 'Unknown Quiz'}</td>
-                              <td className="py-3.5 px-2 text-[12px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
-                                 {new Date(attempt.submitted_at).toLocaleDateString()} {new Date(attempt.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </td>
-                              <td className="py-3.5 px-2 font-bold text-slate-800 dark:text-white">{attempt.score}</td>
-                              <td className="py-3.5 px-2">
-                                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Completed
-                                 </span>
-                              </td>
-                           </tr>
-                        ))
-                     )}
-                  </tbody>
-               </table>
-            </div>
-         </div>
-      </div>
-   );
+      <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"><div><h2 className="text-[15px] font-bold text-slate-900 dark:text-white">Recent quiz attempts</h2><p className="text-[11px] text-slate-500 mt-0.5">Latest submissions from your students</p></div><Link href="/dashboard/teacher/quizzes" className="text-[11px] font-semibold text-primary hover:underline">View quizzes</Link></div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] text-left">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Student</th><th className="px-5 py-3">Quiz</th><th className="px-5 py-3">Submitted</th><th className="px-5 py-3">Score</th><th className="px-5 py-3">Status</th></tr></thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {(stats?.recent_attempts || []).map((attempt) => (
+                <tr key={attempt.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                  <td className="px-5 py-3.5"><div className="flex items-center gap-3">{attempt.users?.profile_picture ? <img src={attempt.users.profile_picture.startsWith("http") ? attempt.users.profile_picture : `${BASE_URL}${attempt.users.profile_picture.startsWith("/") ? "" : "/"}${attempt.users.profile_picture}`} alt={attempt.users.full_name || "Student"} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">{attempt.users?.full_name?.substring(0, 2).toUpperCase() || "ST"}</div>}<span className="text-[13px] font-semibold text-slate-800 dark:text-white">{attempt.users?.full_name || "Unknown student"}</span></div></td>
+                  <td className="px-5 py-3.5 text-[12px] text-slate-600 dark:text-slate-300">{attempt.quizzes?.title || "Unknown quiz"}</td>
+                  <td className="px-5 py-3.5 text-[11px] text-slate-500 whitespace-nowrap">{new Date(attempt.submitted_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</td>
+                  <td className="px-5 py-3.5 text-[13px] font-bold text-slate-900 dark:text-white">{attempt.score}</td>
+                  <td className="px-5 py-3.5"><span className="rounded-full px-2.5 py-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">Completed</span></td>
+                </tr>
+              ))}
+              {(!stats?.recent_attempts || stats.recent_attempts.length === 0) && <tr><td colSpan="5" className="p-10 text-center text-[12px] text-slate-500">No recent quiz attempts found.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
 }

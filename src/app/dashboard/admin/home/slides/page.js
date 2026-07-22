@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import {
@@ -96,11 +97,16 @@ export default function HomePageSlidesManager() {
       if (data.success) {
         onUploaded(data.url);
         setSuccessMsg("Image uploaded.");
+        toast.success("Slide image uploaded successfully.");
       } else {
-        setErrorMsg(data.message || "Image upload failed.");
+        const message = data.message || "Image upload failed.";
+        setErrorMsg(message);
+        toast.error(message);
       }
     } catch {
-      setErrorMsg("Image upload failed. Please check that XAMPP Apache is running.");
+      const message = "Image upload failed. Please check that XAMPP Apache is running.";
+      setErrorMsg(message);
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
@@ -123,12 +129,16 @@ export default function HomePageSlidesManager() {
 
     setIsSaving(false);
     if (response.success) {
-      setSuccessMsg(response.message);
+      const message = response.message || (editingSlideId ? "Slide updated successfully." : "Slide saved successfully.");
+      setSuccessMsg(message);
+      toast.success(message);
       setSlideForm(initialSlide);
       setEditingSlideId(null);
       loadContent();
     } else {
-      setErrorMsg(response.message || "Failed to save slide.");
+      const message = response.message || "Failed to save slide.";
+      setErrorMsg(message);
+      toast.error(message);
     }
   };
 
@@ -142,8 +152,17 @@ export default function HomePageSlidesManager() {
           method: "POST",
           body: JSON.stringify({ slideId, role: user?.role }),
         });
-        if (response.success) loadContent();
-        else setErrorMsg(response.message || "Failed to delete slide.");
+        if (response.success) {
+          const message = response.message || "Slide deleted successfully.";
+          setSuccessMsg(message);
+          setErrorMsg("");
+          toast.success(message);
+          loadContent();
+        } else {
+          const message = response.message || "Failed to delete slide.";
+          setErrorMsg(message);
+          toast.error(message);
+        }
       }
     );
   };

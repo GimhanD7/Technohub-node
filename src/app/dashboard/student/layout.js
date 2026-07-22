@@ -64,13 +64,13 @@ export default function StudentLayout({ children }) {
       return next;
     });
   };
-  const navLinkClass = (path, exact = false) => `flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "justify-between px-3"} py-2 rounded-lg transition-colors text-[13px] font-medium ${isActive(path, exact) ? 'bg-primary/5 text-primary' : 'text-slate-600 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white dark:text-white'}`;
+  const navLinkClass = (path, exact = false) => `flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "justify-between px-3"} py-2 rounded-lg transition-colors text-[13px] font-medium ${isActive(path, exact) ? 'bg-primary/5 dark:bg-primary/20 text-primary dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`;
   const navInnerClass = `flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"}`;
   const labelClass = isSidebarCollapsed ? "hidden" : "inline";
-  const sectionClass = isSidebarCollapsed ? "sr-only" : "text-[10px] font-bold text-gray-400 dark:text-white uppercase tracking-wider mb-3 px-2";
+  const sectionClass = isSidebarCollapsed ? "sr-only" : "text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-2";
 
   return (
-    <div className="h-screen flex flex-col bg-[#f4f7f9] dark:bg-slate-900 text-slate-800 dark:text-white font-sans overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#f4f7f9] dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 font-sans overflow-hidden transition-colors duration-300">
       <TopNavbar user={user} sidebarCollapsed={isSidebarCollapsed} onMenuClick={() => setIsMobileSidebarOpen(true)} />
       
       <div className="flex flex-1 overflow-hidden relative">
@@ -83,7 +83,7 @@ export default function StudentLayout({ children }) {
         )}
 
         {/* Sidebar */}
-        <aside className={`${isSidebarCollapsed ? "md:w-20" : "md:w-64"} w-64 fixed md:relative inset-y-0 left-0 transform ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 bg-white dark:bg-[#1e293b] border-r border-gray-200 dark:border-slate-800 flex flex-col overflow-y-auto shrink-0 z-50 transition-transform duration-300`}>
+        <aside className={`${isSidebarCollapsed ? "md:w-20" : "md:w-64"} w-64 fixed md:relative inset-y-0 left-0 transform ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 bg-white dark:bg-[#1e293b] border-r border-gray-200 dark:border-slate-800 flex flex-col overflow-y-auto shrink-0 z-50 transition-all duration-300`}>
           
           {/* User Profile Block */}
           <div className={`${isSidebarCollapsed ? "md:p-4 md:justify-center" : ""} p-6 border-b border-gray-100 dark:border-slate-800/50 flex items-center gap-3`}>
@@ -96,7 +96,7 @@ export default function StudentLayout({ children }) {
              )}
              <div className={`${isSidebarCollapsed ? "md:hidden" : "block"} min-w-0`}>
                <h3 className="text-[13px] font-bold text-slate-800 dark:text-white truncate">{user.full_name}</h3>
-               <p className="text-[11px] text-gray-500 dark:text-white capitalize">{user.role} Portal</p>
+               <p className="text-[11px] text-gray-500 dark:text-slate-400 capitalize">{user.role} Portal</p>
              </div>
           </div>
 
@@ -161,7 +161,7 @@ export default function StudentLayout({ children }) {
                onClick={toggleSidebar}
                aria-label={isSidebarCollapsed ? "Expand menu" : "Collapse menu"}
                title={isSidebarCollapsed ? "Expand menu" : "Collapse menu"}
-               className="text-[12px] font-medium text-slate-500 dark:text-white hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center gap-2 w-full"
+               className="text-[12px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center gap-2 w-full"
              >
                {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
                <span className={labelClass}>{isSidebarCollapsed ? "Expand Menu" : "Collapse Menu"}</span>
@@ -174,7 +174,7 @@ export default function StudentLayout({ children }) {
           {children}
           
           {/* Footer */}
-          <footer className="mt-8 flex items-center justify-between text-[11px] text-gray-400 dark:text-white border-t border-gray-200 dark:border-slate-800 pt-4">
+          <footer className="mt-8 flex items-center justify-between text-[11px] text-gray-400 dark:text-slate-500 border-t border-gray-200 dark:border-slate-800 pt-4">
              <p className="flex items-center gap-1.5">
                <span>&copy; 2026 Design By</span>
                <a href="https://www.facebook.com/share/1BToLNwWPY/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-bold text-[#061a59] dark:text-[#20c8e8] hover:text-[#0877ee] transition-colors">
@@ -187,7 +187,7 @@ export default function StudentLayout({ children }) {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 flex justify-around items-center h-16 z-40 px-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1e293b] border-t border-gray-200 dark:border-slate-800 flex justify-around items-center h-16 z-40 px-2 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.2)]">
         <Link href="/dashboard/student" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/dashboard/student', true) ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
           <BookOpen className={`w-5 h-5 ${isActive('/dashboard/student', true) ? 'fill-primary/20' : ''}`} />
           <span className="text-[10px] font-medium">Home</span>
