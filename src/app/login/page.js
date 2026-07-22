@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
-import { LogIn, Phone, KeyRound, Cpu, ArrowLeft, User, Mail, MessageCircle, X, Eye, EyeOff } from "lucide-react";
+import { LogIn, Phone, KeyRound, ArrowLeft, User, Mail, MessageCircle, X, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -21,13 +21,16 @@ export default function LoginPage() {
 
   // Load remembered credentials on mount
   useEffect(() => {
-    const savedPhone = localStorage.getItem("techno_hub_phone");
-    const savedPassword = localStorage.getItem("techno_hub_password");
-    if (savedPhone && savedPassword) {
-      setPhoneNumber(savedPhone);
-      setPassword(savedPassword);
-      setRememberMe(true);
-    }
+    const timer = window.setTimeout(() => {
+      const savedPhone = localStorage.getItem("techno_hub_phone");
+      const savedPassword = localStorage.getItem("techno_hub_password");
+      if (savedPhone && savedPassword) {
+        setPhoneNumber(savedPhone);
+        setPassword(savedPassword);
+        setRememberMe(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleLogin = async (e) => {
@@ -84,19 +87,14 @@ export default function LoginPage() {
       ========================================= */}
       <div className="hidden lg:flex w-full min-h-screen">
         {/* Left side - Decorative / Branding */}
-        <div className="flex flex-col justify-between w-1/2 bg-foreground text-white p-12 relative overflow-hidden">
+        <div className="flex flex-col justify-between w-1/2 bg-slate-950 text-white p-12 relative overflow-hidden">
           {/* Background gradient effects */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
             <div className="absolute -top-1/4 -left-1/4 w-[800px] h-[800px] bg-primary/40 rounded-full blur-[100px] animate-pulse"></div>
             <div className="absolute -bottom-1/4 -right-1/4 w-[600px] h-[600px] bg-secondary/20 rounded-full blur-[100px]"></div>
           </div>
 
-          <div className="relative z-10">
-            <Link href="/home" className="flex items-center gap-2 w-max group">
-              <Cpu className="w-8 h-8 text-primary group-hover:text-secondary transition-colors" />
-              <span className="font-bold text-2xl tracking-tight">Techno-Hub</span>
-            </Link>
-          </div>
+          <div aria-hidden="true" />
           
           <div className="relative z-10 max-w-lg">
             <h1 className="text-5xl font-bold leading-tight mb-6">
@@ -108,7 +106,7 @@ export default function LoginPage() {
             <div className="flex items-center gap-4">
               <div className="flex -space-x-4">
                 {[1,2,3,4].map((i) => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-foreground bg-primary/50 flex items-center justify-center backdrop-blur-sm">
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-950 bg-primary/50 flex items-center justify-center backdrop-blur-sm">
                     <User className="w-4 h-4 text-white" />
                   </div>
                 ))}
@@ -123,11 +121,11 @@ export default function LoginPage() {
         </div>
 
         {/* Right side - Login Form */}
-        <div className="w-1/2 flex flex-col justify-center items-center p-12 bg-white dark:bg-[#1e293b] relative">
+        <div className="w-1/2 flex flex-col justify-center items-center p-12 bg-white dark:bg-[#111c30] relative border-l border-transparent dark:border-slate-800">
           <div className="w-full max-w-md">
             <div className="mb-10 text-left">
               <h2 className="text-4xl font-bold text-foreground mb-3">Welcome back</h2>
-              <p className="text-zinc-500">Please enter your details to access your account.</p>
+              <p className="text-zinc-500 dark:text-slate-400">Please enter your details to access your account.</p>
             </div>
             
             <form className="space-y-6" onSubmit={handleLogin}>
@@ -143,7 +141,7 @@ export default function LoginPage() {
                     onChange={(e) => setPhoneNumber(digitsOnly(e.target.value))}
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-black/10 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary dark:bg-slate-950/70 dark:text-white dark:placeholder:text-slate-500 transition-all bg-zinc-50/50"
                     placeholder="07x xxx xxxx" 
                     required
                   />
@@ -160,7 +158,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"} 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3 rounded-xl border border-black/10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-[#0f172a] transition-all bg-zinc-50/50" 
+                    className="w-full pl-12 pr-12 py-3 rounded-xl border border-black/10 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary dark:bg-slate-950/70 dark:text-white dark:placeholder:text-slate-500 transition-all bg-zinc-50/50"
                     placeholder="••••••••" 
                     required
                   />
@@ -182,7 +180,7 @@ export default function LoginPage() {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300 dark:border-slate-700 text-primary focus:ring-primary accent-primary" 
                   />
-                  <span className="text-sm text-zinc-600">Remember for 30 days</span>
+                  <span className="text-sm text-zinc-600 dark:text-slate-400">Remember for 30 days</span>
                 </label>
                 <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-secondary transition-colors">
                   Forgot password?
@@ -194,14 +192,14 @@ export default function LoginPage() {
               </Button>
             </form>
             
-            <div className="mt-8 pt-8 border-t border-black/5 text-center">
-              <p className="text-sm text-zinc-600">
-                Don't have an account? <Link href="/register" className="font-semibold text-primary hover:text-secondary transition-colors">Sign up</Link>
+            <div className="mt-8 pt-8 border-t border-black/5 dark:border-slate-800 text-center">
+              <p className="text-sm text-zinc-600 dark:text-slate-400">
+                Don&apos;t have an account? <Link href="/register" className="font-semibold text-primary hover:text-secondary transition-colors">Sign up</Link>
               </p>
             </div>
             
             <div className="mt-10 text-left">
-              <Link href="/home" className="text-sm font-medium text-zinc-500 hover:text-foreground transition-colors inline-flex items-center gap-2 group">
+              <Link href="/home" className="text-sm font-medium text-zinc-500 dark:text-slate-400 hover:text-foreground transition-colors inline-flex items-center gap-2 group">
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to home
               </Link>
             </div>
@@ -219,9 +217,6 @@ export default function LoginPage() {
           <div className="flex justify-between items-start">
             <div className="w-28 h-28 bg-primary rounded-full relative flex items-center justify-center shadow-lg">
               <div className="w-6 h-6 bg-white dark:bg-slate-800 rounded-full absolute bottom-4 right-4 shadow-sm"></div>
-            </div>
-            <div className="opacity-80 pr-2 pt-2">
-              <Cpu className="w-24 h-24 text-slate-100 dark:text-slate-700" />
             </div>
           </div>
           

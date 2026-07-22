@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import { Phone, KeyRound, Cpu, ArrowLeft, LockKeyhole } from "lucide-react";
+import { Phone, KeyRound, ArrowLeft, LockKeyhole } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -150,9 +151,8 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 <div className="relative z-10">
-                    <Link href="/home" className="flex items-center gap-2 w-max group">
-                        <Cpu className="w-8 h-8 text-primary group-hover:text-secondary transition-colors" />
-                        <span className="font-bold text-2xl tracking-tight">Techno-Hub</span>
+                    <Link href="/home" className="flex items-center w-max group" aria-label="Techno Hub home">
+                        <BrandLogo whiteOnly className="h-36 w-64 transition-transform group-hover:scale-[1.02]" />
                     </Link>
                 </div>
 
@@ -161,7 +161,7 @@ export default function ForgotPasswordPage() {
                         <span className="text-primary">Recover</span> your account.
                     </h1>
                     <p className="text-lg text-white/80 leading-relaxed mb-8">
-                        Don't worry, we'll help you get back to your learning journey in no time. Follow the simple steps to securely reset your password.
+                        Don&apos;t worry, we&apos;ll help you get back to your learning journey in no time. Follow the simple steps to securely reset your password.
                     </p>
                 </div>
 
@@ -173,7 +173,7 @@ export default function ForgotPasswordPage() {
             {/* Right side - Form */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 bg-white dark:bg-[#1e293b] relative overflow-y-auto">
                 <Link href="/home" className="lg:hidden absolute top-6 left-6 flex items-center gap-2">
-                    <Cpu className="w-6 h-6 text-primary" />
+                    <BrandLogo className="h-20 w-28" />
                 </Link>
 
                 <div className="w-full max-w-md my-auto">
@@ -250,7 +250,7 @@ export default function ForgotPasswordPage() {
                                         disabled={isLoading}
                                         className="text-sm font-medium text-primary hover:text-secondary transition-colors"
                                     >
-                                        Didn't receive a code? Resend
+                                        Didn&apos;t receive a code? Resend
                                     </button>
                                 </div>
 

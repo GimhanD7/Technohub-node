@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick }) {
   const router = useRouter();
@@ -104,11 +105,8 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
              <Menu className="w-5 h-5" />
            </button>
          )}
-         <Link href="/home" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0">TH</div>
-            <span className={`${sidebarCollapsed ? "md:hidden" : "inline"} font-bold text-[15px] tracking-tight text-slate-800 dark:text-slate-100 hidden md:inline`}>
-               Techno-Hub <span className="text-gray-400 font-normal text-[10px] ml-1 tracking-normal">v1.0.0</span>
-            </span>
+         <Link href="/home" className="flex items-center" aria-label="Techno Hub home">
+            <BrandLogo className={sidebarCollapsed ? "h-12 w-12" : "h-16 w-36"} />
          </Link>
       </div>
 

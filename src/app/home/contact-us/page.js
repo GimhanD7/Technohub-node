@@ -256,13 +256,13 @@ export default function ContactUsPage() {
                   value={form.fullName}
                   onChange={(event) => updateField("fullName", event.target.value)}
                   placeholder="Full name"
-                  className="h-11 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm outline-none focus:border-primary dark:bg-[#0f172a] focus:bg-white dark:bg-[#1e293b]"
+                  className="h-11 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-3 text-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-950/80 focus:ring-2 focus:ring-primary/15 transition-colors"
                   required
                 />
                 <select
                   value={form.learnerType}
                   onChange={(event) => updateField("learnerType", event.target.value)}
-                  className="h-11 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm outline-none focus:border-primary dark:bg-[#0f172a] focus:bg-white dark:bg-[#1e293b]"
+                  className="h-11 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-3 text-sm text-slate-800 dark:text-white outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-950/80 focus:ring-2 focus:ring-primary/15 transition-colors"
                 >
                   <option>Student</option>
                   <option>Parent</option>
@@ -278,7 +278,7 @@ export default function ContactUsPage() {
                   value={form.email}
                   onChange={(event) => updateField("email", event.target.value)}
                   placeholder="Email address"
-                  className="h-11 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm outline-none focus:border-primary dark:bg-[#0f172a] focus:bg-white dark:bg-[#1e293b]"
+                  className="h-11 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-3 text-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-950/80 focus:ring-2 focus:ring-primary/15 transition-colors"
                 />
                 <input
                   value={form.phone}
@@ -287,7 +287,7 @@ export default function ContactUsPage() {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   placeholder="Phone number"
-                  className="h-11 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm outline-none focus:border-primary dark:bg-[#0f172a] focus:bg-white dark:bg-[#1e293b]"
+                  className="h-11 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-3 text-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-950/80 focus:ring-2 focus:ring-primary/15 transition-colors"
                 />
               </div>
 
@@ -295,7 +295,7 @@ export default function ContactUsPage() {
                 value={form.subject}
                 onChange={(event) => updateField("subject", event.target.value)}
                 placeholder="Subject"
-                className="h-11 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm outline-none focus:border-primary dark:bg-[#0f172a] focus:bg-white dark:bg-[#1e293b]"
+                className="h-11 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-3 text-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-950/80 focus:ring-2 focus:ring-primary/15 transition-colors"
                 required
               />
 
@@ -304,7 +304,7 @@ export default function ContactUsPage() {
                 onChange={(event) => updateField("message", event.target.value)}
                 placeholder="How can we help?"
                 rows={6}
-                className="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-3 text-sm outline-none focus:border-primary dark:bg-[#0f172a] focus:bg-white dark:bg-[#1e293b] resize-none"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 px-3 py-3 text-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-primary focus:bg-white dark:focus:bg-slate-950/80 focus:ring-2 focus:ring-primary/15 transition-colors resize-none"
                 required
               />
 

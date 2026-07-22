@@ -11,16 +11,11 @@ import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 
 export default function ExamHallPage() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedUser = localStorage.getItem("techno_hub_user");
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-    }
-  }, []);
+  const [user, setUser] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const savedUser = localStorage.getItem("techno_hub_user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [quizzes, setQuizzes] = useState({ active: [], upcoming: [], past: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -132,7 +127,7 @@ export default function ExamHallPage() {
           <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-secondary/10 rounded-full blur-[90px] pointer-events-none"></div>
 
           <div className="relative z-10 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#1e293b]/10 backdrop-blur-md rounded-full text-[10px] font-bold text-secondary uppercase tracking-widest border border-white/5 shadow-sm mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-bold text-secondary uppercase tracking-widest border border-white/10 shadow-sm mb-4">
               <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse-slow"></span>
               Virtual Examination Arena
             </div>
@@ -146,12 +141,12 @@ export default function ExamHallPage() {
         </div>
 
         {!user && (
-          <div className="mb-8 p-6 bg-blue-50 border border-blue-100 dark:border-blue-900/50 rounded-3xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-left">
+          <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800/60 rounded-3xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-left">
             <div className="flex gap-3 items-start">
               <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-sm font-bold text-slate-800 dark:text-white">Authentication Required</h4>
-                <p className="text-xs text-slate-500 dark:text-white">You must be logged in as a student to participate in mock examinations and view leaderboards.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">You must be logged in as a student to participate in mock examinations and view leaderboards.</p>
               </div>
             </div>
             <Link href="/login" className="shrink-0">
@@ -280,7 +275,7 @@ hover:-translate-y-1
                   {/* Body: icon + label + value rows */}
                   <div className="px-6 py-5 space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
                         <Clock className="w-4 h-4 text-blue-500" />
                       </div>
                       <div>
@@ -290,7 +285,7 @@ hover:-translate-y-1
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
                         <span className="text-amber-600 font-bold text-sm">$</span>
                       </div>
                       <div>
@@ -302,7 +297,7 @@ hover:-translate-y-1
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
                         <ClipboardList className="w-4 h-4 text-emerald-600" />
                       </div>
                       <div>
