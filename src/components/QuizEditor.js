@@ -401,7 +401,7 @@ export default function QuizEditor({ quizId = null, isEdit = false }) {
           <Button 
             onClick={handleSave} 
             disabled={isSaving}
-            className="flex items-center gap-2"
+            className="h-10 px-6 rounded-lg text-sm flex items-center gap-2"
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Quiz

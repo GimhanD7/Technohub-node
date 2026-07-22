@@ -7,9 +7,11 @@ const { logActivity } = require('../utils/logger');
 const { generateNextIndexNumber } = require('../utils/helpers');
 const {
   getEmailError,
+  getEducationCategoryError,
   getPasswordError,
   getPhoneError,
   normalizeEmail,
+  normalizeEducationCategory,
   normalizePhoneNumber,
 } = require('../utils/validation');
 
@@ -157,6 +159,8 @@ exports.addUser = async (req, res) => {
     const mappedPhone = normalizePhoneNumber(phoneNumber || req.body.phone);
     const mappedIndex = indexNumber || req.body.index_number;
     const finalPassword = password || "Password123!";
+    const actualRole = role || "student";
+    const requestedEducationCategory = educationCategory || req.body.education_category;
 
     if (!mappedFullName || !mappedPhone) {
       return res.status(400).json({ success: false, message: "Full name and phone number are required." });
@@ -170,6 +174,10 @@ exports.addUser = async (req, res) => {
 
     const passwordError = getPasswordError(finalPassword, { required: true });
     if (passwordError) return res.status(400).json({ success: false, message: passwordError });
+
+    const educationCategoryError = getEducationCategoryError(requestedEducationCategory, { required: actualRole === "student" });
+    if (educationCategoryError) return res.status(400).json({ success: false, message: educationCategoryError });
+    const mappedEducationCategory = actualRole === "student" ? normalizeEducationCategory(requestedEducationCategory) : null;
     
     const existing = await prisma.users.findFirst({ 
       where: { 
@@ -203,11 +211,11 @@ exports.addUser = async (req, res) => {
         full_name: mappedFullName || "Unknown", 
         email: mappedEmail || null, 
         phone_number: mappedPhone || "", 
-        role: role || "student",
+        role: actualRole,
         password_hash: hash,
         address: "",
         birthdate: birthdate ? new Date(birthdate) : null,
-        education_category: role === 'student' ? (educationCategory || req.body.education_category || null) : null,
+        education_category: mappedEducationCategory,
         subject: subject || null,
         experience: experience || null,
         certifications: certifications || null,
@@ -218,7 +226,7 @@ exports.addUser = async (req, res) => {
     res.json({ success: true, message: "User added successfully." });
   } catch (error) {
     console.error("[addUser Error]:", error);
-    res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    res.status(500).json({ success: false, message: "Unable to create the user. Please verify the details and try again." });
   }
 };
 
@@ -232,7 +240,7 @@ exports.updateUser = async (req, res) => {
     const mappedFullName = fullName || full_name;
     const mappedPhone = normalizePhoneNumber(phoneNumber || phone);
     const mappedEmail = normalizeEmail(email);
-    const mappedEdu = educationCategory || education_category;
+    const requestedEducationCategory = educationCategory || education_category;
 
     if (!mappedFullName || !mappedPhone) {
       return res.status(400).json({ success: false, message: "Full name and phone number are required." });
@@ -243,6 +251,10 @@ exports.updateUser = async (req, res) => {
 
     const emailError = getEmailError(mappedEmail);
     if (emailError) return res.status(400).json({ success: false, message: emailError });
+
+    const educationCategoryError = getEducationCategoryError(requestedEducationCategory, { required: role === "student" });
+    if (educationCategoryError) return res.status(400).json({ success: false, message: educationCategoryError });
+    const mappedEdu = role === "student" ? normalizeEducationCategory(requestedEducationCategory) : null;
 
     const updateData = { 
       full_name: mappedFullName, 
@@ -408,10 +420,9 @@ exports.updateProfile = async (req, res) => {
     }
     
     if (user.role === 'student' && actualEduCategory) {
-      let mappedEduCategory = actualEduCategory;
-      if (mappedEduCategory === 'o/l') mappedEduCategory = 'o_l';
-      if (mappedEduCategory === 'a/l') mappedEduCategory = 'a_l';
-      updateData.education_category = mappedEduCategory;
+      const educationCategoryError = getEducationCategoryError(actualEduCategory);
+      if (educationCategoryError) return res.status(400).json({ success: false, message: educationCategoryError });
+      updateData.education_category = normalizeEducationCategory(actualEduCategory);
     }
 
     if (address !== undefined) updateData.address = address;

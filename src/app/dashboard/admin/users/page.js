@@ -55,23 +55,40 @@ export default function UserManagement() {
   };
 
   // Form States
-  const [formData, setFormData] = useState({ fullName: "", phoneNumber: "", email: "", birthdate: "", educationCategory: "", role: "student", password: "" });
+  const [formData, setFormData] = useState({ fullName: "", phoneNumber: "", email: "", birthdate: "", educationCategory: "school", role: "student", password: "" });
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [formTouched, setFormTouched] = useState({});
+
+  const formFieldErrors = useMemo(() => {
+    const errors = {};
+    const fullName = formData.fullName.trim();
+    if (!fullName) errors.fullName = "Full name is required.";
+    else if (fullName.length < 2) errors.fullName = "Full name must contain at least 2 characters.";
+
+    errors.phoneNumber = getPhoneError(formData.phoneNumber);
+    errors.email = getEmailError(formData.email);
+    if (formData.birthdate && new Date(`${formData.birthdate}T00:00:00`) > new Date()) {
+      errors.birthdate = "Date of birth cannot be in the future.";
+    }
+    if (formData.role === "student" && !formData.educationCategory) {
+      errors.educationCategory = "Education category is required for students.";
+    }
+    errors.password = getPasswordError(formData.password);
+    return errors;
+  }, [formData]);
+
+  const updateFormField = (field, value) => {
+    setFormData(current => ({ ...current, [field]: value }));
+    setFormTouched(current => ({ ...current, [field]: true }));
+    setFormError("");
+  };
+
+  const touchFormField = (field) => setFormTouched(current => ({ ...current, [field]: true }));
+  const hasFormFieldErrors = Object.values(formFieldErrors).some(Boolean);
 
   const validateFormData = () => {
-    if (!formData.fullName.trim()) return "Full name is required.";
-
-    const phoneError = getPhoneError(formData.phoneNumber);
-    if (phoneError) return phoneError;
-
-    const emailError = getEmailError(formData.email);
-    if (emailError) return emailError;
-
-    const passwordError = getPasswordError(formData.password);
-    if (passwordError) return passwordError;
-
-    return "";
+    return Object.values(formFieldErrors).find(Boolean) || "";
   };
 
   const loadUsers = async () => {
@@ -84,13 +101,14 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
-    loadUsers();
-    if (typeof window !== "undefined") {
+    const timer = window.setTimeout(() => {
+      loadUsers();
       const savedUser = localStorage.getItem("techno_hub_user");
       if (savedUser) {
         setCurrentUser(JSON.parse(savedUser));
       }
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const userCounts = useMemo(() => ({
@@ -124,10 +142,6 @@ export default function UserManagement() {
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / usersPerPage));
   const currentUsers = filteredUsers.slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, roleFilter, statusFilter, educationFilter, usersPerPage]);
-
   const handleSort = (key) => {
     setSortConfig(current => ({
       key,
@@ -140,6 +154,7 @@ export default function UserManagement() {
     setRoleFilter("all");
     setStatusFilter("all");
     setEducationFilter("all");
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = Boolean(searchQuery || roleFilter !== "all" || statusFilter !== "all" || educationFilter !== "all");
@@ -231,6 +246,7 @@ export default function UserManagement() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
+    setFormTouched({ fullName: true, phoneNumber: true, email: true, birthdate: true, educationCategory: true, password: true });
     const validationError = validateFormData();
     if (validationError) {
       setFormError(validationError);
@@ -245,7 +261,7 @@ export default function UserManagement() {
     
     if (data.success) {
       setShowAddModal(false);
-      setFormData({ fullName: "", phoneNumber: "", email: "", birthdate: "", educationCategory: "", role: "student", password: "" });
+      setFormData({ fullName: "", phoneNumber: "", email: "", birthdate: "", educationCategory: "school", role: "student", password: "" });
       loadUsers();
       showAlert("Success", "The user has been successfully created.", "success");
     } else {
@@ -257,6 +273,7 @@ export default function UserManagement() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
+    setFormTouched({ fullName: true, phoneNumber: true, email: true, birthdate: true, educationCategory: true, password: true });
     const validationError = validateFormData();
     if (validationError) {
       setFormError(validationError);
@@ -285,15 +302,19 @@ export default function UserManagement() {
       phoneNumber: user.phone_number || "",
       email: user.email || "",
       birthdate: user.birthdate || "",
-      educationCategory: user.education_category || "",
+      educationCategory: user.education_category === "o_l" ? "o/l" : user.education_category === "a_l" ? "a/l" : (user.education_category || ""),
       role: user.role || "student",
       password: ""
     });
+    setFormTouched({});
+    setFormError("");
     setEditUser(user);
   };
 
   const openAddModal = () => {
-    setFormData({ fullName: "", phoneNumber: "", email: "", birthdate: "", educationCategory: "", role: "student", password: "" });
+    setFormData({ fullName: "", phoneNumber: "", email: "", birthdate: "", educationCategory: "school", role: "student", password: "" });
+    setFormTouched({});
+    setFormError("");
     setShowAddModal(true);
   };
 
@@ -376,14 +397,14 @@ export default function UserManagement() {
             type="text" 
             placeholder="Search users..." 
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary dark:bg-[#0f172a]"
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full xl:w-auto xl:ml-auto">
           <select 
             value={roleFilter}
-            onChange={e => setRoleFilter(e.target.value)}
+            onChange={e => { setRoleFilter(e.target.value); setCurrentPage(1); }}
             className="text-[12px] border border-gray-200 dark:border-slate-700 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary bg-white dark:bg-slate-900 dark:text-white"
           >
             <option value="all">All Roles</option>
@@ -391,11 +412,11 @@ export default function UserManagement() {
             <option value="teacher">Teachers</option>
             <option value="student">Students</option>
           </select>
-          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="text-[12px] border border-gray-200 dark:border-slate-700 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary bg-white dark:bg-slate-900 dark:text-white">
+          <select value={statusFilter} onChange={event => { setStatusFilter(event.target.value); setCurrentPage(1); }} className="text-[12px] border border-gray-200 dark:border-slate-700 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary bg-white dark:bg-slate-900 dark:text-white">
             <option value="all">All Statuses</option><option value="active">Active</option><option value="suspended">Suspended</option>
           </select>
-          <select value={educationFilter} onChange={event => setEducationFilter(event.target.value)} className="text-[12px] border border-gray-200 dark:border-slate-700 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary bg-white dark:bg-slate-900 dark:text-white">
-            <option value="all">All Education</option><option value="school">School</option><option value="o/l">O/L</option><option value="a/l">A/L</option><option value="university">University</option><option value="vocational">Vocational</option><option value="professional">Professional</option>
+          <select value={educationFilter} onChange={event => { setEducationFilter(event.target.value); setCurrentPage(1); }} className="text-[12px] border border-gray-200 dark:border-slate-700 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary bg-white dark:bg-slate-900 dark:text-white">
+            <option value="all">All Education</option><option value="school">School</option><option value="o_l">O/L</option><option value="a_l">A/L</option><option value="university">University</option><option value="vocational">Vocational</option><option value="professional">Professional</option>
           </select>
         </div>
         </div>
@@ -527,7 +548,7 @@ export default function UserManagement() {
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400">
               Show
-              <select value={usersPerPage} onChange={(event) => setUsersPerPage(Number(event.target.value))} className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-primary">
+              <select value={usersPerPage} onChange={(event) => { setUsersPerPage(Number(event.target.value)); setCurrentPage(1); }} className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:border-primary">
                 <option value={10}>10</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
@@ -808,37 +829,41 @@ export default function UserManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Full Name *</label>
-                  <input type="text" required value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none" />
+                  <input type="text" required value={formData.fullName} onChange={e => updateFormField("fullName", e.target.value)} onBlur={() => touchFormField("fullName")} aria-invalid={Boolean(formTouched.fullName && formFieldErrors.fullName)} className={`w-full p-2 text-[13px] border rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-slate-900 ${formTouched.fullName && formFieldErrors.fullName ? "border-red-400" : "border-gray-200 dark:border-slate-700"}`} />
+                  {formTouched.fullName && formFieldErrors.fullName && <p className="mt-1 text-[10px] font-medium text-red-500">{formFieldErrors.fullName}</p>}
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Phone Number *</label>
-                  <input type="tel" required value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: digitsOnly(e.target.value)})} inputMode="numeric" pattern="[0-9]*" className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none" />
+                  <input type="tel" required value={formData.phoneNumber} onChange={e => updateFormField("phoneNumber", digitsOnly(e.target.value))} onBlur={() => touchFormField("phoneNumber")} inputMode="numeric" pattern="[0-9]*" aria-invalid={Boolean(formTouched.phoneNumber && formFieldErrors.phoneNumber)} className={`w-full p-2 text-[13px] border rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-slate-900 ${formTouched.phoneNumber && formFieldErrors.phoneNumber ? "border-red-400" : "border-gray-200 dark:border-slate-700"}`} />
+                  {formTouched.phoneNumber && formFieldErrors.phoneNumber && <p className="mt-1 text-[10px] font-medium text-red-500">{formFieldErrors.phoneNumber}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Email Address</label>
-                  <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none" />
+                  <input type="email" value={formData.email} onChange={e => updateFormField("email", e.target.value)} onBlur={() => touchFormField("email")} aria-invalid={Boolean(formTouched.email && formFieldErrors.email)} className={`w-full p-2 text-[13px] border rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-slate-900 ${formTouched.email && formFieldErrors.email ? "border-red-400" : "border-gray-200 dark:border-slate-700"}`} />
+                  {formTouched.email && formFieldErrors.email && <p className="mt-1 text-[10px] font-medium text-red-500">{formFieldErrors.email}</p>}
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Date of Birth</label>
-                  <input type="date" value={formData.birthdate} onChange={e => setFormData({...formData, birthdate: e.target.value})} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none" />
+                  <input type="date" value={formData.birthdate} max={new Date().toISOString().split("T")[0]} onChange={e => updateFormField("birthdate", e.target.value)} onBlur={() => touchFormField("birthdate")} aria-invalid={Boolean(formTouched.birthdate && formFieldErrors.birthdate)} className={`w-full p-2 text-[13px] border rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-slate-900 ${formTouched.birthdate && formFieldErrors.birthdate ? "border-red-400" : "border-gray-200 dark:border-slate-700"}`} />
+                  {formTouched.birthdate && formFieldErrors.birthdate && <p className="mt-1 text-[10px] font-medium text-red-500">{formFieldErrors.birthdate}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">System Role *</label>
-                  <select required value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white dark:bg-[#1e293b]">
+                  <select required value={formData.role} onChange={e => updateFormField("role", e.target.value)} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-700 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white dark:bg-slate-900">
                     <option value="student">Student</option>
                     <option value="teacher">Teacher</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Education Category</label>
-                  <select value={formData.educationCategory} onChange={e => setFormData({...formData, educationCategory: e.target.value})} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white dark:bg-[#1e293b]">
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Education Category {formData.role === "student" ? "*" : ""}</label>
+                  <select value={formData.educationCategory} disabled={formData.role !== "student"} onChange={e => updateFormField("educationCategory", e.target.value)} onBlur={() => touchFormField("educationCategory")} aria-invalid={Boolean(formTouched.educationCategory && formFieldErrors.educationCategory)} className={`w-full p-2 text-[13px] border rounded focus:ring-1 focus:ring-primary focus:outline-none bg-white dark:bg-slate-900 disabled:opacity-50 ${formTouched.educationCategory && formFieldErrors.educationCategory ? "border-red-400" : "border-gray-200 dark:border-slate-700"}`}>
                     <option value="">None</option>
                     <option value="school">School</option>
                     <option value="o/l">O/L</option>
@@ -847,14 +872,16 @@ export default function UserManagement() {
                     <option value="vocational">Vocational</option>
                     <option value="professional">Professional</option>
                   </select>
+                  {formTouched.educationCategory && formFieldErrors.educationCategory && <p className="mt-1 text-[10px] font-medium text-red-500">{formFieldErrors.educationCategory}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Password</label>
-                  <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={editUser ? "Leave blank to keep current" : "Default: Password123!"} className="w-full p-2 text-[13px] border border-gray-200 dark:border-slate-800 rounded focus:ring-1 focus:ring-primary focus:outline-none" />
+                  <input type="password" value={formData.password} onChange={e => updateFormField("password", e.target.value)} onBlur={() => touchFormField("password")} placeholder={editUser ? "Leave blank to keep current" : "Default: Password123!"} aria-invalid={Boolean(formTouched.password && formFieldErrors.password)} className={`w-full p-2 text-[13px] border rounded focus:ring-1 focus:ring-primary focus:outline-none dark:bg-slate-900 ${formTouched.password && formFieldErrors.password ? "border-red-400" : "border-gray-200 dark:border-slate-700"}`} />
                   <p className="mt-1 text-[11px] text-gray-400">Use 8+ characters with uppercase, lowercase, number, and special character.</p>
+                  {formTouched.password && formFieldErrors.password && <p className="mt-1 text-[10px] font-medium text-red-500">{formFieldErrors.password}</p>}
                 </div>
               </div>
 
@@ -862,7 +889,7 @@ export default function UserManagement() {
                 <button type="button" onClick={() => { setShowAddModal(false); setEditUser(null); }} className="px-4 py-2 text-[12px] font-medium text-slate-600 dark:text-white bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-slate-800 rounded hover:bg-gray-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200">
                   Cancel
                 </button>
-                <button type="submit" disabled={formLoading} className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium text-white bg-primary rounded hover:bg-primary/90 transition-colors disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1">
+                <button type="submit" disabled={formLoading || hasFormFieldErrors} className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium text-white bg-primary rounded hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1">
                   {formLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {editUser ? 'Save Changes' : 'Create User'}
                 </button>
