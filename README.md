@@ -34,3 +34,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+# PDF compression
+
+PDFs uploaded as course materials or e-book resources are automatically compressed with Ghostscript's balanced `ebook` preset before they are saved. Install Ghostscript on the backend host and ensure its command is available on `PATH`. Alternatively, set `GHOSTSCRIPT_PATH` to the full Ghostscript executable path (for example, `C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe`).
