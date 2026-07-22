@@ -5,10 +5,12 @@ const { generateNextIndexNumber } = require('../utils/helpers');
 const { logActivity } = require('../utils/logger');
 const {
   getEmailError,
+  getEducationCategoryError,
   getOtpError,
   getPasswordError,
   getPhoneError,
   normalizeEmail,
+  normalizeEducationCategory,
   normalizePhoneNumber,
 } = require('../utils/validation');
 
@@ -155,9 +157,11 @@ exports.register = async (req, res) => {
     // Hash password
     const password_hash = await bcrypt.hash(password, 10);
 
-    let mappedEduCategory = actualStudentCategory;
-    if (mappedEduCategory === 'o/l') mappedEduCategory = 'o_l';
-    if (mappedEduCategory === 'a/l') mappedEduCategory = 'a_l';
+    const educationCategoryError = getEducationCategoryError(actualStudentCategory, { required: true });
+    if (educationCategoryError) {
+      return res.status(400).json({ success: false, message: educationCategoryError });
+    }
+    const mappedEduCategory = normalizeEducationCategory(actualStudentCategory);
 
     const newIndexNumber = await generateNextIndexNumber();
 

@@ -7,7 +7,7 @@ import { Sun, Moon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import BrandLogo from '@/components/BrandLogo';
 import { cn } from '@/lib/utils';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ThemeProvider';
 
 const navItems = [
   { label: "Home", href: "/home", exact: true },
@@ -66,8 +66,8 @@ export default function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         isScrolled 
-          ? "bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-xl shadow-sm border-b border-gray-200 dark:border-slate-800" 
-          : "bg-white/40 dark:bg-[#0f172a]/40 backdrop-blur-md border-b border-transparent"
+          ? "bg-white dark:bg-[#0f172a]/90 dark:backdrop-blur-xl shadow-sm border-b border-gray-200 dark:border-slate-800"
+          : "bg-white dark:bg-[#0f172a]/40 dark:backdrop-blur-md border-b border-transparent"
       )}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Search, Bell, Settings, Moon, Sun, Globe, Menu, BookOpen, FileText, CreditCard, Info, Clock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/ThemeProvider";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
 import BrandLogo from "@/components/BrandLogo";
 

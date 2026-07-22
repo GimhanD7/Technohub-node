@@ -24,8 +24,8 @@ function CountUp({ value, duration = 900, delay = 0, className }) {
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
     if (prefersReduced) {
-      setDisplay(value);
-      return;
+      const reducedMotionTimer = window.setTimeout(() => setDisplay(value), 0);
+      return () => window.clearTimeout(reducedMotionTimer);
     }
 
     let raf;
@@ -82,6 +82,38 @@ function Confetti() {
 }
 
 // Pentagon badge colors per rank — gold for 1st, matching the site's amber accent
+// A restrained page-wide celebration while a completed exam leaderboard is shown.
+function PageCelebration() {
+  const colors = ["#eab308", "#1d4ed8", "#0f172a", "#f59e0b", "#60a5fa"];
+  const pieces = Array.from({ length: 14 }, (_, index) => ({
+    left: `${3 + ((index * 37) % 94)}%`,
+    color: colors[index % colors.length],
+    delay: `${-(index * 0.73)}s`,
+    duration: `${7.5 + (index % 5) * 0.65}s`,
+    drift: `${((index % 7) - 3) * 18}px`,
+    rotation: `${180 + (index % 6) * 75}deg`,
+  }));
+
+  return (
+    <div className="fixed inset-0 z-[60] overflow-hidden pointer-events-none" aria-hidden="true">
+      {pieces.map((piece, index) => (
+        <span
+          key={index}
+          className={`page-celebration-piece ${index % 3 === 0 ? "rounded-full" : "rounded-sm"}`}
+          style={{
+            left: piece.left,
+            backgroundColor: piece.color,
+            animationDelay: piece.delay,
+            animationDuration: piece.duration,
+            "--celebration-drift": piece.drift,
+            "--celebration-rotation": piece.rotation,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 const RANK_BADGE = {
   1: "bg-[#eab308]",
   2: "bg-slate-300",
@@ -96,9 +128,9 @@ const RANK_BADGE_TEXT = {
 
 // Pedestal heights (tallest in center for 1st)
 const PEDESTAL_HEIGHT = {
-  1: "h-52",
-  2: "h-40",
-  3: "h-32",
+  1: "h-44 sm:h-48",
+  2: "h-36 sm:h-40",
+  3: "h-28 sm:h-32",
 };
 
 const AVATAR_RING = {
@@ -215,19 +247,7 @@ export default function RankerPage() {
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
-    loadPastQuizzes();
-  }, []);
-
-  useEffect(() => {
-    if (selectedQuizId) {
-      loadRankings(selectedQuizId);
-    } else {
-      setRankings([]);
-    }
-  }, [selectedQuizId]);
-
-  const loadPastQuizzes = async () => {
+  async function loadPastQuizzes() {
     setIsLoadingQuizzes(true);
     setErrorMsg("");
     const res = await fetchApi("/quiz/list");
@@ -241,9 +261,9 @@ export default function RankerPage() {
     } else {
       setErrorMsg("Failed to load past mock exams.");
     }
-  };
+  }
 
-  const loadRankings = async (qId) => {
+  async function loadRankings(qId) {
     setIsLoadingRankings(true);
     setErrorMsg("");
     const res = await fetchApi(`/quiz/rankings?quizId=${qId}`);
@@ -255,7 +275,24 @@ export default function RankerPage() {
     } else {
       setErrorMsg(res.message || "Failed to load rankings.");
     }
-  };
+  }
+
+  useEffect(() => {
+    const quizzesTimer = window.setTimeout(() => loadPastQuizzes(), 0);
+    return () => window.clearTimeout(quizzesTimer);
+  }, []);
+
+  useEffect(() => {
+    const rankingsTimer = window.setTimeout(() => {
+      if (selectedQuizId) {
+        loadRankings(selectedQuizId);
+      } else {
+        setRankings([]);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(rankingsTimer);
+  }, [selectedQuizId]);
 
   const gold = rankings[0] || null;
   const silver = rankings[1] || null;
@@ -331,42 +368,65 @@ export default function RankerPage() {
           100% { transform: rotate(360deg); }
         }
         .sparkle-spin { animation: sparkleSpin 4s linear infinite; }
+        @keyframes pageCelebrationFall {
+          0% { transform: translate3d(0, -8vh, 0) rotate(0deg); opacity: 0; }
+          12% { opacity: 0.62; }
+          82% { opacity: 0.62; }
+          100% { transform: translate3d(var(--celebration-drift), 105vh, 0) rotate(var(--celebration-rotation)); opacity: 0; }
+        }
+        .page-celebration-piece {
+          position: absolute;
+          top: 0;
+          width: 6px;
+          height: 9px;
+          box-shadow: 0 1px 3px rgb(15 23 42 / 0.1);
+          animation-name: pageCelebrationFall;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          animation-fill-mode: both;
+          will-change: transform, opacity;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .page-celebration-piece { display: none; }
+        }
       `}</style>
 
       <Navbar />
 
+      {rankings.length > 0 && <PageCelebration key={selectedQuizId} />}
+
       <main className="flex-1 bg-[#f8fafc] dark:bg-slate-900 min-h-screen">
         {/* Header Section matching the site's card style */}
-        <section className="pt-28 pb-8 px-6 bg-white dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800">
+        <section className="pt-24 pb-6 px-4 sm:px-6 bg-white dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800">
           <div className="max-w-7xl mx-auto">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/15 bg-amber-500/5 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/5 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-3">
                 <Award className="w-4 h-4" />
                 Hall of Fame
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-950 dark:text-white mb-5">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-950 dark:text-white mb-2">
                 Top Rankers
               </h1>
-              <p className="text-slate-600 dark:text-slate-300 text-lg leading-8">
+              <p className="max-w-2xl text-slate-600 dark:text-slate-300 text-base leading-7">
                 Celebrate the excellence and hard work of our highest achieving students. See where you stand among the best!
               </p>
             </div>
 
-            {errorMsg && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg flex gap-2 items-center max-w-3xl">
-                <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
-                {errorMsg}
-              </div>
-            )}
+            <div className="lg:self-end">
+              <label htmlFor="ranker-exam" className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Examination
+              </label>
 
-            <div className="mt-8 max-w-sm">
+            <div className="max-w-md">
               <label className="relative block">
                 <span className="sr-only">Select Examination</span>
                 <Award className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <select
+                  id="ranker-exam"
                   value={selectedQuizId}
                   onChange={(e) => setSelectedQuizId(e.target.value)}
-                  className="w-full h-14 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0f172a] pl-12 pr-4 text-sm font-semibold text-slate-700 dark:text-white outline-none focus:border-[#1e3a8a] focus:bg-white dark:focus:bg-[#1e293b] focus:ring-4 focus:ring-[#1e3a8a]/10 appearance-none cursor-pointer"
+                  className="w-full h-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f172a] pl-12 pr-10 text-sm font-semibold text-slate-700 dark:text-white outline-none focus:border-[#1e3a8a] focus:bg-white dark:focus:bg-[#1e293b] focus:ring-4 focus:ring-[#1e3a8a]/10 appearance-none cursor-pointer"
                   disabled={isLoadingQuizzes}
                 >
                   {isLoadingQuizzes ? (
@@ -381,17 +441,25 @@ export default function RankerPage() {
                     ))
                   )}
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
-                  ▼
-                </div>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs" aria-hidden="true">▼</span>
               </label>
             </div>
+            </div>
+            </div>
+
+            {errorMsg && (
+              <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg flex gap-2 items-center max-w-3xl">
+                <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+                {errorMsg}
+              </div>
+            )}
+
           </div>
         </section>
 
         {/* Rankings Section */}
-        <section className="px-6 py-8">
-          <div className="max-w-7xl mx-auto">
+        <section className="px-4 sm:px-6 py-6">
+          <div className="max-w-5xl mx-auto">
             {isLoadingRankings ? (
               <div className="py-20 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
                 <div className="flex gap-2 mb-4">
@@ -410,8 +478,8 @@ export default function RankerPage() {
             ) : rankings.length > 0 ? (
               <div className="space-y-8">
                 {/* Podium */}
-                <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm px-6 pt-10 pb-6">
-                  <div className="flex items-end justify-center gap-3 sm:gap-6 max-w-2xl mx-auto">
+                <div className="relative bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm px-3 sm:px-8 pt-9 pb-0">
+                  <div className="flex items-end justify-center gap-2 sm:gap-6 max-w-2xl mx-auto">
                     <PodiumColumn entry={silver} rank={2} order="order-1" />
                     <PodiumColumn entry={gold} rank={1} order="order-2" />
                     <PodiumColumn entry={bronze} rank={3} order="order-3" />

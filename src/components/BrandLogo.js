@@ -8,7 +8,7 @@ export default function BrandLogo({ className = "h-14 w-28", whiteOnly = false, 
 
   return (
     <span className={`${className} relative block shrink-0`} aria-label="Techno Hub">
-      <img src={colorSource} alt="" className="absolute inset-0 h-full w-full object-contain dark:hidden" />
+      <img src={colorSource} alt="" className="absolute inset-0 h-full w-full object-contain mix-blend-multiply dark:hidden" />
       <img src={whiteSource} alt="" className="absolute inset-0 hidden h-full w-full object-contain dark:block" />
     </span>
   );

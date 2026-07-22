@@ -2,6 +2,84 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { logActivity } = require('../utils/logger');
 
+function createSeededRandom(seedValue) {
+  let seed = 2166136261;
+  const input = String(seedValue);
+
+  for (let index = 0; index < input.length; index += 1) {
+    seed ^= input.charCodeAt(index);
+    seed = Math.imul(seed, 16777619);
+  }
+
+  return () => {
+    seed += 0x6D2B79F5;
+    let value = seed;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle(items, seedValue) {
+  const shuffled = [...items];
+  const random = createSeededRandom(seedValue);
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
+function rotateItems(items, offset) {
+  if (items.length < 2) return [...items];
+  const safeOffset = ((offset % items.length) + items.length) % items.length;
+  return [...items.slice(safeOffset), ...items.slice(0, safeOffset)];
+}
+
+function prepareStudentQuestions(questions, attemptId, responses = [], flags = []) {
+  const responseMap = responses.reduce((map, response) => {
+    const selected = map.get(response.question_id) || [];
+    selected.push(response.option_id);
+    map.set(response.question_id, selected);
+    return map;
+  }, new Map());
+  const flagMap = new Map(flags.map(flag => [flag.question_id, Boolean(flag.is_flagged)]));
+  const orderedQuestions = attemptId
+    ? rotateItems(
+        seededShuffle(questions, `quiz:${questions[0]?.quiz_id || 0}:questions`),
+        Number(attemptId)
+      )
+    : questions;
+
+  return orderedQuestions.map(question => {
+    const orderedOptions = attemptId
+      ? rotateItems(
+          seededShuffle(question.options, `question:${question.id}:options`),
+          Number(attemptId) + Number(question.id)
+        )
+      : question.options;
+
+    return {
+      id: question.id,
+      quiz_id: question.quiz_id,
+      question_text: question.question_text,
+      image_url: question.image_url,
+      marks: question.marks,
+      created_at: question.created_at,
+      correctAnswerCount: question.options.filter(option => Boolean(option.is_correct)).length,
+      selectedOptions: responseMap.get(question.id) || [],
+      isFlagged: flagMap.get(question.id) || false,
+      options: orderedOptions.map(option => ({
+        id: option.id,
+        question_id: option.question_id,
+        option_text: option.option_text
+      }))
+    };
+  });
+}
+
 // ==========================================
 // 1. TEACHER MANAGEMENT (CRUD)
 // ==========================================
@@ -132,15 +210,16 @@ exports.listQuizzes = async (req, res) => {
 
 exports.getQuiz = async (req, res) => {
   try {
-    const { quizId } = req.query;
+    const { quizId, userId } = req.query;
     if (!quizId) return res.status(400).json({ success: false, message: "Quiz ID is required." });
 
     const quiz = await prisma.quizzes.findUnique({
       where: { id: parseInt(quizId) },
       include: {
         questions: {
+          orderBy: { id: 'asc' },
           include: {
-            options: true
+            options: { orderBy: { id: 'asc' } }
           }
         }
       }
@@ -148,10 +227,38 @@ exports.getQuiz = async (req, res) => {
 
     if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found." });
 
+    const parsedUserId = Number.parseInt(userId, 10);
+    const requestingUser = Number.isInteger(parsedUserId)
+      ? await prisma.users.findUnique({ where: { id: parsedUserId }, select: { role: true } })
+      : null;
+    let questions = quiz.questions;
+    let studentAttemptId = null;
+
+    if (!requestingUser || requestingUser.role === 'student') {
+      const attempt = requestingUser
+        ? await prisma.quiz_attempts.findFirst({
+            where: { quiz_id: quiz.id, user_id: parsedUserId },
+            select: { id: true }
+          })
+        : null;
+      const responses = attempt
+        ? await prisma.student_responses.findMany({ where: { attempt_id: attempt.id } })
+        : [];
+      const flags = attempt
+        ? await prisma.student_flags.findMany({ where: { attempt_id: attempt.id } })
+        : [];
+
+      studentAttemptId = attempt?.id || null;
+      questions = prepareStudentQuestions(quiz.questions, attempt?.id, responses, flags);
+    }
+
     res.json({ 
       success: true, 
       quiz: {
         ...quiz,
+        questions,
+        attemptId: studentAttemptId,
+        shuffleApplied: Boolean(studentAttemptId),
         startTime: quiz.start_time,
         endTime: quiz.end_time,
         now: new Date().toISOString()
@@ -414,17 +521,28 @@ exports.startAttempt = async (req, res) => {
       });
     }
 
-    // Return the quiz data without the `is_correct` flags
+    // Build a stable, attempt-specific order. Reopening the same attempt keeps
+    // the exact order while different students receive different arrangements.
     const questions = await prisma.questions.findMany({
       where: { quiz_id: parseInt(quizId) },
-      include: {
-        options: {
-          select: { id: true, question_id: true, option_text: true } // Omit is_correct
-        }
-      }
+      orderBy: { id: 'asc' },
+      include: { options: { orderBy: { id: 'asc' } } }
     });
+    const responses = await prisma.student_responses.findMany({
+      where: { attempt_id: attempt.id }
+    });
+    const flags = await prisma.student_flags.findMany({
+      where: { attempt_id: attempt.id }
+    });
+    const shuffledQuestions = prepareStudentQuestions(questions, attempt.id, responses, flags);
 
-    res.json({ success: true, attemptId: attempt.id, questions, endTime: quiz.end_time });
+    res.json({
+      success: true,
+      attemptId: attempt.id,
+      questions: shuffledQuestions,
+      shuffleApplied: true,
+      endTime: quiz.end_time
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

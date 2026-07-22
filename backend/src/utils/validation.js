@@ -52,12 +52,33 @@ function getOtpError(otp) {
   return "";
 }
 
+const EDUCATION_CATEGORIES = new Set([
+  "school",
+  "o_l",
+  "a_l",
+  "university",
+  "vocational",
+  "professional",
+]);
+
+function normalizeEducationCategory(value) {
+  const normalized = String(value || "").trim().toLowerCase().replaceAll("/", "_");
+  return EDUCATION_CATEGORIES.has(normalized) ? normalized : null;
+}
+
+function getEducationCategoryError(value, { required = false } = {}) {
+  if (!String(value || "").trim()) return required ? "Education category is required for students." : "";
+  return normalizeEducationCategory(value) ? "" : "Please select a valid education category.";
+}
+
 module.exports = {
   getEmailError,
+  getEducationCategoryError,
   getOtpError,
   getPasswordError,
   getPhoneError,
   normalizeEmail,
+  normalizeEducationCategory,
   normalizePhoneNumber,
   PASSWORD_REQUIREMENTS,
 };

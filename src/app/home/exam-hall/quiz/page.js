@@ -12,6 +12,36 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Button from "@/components/ui/Button";
 
+function normalizeQuizQuestions(questions = []) {
+  return questions.map(question => ({
+    ...question,
+    text: question.text || question.question_text,
+    imageUrl: (question.imageUrl || question.image_url)
+      ? ((question.imageUrl || question.image_url).startsWith('http')
+          ? (question.imageUrl || question.image_url)
+          : `${BASE_URL}${question.imageUrl || question.image_url}`)
+      : null,
+    selectedOptions: question.selectedOptions || [],
+    options: (question.options || []).map(option => ({
+      ...option,
+      text: option.text || option.option_text
+    }))
+  }));
+}
+
+function rotateForAttempt(items, offset) {
+  if (items.length < 2) return [...items];
+  const safeOffset = ((Number(offset) % items.length) + items.length) % items.length;
+  return [...items.slice(safeOffset), ...items.slice(0, safeOffset)];
+}
+
+function applyFallbackAttemptOrder(questions, attemptId) {
+  return rotateForAttempt(questions, attemptId).map(question => ({
+    ...question,
+    options: rotateForAttempt(question.options || [], Number(attemptId) + Number(question.id))
+  }));
+}
+
 function StudentQuizContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -20,12 +50,14 @@ function StudentQuizContent() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const userTimer = window.setTimeout(() => {
       try {
         const saved = localStorage.getItem("techno_hub_user");
         if (saved) setUser(JSON.parse(saved));
       } catch {}
-    }
+    }, 0);
+
+    return () => window.clearTimeout(userTimer);
   }, []);
   const [quiz, setQuiz] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -148,7 +180,7 @@ function StudentQuizContent() {
     timerRef.current = setInterval(tick, 1000);
   }, [handleAutoSubmit]);
 
-  const checkAttemptStatus = useCallback(async (qId, currentUser, serverTime, startT, endT) => {
+  const checkAttemptStatus = useCallback(async (qId, currentUser, serverTime, startT, endT, shuffleApplied) => {
     // Check list of quizzes to find if user has submitted
     const listRes = await fetchApi(`/quiz/list?userId=${currentUser.id}`);
     if (listRes.success) {
@@ -158,6 +190,9 @@ function StudentQuizContent() {
       
       if (match && match.attempt) {
         setAttemptId(match.attempt.id);
+        if (!shuffleApplied) {
+          setQuestions(currentQuestions => applyFallbackAttemptOrder(currentQuestions, match.attempt.id));
+        }
         if (match.attempt.isSubmitted) {
           setIsSubmitted(true);
           setIsLobby(false);
@@ -186,16 +221,12 @@ function StudentQuizContent() {
 
     if (data.success) {
       setQuiz(data.quiz);
-      setQuestions((data.quiz.questions || []).map(q => ({ 
-        ...q, 
-        text: q.text || q.question_text,
-        imageUrl: (q.imageUrl || q.image_url) ? ((q.imageUrl || q.image_url).startsWith('http') ? (q.imageUrl || q.image_url) : `${BASE_URL}${q.imageUrl || q.image_url}`) : null,
-        selectedOptions: q.selectedOptions || [],
-        options: (q.options || []).map(opt => ({
-          ...opt,
-          text: opt.text || opt.option_text
-        }))
-      })));
+      const normalizedQuestions = normalizeQuizQuestions(data.quiz.questions);
+      setQuestions(
+        data.quiz.attemptId && !data.quiz.shuffleApplied
+          ? applyFallbackAttemptOrder(normalizedQuestions, data.quiz.attemptId)
+          : normalizedQuestions
+      );
       
       const serverTime = new Date(data.quiz.now).getTime();
       const startT = new Date(data.quiz.startTime).getTime();
@@ -208,7 +239,7 @@ function StudentQuizContent() {
         // Load student submissions
         await loadStaffSubmissions(qId, currentUser);
       } else {
-        checkAttemptStatus(qId, currentUser, serverTime, startT, endT);
+        checkAttemptStatus(qId, currentUser, serverTime, startT, endT, data.quiz.shuffleApplied);
       }
       
     } else {
@@ -312,6 +343,13 @@ function StudentQuizContent() {
 
     if (res.success) {
       setAttemptId(res.attemptId);
+      const normalizedQuestions = normalizeQuizQuestions(res.questions);
+      setQuestions(
+        res.shuffleApplied
+          ? normalizedQuestions
+          : applyFallbackAttemptOrder(normalizedQuestions, res.attemptId)
+      );
+      setCurrentIdx(0);
       if (res.isSubmitted) {
         setIsSubmitted(true);
         loadRankings(quiz?.id, user?.id);
