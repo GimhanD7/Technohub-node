@@ -37,4 +37,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 # PDF compression
 
-PDFs uploaded as course materials or e-book resources are automatically compressed with Ghostscript's balanced `ebook` preset before they are saved. Install Ghostscript on the backend host and ensure its command is available on `PATH`. Alternatively, set `GHOSTSCRIPT_PATH` to the full Ghostscript executable path (for example, `C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe`).
+PDFs uploaded as course materials or e-book resources are automatically compressed with Ghostscript's balanced `ebook` preset when Ghostscript is available. If it is not installed on the backend host, the validated original PDF is saved instead, so uploads continue to work. To enable compression, install Ghostscript and ensure `gs` is available on `PATH`, or set `GHOSTSCRIPT_PATH` to the full executable path (for example, `C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe`). Set `PDF_COMPRESSION_REQUIRED=true` only if uploads must fail when compression cannot run.

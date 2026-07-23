@@ -72,7 +72,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/home" className="flex items-center group" aria-label="Techno Hub home">
-          <BrandLogo className="h-16 w-36 transition-transform group-hover:scale-[1.03]" />
+          <BrandLogo horizontal className="h-16 transition-transform group-hover:scale-[1.03]" />
         </Link>
         <nav className="hidden lg:flex items-center gap-5 text-sm font-medium">
           {navItems.map((item) => {

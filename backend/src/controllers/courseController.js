@@ -420,12 +420,17 @@ exports.uploadMaterial = async (req, res) => {
 
     res.json({
       success: true,
-      message: compression.compressed ? "PDF compressed and uploaded successfully." : "PDF uploaded successfully (already optimized).",
+      message: compression.compressed
+        ? "PDF compressed and uploaded successfully."
+        : compression.compressionSkipped
+          ? "PDF uploaded successfully."
+          : "PDF uploaded successfully (already optimized).",
       fileUrl: `/uploads/course-materials/${file.filename}`,
       fileName: file.originalname,
       fileSize: compression.fileSize,
       originalFileSize: compression.originalSize,
-      compressed: compression.compressed
+      compressed: compression.compressed,
+      compressionSkipped: Boolean(compression.compressionSkipped)
     });
 
   } catch (error) {

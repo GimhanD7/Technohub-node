@@ -426,7 +426,7 @@ export default function Home() {
                 <h2 className="text-3xl md:text-4xl font-bold text-slate-950 dark:text-white">{settings.coursesHeading}</h2>
                 {settings.coursesSubtitle && <p className="text-sm leading-6 text-slate-600 dark:text-white max-w-xl mt-3">{settings.coursesSubtitle}</p>}
               </div>
-              <Link href="/home/e-book" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-slate-950">
+              <Link href="/home/e-book" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-slate-950 dark:hover:text-blue-300">
                 Browse resources
                 <ArrowRight className="w-4 h-4" />
               </Link>
@@ -479,7 +479,7 @@ export default function Home() {
               <p className="text-slate-600 dark:text-white leading-7 mt-5">
                 {settings.whySubtitle}
               </p>
-              <Link href="/home/contact-us" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-slate-950">
+              <Link href="/home/contact-us" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-slate-950 dark:hover:text-blue-300">
                 Talk to support
                 <ArrowRight className="w-4 h-4" />
               </Link>
