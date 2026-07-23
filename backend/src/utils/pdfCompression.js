@@ -75,6 +75,21 @@ async function compressPdf(filePath) {
     }
 
     return { compressed: false, originalSize: original.size, fileSize: original.size };
+  } catch (error) {
+    const compressionRequired = process.env.PDF_COMPRESSION_REQUIRED?.toLowerCase() === 'true';
+
+    if (error.code === 'GHOSTSCRIPT_NOT_FOUND' && !compressionRequired) {
+      console.warn(`[PDF compression] Ghostscript is unavailable; keeping the validated original file: ${parsed.base}`);
+      return {
+        compressed: false,
+        compressionSkipped: true,
+        skipReason: 'ghostscript-unavailable',
+        originalSize: original.size,
+        fileSize: original.size
+      };
+    }
+
+    throw error;
   } finally {
     await fs.promises.unlink(outputPath).catch(() => {});
   }

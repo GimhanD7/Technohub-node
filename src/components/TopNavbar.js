@@ -106,7 +106,11 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
            </button>
          )}
          <Link href="/home" className="flex items-center" aria-label="Techno Hub home">
-            <BrandLogo className={sidebarCollapsed ? "h-12 w-12" : "h-16 w-36"} />
+            <BrandLogo
+              horizontal={!sidebarCollapsed}
+              markOnly={sidebarCollapsed}
+              className={sidebarCollapsed ? "h-12" : "h-16"}
+            />
          </Link>
       </div>
 

@@ -318,13 +318,18 @@ exports.uploadEbook = async (req, res) => {
 
     res.json({
       success: true,
-      message: compression.compressed ? 'PDF compressed and uploaded successfully.' : 'Resource uploaded successfully.',
+      message: compression.compressed
+        ? 'PDF compressed and uploaded successfully.'
+        : compression.compressionSkipped
+          ? 'PDF uploaded successfully.'
+          : 'Resource uploaded successfully.',
       fileUrl: `/uploads/ebooks/${file.filename}`,
       fileName: file.originalname,
       fileType: file.mimetype,
       fileSize: compression.fileSize,
       originalFileSize: compression.originalSize,
-      compressed: compression.compressed
+      compressed: compression.compressed,
+      compressionSkipped: Boolean(compression.compressionSkipped)
     });
   } catch (error) {
     if (uploadedPath) await fs.promises.unlink(uploadedPath).catch(() => {});

@@ -14,6 +14,7 @@
 .dark {
   --background: #0f172a;
   --foreground: #f8fafc;
+  --primary-dark-accent: #60a5fa;
 }
 
 @theme inline {
@@ -82,6 +83,87 @@ body {
   .lecturer-track:hover {
     animation-play-state: paused;
   }
+}
+
+/*
+ * The brand navy works as a solid button/background, but not as foreground
+ * content on the dark navy canvas. These rules brighten only dark-mode accent
+ * text, borders, rings, and subtle tints; solid bg-primary buttons stay on-brand.
+ */
+.dark .text-primary,
+.dark .hover\:text-primary:hover,
+.dark .group:hover .group-hover\:text-primary {
+  color: var(--primary-dark-accent);
+}
+
+.dark .text-primary.hover\:text-white:hover,
+.dark .hover\:text-white:hover {
+  color: #ffffff;
+}
+
+.dark [class~="text-primary/60"] {
+  color: rgba(147, 197, 253, 0.78);
+}
+
+.dark .border-primary,
+.dark .focus\:border-primary:focus {
+  border-color: var(--primary-dark-accent);
+}
+
+.dark [class~="border-primary/10"],
+.dark [class~="border-primary/15"],
+.dark [class~="border-primary/20"],
+.dark [class~="border-primary/30"],
+.dark [class~="border-primary/35"],
+.dark [class~="border-primary/40"],
+.dark [class~="border-primary/50"] {
+  border-color: rgba(96, 165, 250, 0.32);
+}
+
+.dark [class~="bg-primary/5"] {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.dark [class~="bg-primary/10"] {
+  background-color: rgba(59, 130, 246, 0.16);
+}
+
+.dark [class~="bg-primary/20"] {
+  background-color: rgba(59, 130, 246, 0.22);
+}
+
+.dark [class*="ring-primary"] {
+  --tw-ring-color: rgba(96, 165, 250, 0.38);
+}
+
+.dark .text-gradient,
+.dark .text-gradient-primary {
+  background-image: linear-gradient(to right, #60a5fa, #facc15);
+}
+
+/* Recharts adds keyboard-focus outlines to nested SVG nodes. Keep the analytics
+   cards as the visible focus boundary so charts never render black rectangles. */
+.analytics-page .recharts-wrapper,
+.analytics-page .recharts-surface,
+.analytics-page .recharts-layer,
+.analytics-page .recharts-sector,
+.analytics-page .recharts-rectangle {
+  outline: none !important;
+}
+
+.analytics-page .recharts-wrapper *:focus,
+.analytics-page .recharts-wrapper *:focus-visible {
+  outline: none !important;
+}
+
+/* The brand navy is intentionally dark and loses contrast on the dark footer.
+   Use brighter semantic foregrounds there without changing the light theme. */
+.dark .site-footer .text-zinc-500 {
+  color: #a1a1aa;
+}
+
+.dark .site-footer a.text-zinc-500:hover {
+  color: #60a5fa;
 }
 
 @keyframes reel-scroll {

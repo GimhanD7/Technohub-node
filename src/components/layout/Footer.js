@@ -8,7 +8,7 @@ const LinkedinIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/sv
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-black/5 dark:border-white/10 pt-20 pb-10 mt-24 overflow-hidden">
+    <footer className="site-footer relative border-t border-black/5 dark:border-white/10 pt-20 pb-10 mt-24 overflow-hidden">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
@@ -20,22 +20,22 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="md:col-span-4 lg:col-span-5">
             <Link href="/home" className="inline-flex items-center mb-6 group" aria-label="Techno Hub home">
-              <BrandLogo whiteOnly className="h-32 w-56 transition-transform group-hover:scale-[1.02]" />
+              <BrandLogo fitted className="h-32 w-36 transition-transform group-hover:scale-[1.02]" />
             </Link>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-8 max-w-sm leading-relaxed">
+            <p className="text-zinc-600 dark:text-zinc-300 mb-8 max-w-sm text-justify leading-relaxed">
               Empowering the next generation of builders with tools that scale. We build the foundation, you build the future.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 hover:bg-primary hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-slate-800 text-zinc-500 dark:text-zinc-300 hover:bg-primary dark:hover:bg-blue-500 hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <TwitterIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 hover:bg-primary hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-slate-800 text-zinc-500 dark:text-zinc-300 hover:bg-primary dark:hover:bg-blue-500 hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <GithubIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 hover:bg-primary hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-slate-800 text-zinc-500 dark:text-zinc-300 hover:bg-primary dark:hover:bg-blue-500 hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <LinkedinIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 hover:bg-primary hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-slate-800 text-zinc-500 dark:text-zinc-300 hover:bg-primary dark:hover:bg-blue-500 hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <Globe className="w-4 h-4" />
               </a>
             </div>
