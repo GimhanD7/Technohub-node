@@ -37,7 +37,7 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
     const fetchNotifications = async () => {
       if (!user || !user.id) return;
       try {
-        const data = await fetchApi(`/notifications/get?user_id=${user.id}`);
+        const data = await fetchApi(`/updates/get?user_id=${user.id}`);
         if (data && data.success) {
           const loadedNotifications = data.notifications || [];
           setNotifications(loadedNotifications);
@@ -66,7 +66,7 @@ export default function TopNavbar({ user, sidebarCollapsed = false, onMenuClick 
     setIsNotifOpen(!isNotifOpen);
     if (!isNotifOpen && unreadCount > 0 && user && user.id) {
       try {
-        await fetchApi(`/notifications/mark_read`, {
+        await fetchApi(`/updates/mark_read`, {
           method: "POST",
           body: JSON.stringify({ user_id: user.id, notification_id: "all" })
         });

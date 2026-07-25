@@ -114,8 +114,9 @@ export async function fetchApi(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    console.error("API Error:", error);
-    const message = errorMessage || "Network error. Please try again.";
+    // Log as a warning to prevent Next.js dev server from aggressively throwing an error overlay
+    console.warn("API Network Warning:", error.message || error);
+    const message = errorMessage || "Network error. Please check if your backend server is running.";
 
     if (shouldToastError) {
       void showApiToast("error", message, toastId);

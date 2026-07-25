@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { BookOpen, PlayCircle, FileText, Video, ChevronLeft, Plus, Trash2, Edit3, X, Eye, EyeOff, Loader2, Users, Layout, Image as ImageIcon, ArrowLeft, Star, Upload, Link2, Search, UserCheck, Layers3, Library } from "lucide-react";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
+import { processUploadFile } from "@/lib/fileUtils";
 import { CustomDialog } from "@/components/ui/CustomDialog";
 
 export default function AdminCourseManagement() {
@@ -347,8 +348,16 @@ export default function AdminCourseManagement() {
     if (!file) return;
 
     setActionLoading(true);
+
+    const { file: processedFile, error } = await processUploadFile(file);
+    if (error) {
+      toast.error(error);
+      setActionLoading(false);
+      return;
+    }
+
     const uploadData = new FormData();
-    uploadData.append("resource", file);
+    uploadData.append("resource", processedFile);
 
     try {
       const response = await fetch(`${API_BASE_URL}/course/upload_material`, {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, BASE_URL, fetchApi } from "@/lib/api";
+import { processUploadFile } from "@/lib/fileUtils";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -152,7 +153,23 @@ export default function AdminGalleryPage() {
     setIsUploading(true);
 
     const uploadData = new FormData();
-    files.forEach((file) => uploadData.append("images", file));
+    let hasErrors = false;
+
+    for (const file of files) {
+      const { file: processedFile, error } = await processUploadFile(file);
+      if (error) {
+        toast.error(error);
+        hasErrors = true;
+      } else {
+        uploadData.append("images", processedFile);
+      }
+    }
+
+    if (!uploadData.has("images")) {
+      setIsUploading(false);
+      event.target.value = "";
+      return;
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/gallery/upload`, {

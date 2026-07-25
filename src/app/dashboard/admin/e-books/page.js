@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, fetchApi } from "@/lib/api";
+import { processUploadFile } from "@/lib/fileUtils";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { CustomDialog } from "@/components/ui/CustomDialog";
@@ -121,10 +122,18 @@ export default function AdminEBooksPage() {
   };
 
   const handleUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const rawFile = event.target.files?.[0];
+    if (!rawFile) return;
 
     setIsUploading(true);
+
+    const { file, error } = await processUploadFile(rawFile);
+    if (error) {
+      toast.error(error);
+      setIsUploading(false);
+      event.target.value = "";
+      return;
+    }
 
     const uploadData = new FormData();
     uploadData.append("resource", file);
@@ -157,10 +166,18 @@ export default function AdminEBooksPage() {
 
 
   const handleCoverUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const rawFile = event.target.files?.[0];
+    if (!rawFile) return;
 
     setIsCoverUploading(true);
+
+    const { file, error } = await processUploadFile(rawFile);
+    if (error) {
+      toast.error(error);
+      setIsCoverUploading(false);
+      event.target.value = "";
+      return;
+    }
 
     const uploadData = new FormData();
     uploadData.append("resource", file);

@@ -47,7 +47,7 @@ app.use('/api/course', courseRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ebook', ebookRoutes);
 app.use('/api/gallery', galleryRoutes);
-app.use('/api/notifications', notificationRoutes);
+app.use('/api/updates', notificationRoutes);
 app.use('/api/online_class', onlineClassRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/api/quiz', quizRoutes);

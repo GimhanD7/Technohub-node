@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, fetchApi } from "@/lib/api";
 
 export default function SecurityProvider({ children }) {
   const [settings, setSettings] = useState(null);
@@ -17,14 +17,9 @@ export default function SecurityProvider({ children }) {
     }
 
     const fetchSettings = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/admin/security`);
-        const data = await res.json();
-        if (data.success && data.settings) {
-          setSettings(data.settings);
-        }
-      } catch (error) {
-        console.error("Failed to load global security settings", error);
+      const data = await fetchApi("/admin/security");
+      if (data?.success && data?.settings) {
+        setSettings(data.settings);
       }
     };
     fetchSettings();

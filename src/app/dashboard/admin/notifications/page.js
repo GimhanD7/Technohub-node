@@ -144,7 +144,7 @@ export default function NotificationManagement() {
       target_role: finalTargetRole
     };
 
-    const res = await fetchApi("/notifications/add", {
+    const res = await fetchApi("/updates/add", {
       method: "POST",
       body: JSON.stringify(payload)
     });
@@ -193,7 +193,7 @@ export default function NotificationManagement() {
       onConfirm: async () => {
         setDeleteDialog(prev => ({ ...prev, isOpen: false }));
         try {
-          const res = await fetchApi(`/notifications/delete/${id}`, {
+          const res = await fetchApi(`/updates/delete/${id}`, {
             method: "DELETE"
           });
 
@@ -241,7 +241,7 @@ export default function NotificationManagement() {
         setIsBulkDeleting(true);
 
         try {
-          const res = await fetchApi('/notifications/bulk-delete', {
+          const res = await fetchApi('/updates/bulk-delete', {
             method: 'DELETE',
             body: JSON.stringify({ ids: selectedNotificationIds })
           });

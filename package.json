@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "dashjs": "^5.2.0",
     "framer-motion": "^12.42.2",
