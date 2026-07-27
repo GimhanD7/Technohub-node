@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
+const { optimizeImage } = require('../utils/imageOptimization');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -23,7 +24,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.mimetype)) {
@@ -34,7 +35,7 @@ const upload = multer({
 });
 
 router.post('/', (req, res) => {
-  upload.single('image')(req, res, function (err) {
+  upload.single('image')(req, res, async function (err) {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ success: false, message: "File size exceeds 5MB limit." });
     } else if (err) {
@@ -45,11 +46,20 @@ router.post('/', (req, res) => {
       return res.status(400).json({ success: false, message: "No image file provided." });
     }
 
-    res.json({
-      success: true,
-      message: "Image uploaded successfully.",
-      imageUrl: `/uploads/questions/${req.file.filename}`
-    });
+    try {
+      const optimization = await optimizeImage(req.file.path, { maxWidth: 1920, maxHeight: 1920, quality: 82 });
+      res.json({
+        success: true,
+        message: optimization.optimized ? "Image optimized and uploaded successfully." : "Image uploaded successfully (already optimized).",
+        imageUrl: `/uploads/questions/${req.file.filename}`,
+        optimized: optimization.optimized,
+        fileSize: optimization.fileSize,
+        originalFileSize: optimization.originalSize
+      });
+    } catch (error) {
+      await fs.promises.unlink(req.file.path).catch(() => {});
+      res.status(error.code === 'INVALID_IMAGE' ? 400 : 500).json({ success: false, message: error.message });
+    }
   });
 });
 

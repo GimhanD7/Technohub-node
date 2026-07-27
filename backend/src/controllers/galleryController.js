@@ -178,14 +178,15 @@ exports.uploadGallery = async (req, res) => {
       return res.status(400).json({ success: false, message: "No gallery image provided." });
     }
 
-    const maxSize = 8 * 1024 * 1024; // 8MB
+    const maxSize = 20 * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     const uploadedImages = [];
 
+    const { optimizeImage } = require('../utils/imageOptimization');
     for (let file of fileArray) {
       if (file.size > maxSize) {
         fs.unlinkSync(file.path);
-        return res.status(400).json({ success: false, message: "Each image must be 8MB or smaller." });
+        return res.status(400).json({ success: false, message: "Each source image must be 20MB or smaller." });
       }
 
       if (!allowedTypes.includes(file.mimetype)) {
@@ -193,11 +194,14 @@ exports.uploadGallery = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid image type. Upload JPG, PNG, WebP, or GIF images." });
       }
 
+      const optimization = await optimizeImage(file.path, { maxWidth: 1920, maxHeight: 1920, quality: 82 });
       uploadedImages.push({
         imageUrl: `/uploads/gallery/${file.filename}`,
         fileName: file.originalname,
         fileType: file.mimetype,
-        fileSize: file.size
+        fileSize: optimization.fileSize,
+        originalFileSize: optimization.originalSize,
+        optimized: optimization.optimized
       });
     }
 
@@ -209,6 +213,8 @@ exports.uploadGallery = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, message: "Upload error: " + error.message });
+    const files = Array.isArray(req.files) ? req.files : [];
+    await Promise.all(files.map((file) => fs.promises.unlink(file.path).catch(() => {})));
+    res.status(error.code === 'INVALID_IMAGE' ? 400 : 500).json({ success: false, message: "Upload error: " + error.message });
   }
 };

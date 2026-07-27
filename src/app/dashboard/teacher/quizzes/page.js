@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
+import { FloatingActionMenu } from "@/components/ui/FloatingActionMenu";
 
 export default function TeacherQuizzesPage() {
   const [user, setUser] = useState(null);
@@ -291,10 +292,10 @@ export default function TeacherQuizzesPage() {
           )}
         </div>
 
-        <div className="overflow-x-auto flex-1">
+        <div className="overflow-auto flex-1 isolate">
           <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead className="bg-slate-50/90 dark:bg-slate-900/40">
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 sticky top-0 z-10">
+            <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-[0_1px_0_0_rgb(226_232_240)] dark:shadow-[0_1px_0_0_rgb(30_41_59)]">
+              <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
 
                 <th className="py-3.5 px-5 font-bold">Quiz details</th>
                 <th className="py-3 px-5 font-bold">Status</th>
@@ -362,17 +363,20 @@ export default function TeacherQuizzesPage() {
                       </td>
                       <td className="py-3 px-5">
                         <div className="relative flex justify-end">
-                          <button onClick={() => setOpenActionMenu(openActionMenu === quiz.id ? null : quiz.id)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary/40 hover:text-primary hover:bg-primary/5" aria-label={`Open actions for ${quiz.title}`}><MoreVertical className="w-4 h-4" /></button>
-                          {openActionMenu === quiz.id && <>
-                            <button className="fixed inset-0 z-20 cursor-default" onClick={() => setOpenActionMenu(null)} aria-label="Close actions" />
-                            <div className="absolute right-0 top-11 z-30 w-52 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl">
+                          <FloatingActionMenu
+                            open={openActionMenu === quiz.id}
+                            onOpenChange={(open) => setOpenActionMenu(open ? quiz.id : null)}
+                            label={`Open actions for ${quiz.title}`}
+                            estimatedHeight={196}
+                            widthClassName="w-52"
+                            trigger={<MoreVertical className="w-4 h-4" />}
+                          >
                               <Link onClick={() => setOpenActionMenu(null)} href={`/dashboard/teacher/quiz-standings?id=${quiz.id}`} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Award className="w-4 h-4 text-blue-500" />View standings</Link>
                               <Link onClick={() => setOpenActionMenu(null)} href={`/dashboard/teacher/quiz-submissions?id=${quiz.id}`} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Users className="w-4 h-4 text-purple-500" />View participants</Link>
                               {quiz._status !== "past" && quiz._status !== "active" && <Link onClick={() => setOpenActionMenu(null)} href={`/dashboard/teacher/quizzes/edit?id=${quiz.id}`} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Edit className="w-4 h-4 text-amber-500" />Edit quiz</Link>}
                               {quiz._status !== "past" && <button onClick={() => { setOpenActionMenu(null); handleDeleteQuiz(quiz.id); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 className="w-4 h-4" />Delete quiz</button>}
                               {(quiz._status === "past" || quiz._status === "active") && <div className="px-3 py-2 text-[10px] text-slate-400 flex items-center gap-2"><Lock className="w-3.5 h-3.5" />Editing unavailable</div>}
-                            </div>
-                          </>}
+                          </FloatingActionMenu>
                         </div>
                       </td>
                     </tr>

@@ -324,7 +324,7 @@ export default function TeacherCourseManagement() {
         content_url: String(material.content_url ?? '')
       });
       setMaterialSource(material.content_url?.startsWith('/uploads/') ? 'upload' : 'link');
-      setMaterialUploadName(material.content_url?.startsWith('/uploads/') ? material.title || 'Uploaded PDF' : '');
+      setMaterialUploadName(material.content_url?.startsWith('/uploads/') ? material.title || 'Uploaded document' : '');
     } else {
       setEditMaterialId(null);
       setMaterialForm({ module_id: String(moduleId ?? ''), type: 'video', title: '', description: '', content_url: '' });
@@ -353,7 +353,7 @@ export default function TeacherCourseManagement() {
           ...current,
           type: 'pdf',
           content_url: String(data.fileUrl ?? ''),
-          title: current.title || file.name.replace(/\.pdf$/i, '')
+          title: current.title || file.name.replace(/\.(pdf|docx?)$/i, '')
         }));
         setMaterialUploadName(file.name);
       } else {
@@ -369,7 +369,7 @@ export default function TeacherCourseManagement() {
   const handleSaveMaterial = async (e) => {
     e.preventDefault();
     if (!materialForm.content_url.trim()) {
-      showAlert("Resource Required", materialForm.type === 'pdf' ? "Upload a PDF or attach a PDF link before saving." : "Add a valid resource link before saving.");
+      showAlert("Resource Required", materialForm.type === 'pdf' ? "Upload a PDF/Word document or attach a document link before saving." : "Add a valid resource link before saving.");
       return;
     }
     setActionLoading(true);
@@ -950,7 +950,7 @@ export default function TeacherCourseManagement() {
               {materialForm.type === 'pdf' && materialSource === 'upload' ? (
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1.5">Choose PDF *</label>
-                  <input required={!materialForm.content_url} type="file" accept="application/pdf,.pdf" onChange={e => handleMaterialUpload(e.target.files?.[0])} className="w-full p-2.5 text-[13px] border border-dashed border-gray-300 dark:border-slate-700 rounded" />
+                  <input required={!materialForm.content_url} type="file" accept="application/pdf,.pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={e => handleMaterialUpload(e.target.files?.[0])} className="w-full p-2.5 text-[13px] border border-dashed border-gray-300 dark:border-slate-700 rounded" />
                   {materialForm.content_url?.startsWith('/uploads/') && <p className="mt-2 text-[11px] font-medium text-green-600">{materialUploadName || 'PDF'} uploaded and ready.</p>}
                 </div>
               ) : (

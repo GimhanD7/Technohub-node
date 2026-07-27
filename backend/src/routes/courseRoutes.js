@@ -21,7 +21,18 @@ const storage = multer.diskStorage({
     cb(null, filename);
   }
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    cb(allowed.includes(file.mimetype) ? null : new Error('Upload a PDF or Word document.'), allowed.includes(file.mimetype));
+  }
+});
 
 router.get('/get_teachers', courseController.getTeachers);
 
@@ -63,7 +74,14 @@ const moduleStorage = multer.diskStorage({
     cb(null, filename);
   }
 });
-const moduleUpload = multer({ storage: moduleStorage });
+const moduleUpload = multer({
+  storage: moduleStorage,
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    cb(allowed.includes(file.mimetype) ? null : new Error('Upload a JPG, PNG, WebP, or GIF image.'), allowed.includes(file.mimetype));
+  }
+});
 
 router.post('/upload_module_image', moduleUpload.single('image'), courseController.uploadModuleImage);
 router.get('/enrolled_students', courseController.getEnrolledStudents);

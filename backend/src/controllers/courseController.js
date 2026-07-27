@@ -373,6 +373,8 @@ exports.uploadBanner = async (req, res) => {
     const filePath = path.join(uploadDir, filename);
 
     fs.writeFileSync(filePath, buffer);
+    const { optimizeImage } = require('../utils/imageOptimization');
+    const optimization = await optimizeImage(filePath, { maxWidth: 1920, maxHeight: 1080, quality: 82 });
 
     const protocol = req.protocol;
     const host = req.get('host');
@@ -388,7 +390,14 @@ exports.uploadBanner = async (req, res) => {
     // Wait, the PHP code did: `/Techno-Hub/uploads/banners/file.jpg`.
     // Let's return `/uploads/banners/${filename}`.
     
-    res.json({ success: true, url: `/uploads/banners/${filename}`, message: "Image uploaded successfully." });
+    res.json({
+      success: true,
+      url: `/uploads/banners/${filename}`,
+      message: optimization.optimized ? "Image optimized and uploaded successfully." : "Image uploaded successfully (already optimized).",
+      optimized: optimization.optimized,
+      fileSize: optimization.fileSize,
+      originalFileSize: optimization.originalSize
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: "Upload failed: " + error.message });
   }
@@ -398,7 +407,7 @@ exports.uploadMaterial = async (req, res) => {
   let uploadedPath;
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Choose a PDF file to upload." });
+      return res.status(400).json({ success: false, message: "Choose a PDF or Word file to upload." });
     }
 
     const file = req.file;
@@ -408,15 +417,22 @@ exports.uploadMaterial = async (req, res) => {
     if (file.size <= 0 || file.size > maxSize) {
       // Must delete the temp file Multer created
       fs.unlinkSync(file.path);
-      return res.status(400).json({ success: false, message: "PDF files must be smaller than 25MB." });
+      return res.status(400).json({ success: false, message: "Documents must be smaller than 25MB." });
     }
 
-    if (file.mimetype !== 'application/pdf' && path.extname(file.originalname).toLowerCase() !== '.pdf') {
+    const isPdfUpload = file.mimetype === 'application/pdf' || path.extname(file.originalname).toLowerCase() === '.pdf';
+    const isWordUpload = [
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ].includes(file.mimetype);
+    if (!isPdfUpload && !isWordUpload) {
       fs.unlinkSync(file.path);
-      return res.status(400).json({ success: false, message: "Only valid PDF files can be uploaded here." });
+      return res.status(400).json({ success: false, message: "Only valid PDF or Word files can be uploaded here." });
     }
 
-    const compression = await compressPdf(file.path);
+    const compression = isPdfUpload
+      ? await compressPdf(file.path)
+      : { compressed: false, originalSize: file.size, fileSize: file.size };
 
     res.json({
       success: true,
@@ -424,7 +440,7 @@ exports.uploadMaterial = async (req, res) => {
         ? "PDF compressed and uploaded successfully."
         : compression.compressionSkipped
           ? "PDF uploaded successfully."
-          : "PDF uploaded successfully (already optimized).",
+          : isPdfUpload ? "PDF uploaded successfully (already optimized)." : "Word document uploaded successfully.",
       fileUrl: `/uploads/course-materials/${file.filename}`,
       fileName: file.originalname,
       fileSize: compression.fileSize,
@@ -441,18 +457,26 @@ exports.uploadMaterial = async (req, res) => {
 };
 
 exports.uploadModuleImage = async (req, res) => {
+  let uploadedPath;
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Choose an image file to upload." });
     }
+    uploadedPath = req.file.path;
+    const { optimizeImage } = require('../utils/imageOptimization');
+    const optimization = await optimizeImage(req.file.path, { maxWidth: 1600, maxHeight: 1200, quality: 82 });
     res.json({
       success: true,
-      message: "Image uploaded successfully.",
+      message: optimization.optimized ? "Image optimized and uploaded successfully." : "Image uploaded successfully (already optimized).",
       imageUrl: `/uploads/modules/${req.file.filename}`,
-      fileName: req.file.originalname
+      fileName: req.file.originalname,
+      optimized: optimization.optimized,
+      fileSize: optimization.fileSize,
+      originalFileSize: optimization.originalSize
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Upload error: " + error.message });
+    if (uploadedPath) await fs.promises.unlink(uploadedPath).catch(() => {});
+    res.status(error.code === 'INVALID_IMAGE' ? 400 : 500).json({ success: false, message: "Upload error: " + error.message });
   }
 };
 

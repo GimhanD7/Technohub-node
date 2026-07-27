@@ -107,6 +107,13 @@ exports.recharge = async (req, res) => {
 
     let slipUrl = null;
     if (req.file) {
+      if (req.file.mimetype === 'application/pdf') {
+        const { compressPdf } = require('../utils/pdfCompression');
+        await compressPdf(req.file.path);
+      } else {
+        const { optimizeImage } = require('../utils/imageOptimization');
+        await optimizeImage(req.file.path, { maxWidth: 1920, maxHeight: 1920, quality: 82 });
+      }
       slipUrl = `/uploads/slips/${req.file.filename}`;
     }
 

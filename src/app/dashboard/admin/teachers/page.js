@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { Users, BookOpen, Loader2, RefreshCw, Search, Plus, X, Edit3, ChevronLeft, ChevronRight, Ban, CheckCircle2, Upload, MoreVertical, ArrowUpDown, UserCheck, Layers3 } from "lucide-react";
 import { fetchApi, API_BASE_URL, BASE_URL } from "@/lib/api";
 import { CustomDialog } from "@/components/ui/CustomDialog";
+import { FloatingActionMenu } from "@/components/ui/FloatingActionMenu";
 import { digitsOnly, getEmailError, getPasswordError, getPhoneError, normalizeEmail } from "@/lib/validation";
 
 export default function TeacherManagement() {
@@ -398,18 +399,19 @@ export default function TeacherManagement() {
                     </td>
                     <td className="py-3 px-5">
                       <div className="relative flex justify-end">
-                        <button onClick={() => setOpenActionMenu(openActionMenu === u.id ? null : u.id)} disabled={actionLoading === u.id} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors disabled:opacity-50" aria-label={`Open actions for ${u.full_name}`}>
-                          {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
-                        </button>
-                        {openActionMenu === u.id && <>
-                          <button className="fixed inset-0 z-20 cursor-default" onClick={() => setOpenActionMenu(null)} aria-label="Close actions" />
-                          <div className="absolute right-0 top-11 z-30 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl">
+                        <FloatingActionMenu
+                          open={openActionMenu === u.id}
+                          onOpenChange={(open) => setOpenActionMenu(open ? u.id : null)}
+                          disabled={actionLoading === u.id}
+                          label={`Open actions for ${u.full_name}`}
+                          estimatedHeight={112}
+                          trigger={actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
+                        >
                             <button onClick={() => { setOpenActionMenu(null); openEditModal(u); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Edit3 className="w-4 h-4 text-blue-500" />Edit teacher</button>
                             <button onClick={() => { setOpenActionMenu(null); handleToggleStatus(u); }} className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold ${u.status === 'suspended' ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20' : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}>
                               {u.status === 'suspended' ? <CheckCircle2 className="w-4 h-4" /> : <Ban className="w-4 h-4" />}{u.status === 'suspended' ? 'Activate account' : 'Suspend account'}
                             </button>
-                          </div>
-                        </>}
+                        </FloatingActionMenu>
                       </div>
                     </td>
                   </tr>

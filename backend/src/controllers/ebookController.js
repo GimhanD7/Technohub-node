@@ -312,14 +312,22 @@ exports.uploadEbook = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid file type.' });
     }
 
-    const compression = file.mimetype === 'application/pdf'
-      ? await compressPdf(file.path)
-      : { compressed: false, originalSize: file.size, fileSize: file.size };
+    let compression;
+    if (file.mimetype === 'application/pdf') {
+      compression = await compressPdf(file.path);
+    } else if (file.mimetype.startsWith('image/')) {
+      const { optimizeImage } = require('../utils/imageOptimization');
+      const imageResult = await optimizeImage(file.path, { maxWidth: 1920, maxHeight: 1920, quality: 82 });
+      compression = { ...imageResult, compressed: imageResult.optimized };
+    } else {
+      // Office files are already ZIP-compressed; rewriting them risks corruption.
+      compression = { compressed: false, originalSize: file.size, fileSize: file.size };
+    }
 
     res.json({
       success: true,
       message: compression.compressed
-        ? 'PDF compressed and uploaded successfully.'
+        ? file.mimetype === 'application/pdf' ? 'PDF compressed and uploaded successfully.' : 'Image optimized and uploaded successfully.'
         : compression.compressionSkipped
           ? 'PDF uploaded successfully.'
           : 'Resource uploaded successfully.',
@@ -329,6 +337,7 @@ exports.uploadEbook = async (req, res) => {
       fileSize: compression.fileSize,
       originalFileSize: compression.originalSize,
       compressed: compression.compressed,
+      optimized: Boolean(compression.optimized),
       compressionSkipped: Boolean(compression.compressionSkipped)
     });
   } catch (error) {
