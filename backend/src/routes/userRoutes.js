@@ -18,7 +18,14 @@ const storage = multer.diskStorage({
     cb(null, filename);
   }
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    cb(allowed.includes(file.mimetype) ? null : new Error('Upload a JPG, PNG, or WebP profile image.'), allowed.includes(file.mimetype));
+  }
+});
 
 // Admin Management
 router.get('/get_users', userController.getUsers);

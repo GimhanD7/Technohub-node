@@ -2,6 +2,7 @@
 
 import { toast } from "react-hot-toast";
 import { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { 
   DollarSign, Search, Loader2, RefreshCw, Settings2, History, X, 
   CheckCircle2, Download, TrendingUp, Calendar, AlertCircle, ArrowDownRight, CreditCard,
@@ -22,6 +23,7 @@ export default function TeacherEarnings() {
   const [commissionFilter, setCommissionFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState({ key: "full_name", direction: "asc" });
   const [openActionMenu, setOpenActionMenu] = useState(null);
+  const [actionMenuPosition, setActionMenuPosition] = useState({ top: 0, right: 0 });
   const [dialogState, setDialogState] = useState({ isOpen: false, type: 'info', title: '', message: '', isAlertOnly: false, onConfirm: null, onCancel: null });
   
   // Modals
@@ -128,6 +130,26 @@ export default function TeacherEarnings() {
     fixed: teachers.filter(teacher => teacher.commission_type === "fixed").length,
     earnings: teachers.reduce((total, teacher) => total + Number(teacher.total_earnings || 0), 0),
   }), [teachers]);
+
+  const toggleActionMenu = (event, teacherId) => {
+    if (openActionMenu === teacherId) {
+      setOpenActionMenu(null);
+      return;
+    }
+
+    const buttonRect = event.currentTarget.getBoundingClientRect();
+    const menuHeight = 104;
+    const spaceBelow = window.innerHeight - buttonRect.bottom;
+    const top = spaceBelow >= menuHeight + 12
+      ? buttonRect.bottom + 8
+      : Math.max(8, buttonRect.top - menuHeight - 8);
+
+    setActionMenuPosition({
+      top,
+      right: Math.max(8, window.innerWidth - buttonRect.right)
+    });
+    setOpenActionMenu(teacherId);
+  };
 
   const handleSort = (key) => {
     setSortConfig(current => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
@@ -474,14 +496,20 @@ export default function TeacherEarnings() {
                       </td>
                       <td className="py-4 px-5">
                         <div className="relative flex justify-end">
-                          <button onClick={() => setOpenActionMenu(openActionMenu === t.id ? null : t.id)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors" aria-label={`Open actions for ${t.full_name}`}><MoreVertical className="w-4 h-4" /></button>
-                          {openActionMenu === t.id && <>
-                            <button className="fixed inset-0 z-20 cursor-default" onClick={() => setOpenActionMenu(null)} aria-label="Close actions" />
-                            <div className="absolute right-0 top-11 z-30 w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl">
-                              <button onClick={() => { setOpenActionMenu(null); openHistoryModal(t); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><History className="w-4 h-4 text-blue-500" />View history</button>
-                              <button onClick={() => { setOpenActionMenu(null); openConfigModal(t); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Settings2 className="w-4 h-4 text-violet-500" />Edit commission</button>
-                            </div>
-                          </>}
+                          <button onClick={(event) => toggleActionMenu(event, t.id)} className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors" aria-label={`Open actions for ${t.full_name}`} aria-expanded={openActionMenu === t.id}><MoreVertical className="w-4 h-4" /></button>
+                          {openActionMenu === t.id && createPortal(
+                            <>
+                              <button className="fixed inset-0 z-[70] cursor-default" onClick={() => setOpenActionMenu(null)} aria-label="Close actions" />
+                              <div
+                                className="fixed z-[80] w-48 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-2xl"
+                                style={{ top: actionMenuPosition.top, right: actionMenuPosition.right }}
+                              >
+                                <button onClick={() => { setOpenActionMenu(null); openHistoryModal(t); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><History className="w-4 h-4 text-blue-500" />View history</button>
+                                <button onClick={() => { setOpenActionMenu(null); openConfigModal(t); }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"><Settings2 className="w-4 h-4 text-violet-500" />Edit commission</button>
+                              </div>
+                            </>,
+                            document.body
+                          )}
                         </div>
                       </td>
                     </tr>

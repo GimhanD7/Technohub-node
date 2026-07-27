@@ -468,9 +468,11 @@ exports.updateProfile = async (req, res) => {
 };
 
 exports.uploadProfile = async (req, res) => {
+  let uploadedPath;
   try {
     if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: "No image provided." });
     req.file = req.files[0]; // Map the first file to req.file
+    uploadedPath = req.file.path;
 
     // Verify token payload to get user ID instead of req.body.id
     // Wait, let's just grab the user from localStorage on frontend...
@@ -478,15 +480,20 @@ exports.uploadProfile = async (req, res) => {
     // If the frontend isn't sending ID, we have to get it from the token or body.
     let userId = req.body.id;
     if (!userId && req.user) userId = req.user.id;
-    if (!userId) return res.status(400).json({ success: false, message: "User ID required. The frontend must send 'id' in the formData." });
-
-    const id = userId;
-    const maxSize = 5 * 1024 * 1024;
-    if (req.file.size > maxSize) {
-      fs.unlinkSync(req.file.path);
-      return res.status(400).json({ success: false, message: "Max 5MB." });
+    if (!userId) {
+      await fs.promises.unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ success: false, message: "User ID required. The frontend must send 'id' in the formData." });
     }
 
+    const id = userId;
+    const maxSize = 15 * 1024 * 1024;
+    if (req.file.size > maxSize) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: "Profile images must be 15MB or smaller." });
+    }
+
+    const { optimizeImage } = require('../utils/imageOptimization');
+    const optimization = await optimizeImage(req.file.path, { maxWidth: 1024, maxHeight: 1024, quality: 82 });
     const relativePath = `/uploads/profiles/${req.file.filename}`;
     
     if (id !== 'NEW') {
@@ -505,9 +512,17 @@ exports.uploadProfile = async (req, res) => {
       });
     }
 
-    res.json({ success: true, message: "Avatar updated.", imageUrl: relativePath });
+    res.json({
+      success: true,
+      message: optimization.optimized ? "Avatar optimized and updated." : "Avatar updated.",
+      imageUrl: relativePath,
+      optimized: optimization.optimized,
+      fileSize: optimization.fileSize,
+      originalFileSize: optimization.originalSize
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (uploadedPath) await fs.promises.unlink(uploadedPath).catch(() => {});
+    res.status(error.code === 'INVALID_IMAGE' ? 400 : 500).json({ success: false, message: error.message });
   }
 };
 

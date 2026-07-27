@@ -3,7 +3,7 @@ import imageCompression from 'browser-image-compression';
 /**
  * Process a file for upload.
  * Compresses images to max 1MB.
- * Validates other files against a 10MB limit.
+ * Validates documents against the backend's 25MB upload limit.
  * 
  * @param {File} file 
  * @returns {Promise<{file?: File, error?: string}>}
@@ -28,11 +28,11 @@ export async function processUploadFile(file) {
       return { error: `Failed to compress image "${file.name}".` };
     }
   } else {
-    // For non-images (like PDFs) check if they exceed 10MB limit
-    const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+    // PDFs and Office files are optimized/validated by the backend.
+    const maxSizeInBytes = 25 * 1024 * 1024;
     
     if (file.size > maxSizeInBytes) {
-      return { error: `File "${file.name}" exceeds the 10MB limit. Please choose a smaller file.` };
+      return { error: `File "${file.name}" exceeds the 25MB limit. Please choose a smaller file.` };
     }
     
     return { file };

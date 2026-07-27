@@ -284,10 +284,10 @@ export default function TeacherOnlineClassesPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto flex-1">
+        <div className="overflow-auto flex-1 isolate">
           <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead className="bg-slate-50/90 dark:bg-slate-900/40">
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 sticky top-0 z-10">
+            <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-[0_1px_0_0_rgb(226_232_240)] dark:shadow-[0_1px_0_0_rgb(30_41_59)]">
+              <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
                 <th className="py-3.5 px-5 font-bold">Class details</th>
                 <th className="py-3 px-5 font-bold">Status</th>
                 <th className="py-3 px-5 font-bold hidden md:table-cell">Platform</th>

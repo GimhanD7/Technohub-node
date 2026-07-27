@@ -18,7 +18,14 @@ const storage = multer.diskStorage({
     cb(null, filename);
   }
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    cb(allowed.includes(file.mimetype) ? null : new Error('Upload a JPG, PNG, WebP, or PDF receipt.'), allowed.includes(file.mimetype));
+  }
+});
 
 router.get('/balance', walletController.getBalance);
 router.get('/history', walletController.getHistory);

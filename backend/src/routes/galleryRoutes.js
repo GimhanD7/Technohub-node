@@ -20,7 +20,14 @@ const storage = multer.diskStorage({
     cb(null, filename);
   }
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    cb(allowed.includes(file.mimetype) ? null : new Error('Upload JPG, PNG, WebP, or GIF images.'), allowed.includes(file.mimetype));
+  }
+});
 
 router.get('/list', galleryController.listGallery);
 router.post('/create', galleryController.createGallery);

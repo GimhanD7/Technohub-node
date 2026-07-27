@@ -188,10 +188,10 @@ export default function BankDetailsManager() {
       </div>
 
       <div className="bg-white dark:bg-[#1e293b] rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-        <div className="overflow-x-auto flex-1">
+        <div className="overflow-auto flex-1 isolate">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50/50 dark:bg-[#1e293b] border-b border-gray-200 dark:border-slate-800 text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky top-0 z-10">
+            <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-[0_1px_0_0_rgb(226_232_240)] dark:shadow-[0_1px_0_0_rgb(30_41_59)]">
+              <tr className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 <th className="py-3 px-5 font-bold">Bank Name</th>
                 <th className="py-3 px-5 font-bold">Account Name</th>
                 <th className="py-3 px-5 font-bold">Account Number</th>

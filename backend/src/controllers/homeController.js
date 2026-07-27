@@ -267,22 +267,30 @@ exports.deleteTimetable = async (req, res) => {
 
 // --- UPLOAD ---
 exports.uploadFile = async (req, res) => {
+  let uploadedPath;
   try {
     if (!req.file) return res.status(400).json({ success: false, message: "No file provided." });
     
     const file = req.file;
-    const maxSize = 5 * 1024 * 1024; // 5MB limit
+    uploadedPath = file.path;
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
       fs.unlinkSync(file.path);
-      return res.status(400).json({ success: false, message: "File exceeds 5MB." });
+      return res.status(400).json({ success: false, message: "Image exceeds the 20MB upload limit." });
     }
 
+    const { optimizeImage } = require('../utils/imageOptimization');
+    const optimization = await optimizeImage(file.path, { maxWidth: 1920, maxHeight: 1080, quality: 82 });
     res.json({
       success: true,
       url: `/uploads/home/${file.filename}`,
-      message: "File uploaded successfully."
+      message: optimization.optimized ? "Image optimized and uploaded successfully." : "Image uploaded successfully (already optimized).",
+      optimized: optimization.optimized,
+      fileSize: optimization.fileSize,
+      originalFileSize: optimization.originalSize
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (uploadedPath) await fs.promises.unlink(uploadedPath).catch(() => {});
+    res.status(error.code === 'INVALID_IMAGE' ? 400 : 500).json({ success: false, message: error.message });
   }
 };
